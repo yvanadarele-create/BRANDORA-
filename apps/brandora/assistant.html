@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Log in — Brandora</title>
-<meta name="description" content="Sign in to Brandora to continue building your brand.">
+<title>Ask Brandora</title>
+<meta name="description" content="Ask Brandora about products, packaging and quantities for your brand.">
 <meta name="theme-color" content="#050507">
 <meta name="robots" content="noindex">
-
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="site.webmanifest">
 <link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -52,31 +51,45 @@
 </header>
 
 <main id="main">
-
   <section class="section">
-    <div class="wrap auth-panel">
-      <p class="eyebrow" data-i18n="auth.eyebrow">Your account</p>
-      <h1 data-i18n="auth.login.title">Welcome back</h1>
-      <p class="lede" data-i18n="auth.login.lede">Your brands, packages and orders are waiting where you left them.</p>
+    <div class="wrap wrap--narrow">
+      <p class="eyebrow" data-i18n="nav.assistant">Ask Brandora</p>
+      <h1 data-assistant-title>Ask Brandora</h1>
+      <p class="lede" data-assistant-lede>Ask about products, packaging, quantities or what to launch first. Answers come from your brand and the real catalogue.</p>
 
       <p class="notice" data-error hidden role="alert"></p>
 
-      <form data-login-form novalidate>
-        <div class="field">
-          <label for="email" data-i18n="auth.email">Email</label>
-          <input class="input" id="email" name="email" type="email" autocomplete="email" required>
-        </div>
-        <div class="field">
-          <label for="password" data-i18n="auth.password">Password</label>
-          <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
-        </div>
-        <button class="btn btn--primary" type="submit" data-submit data-i18n="auth.login.submit">Log in</button>
+      <!--
+        The suggestions are the questions §7 names. They are here because a
+        blank box is the hardest thing to answer, and a founder who has never
+        used a tool like this does not know what it can do.
+      -->
+      <ul class="chips" data-suggestions>
+        <li><button class="chip" type="button" data-ask="What products fit my brand?">What products fit my brand?</button></li>
+        <li><button class="chip" type="button" data-ask="What packaging should I use?">What packaging should I use?</button></li>
+        <li><button class="chip" type="button" data-ask="Find me 30 premium cups.">Find me 30 premium cups</button></li>
+        <li><button class="chip" type="button" data-ask="What should I launch first?">What should I launch first?</button></li>
+        <li><button class="chip" type="button" data-ask="Build a launch package for my brand.">Build a launch package</button></li>
+      </ul>
+
+      <div class="thread" data-thread aria-live="polite"></div>
+
+      <form class="ask" data-ask-form>
+        <label class="visually-hidden" for="question">Your question</label>
+        <textarea class="input" id="question" name="question" rows="2"
+                  placeholder="Ask about products, packaging, quantities…" required></textarea>
+        <button class="btn btn--primary" type="submit" data-submit data-i18n="assistant.send">Ask</button>
       </form>
 
-      <p class="auth-alt">
-        <span data-i18n="auth.login.alt">New to Brandora?</span>
-        <a href="signup.html" data-signup-link data-i18n="auth.signup.title">Create an account</a>
+      <p class="product__meta" data-assistant-note>
+        Brandora answers from the catalogue it can actually order from. It will
+        tell you when nothing fits rather than suggest something that does not exist.
       </p>
+
+      <noscript>
+        <div class="notice">The assistant needs JavaScript. You can still
+          <a href="catalog.html">browse the catalogue</a>.</div>
+      </noscript>
     </div>
   </section>
 
@@ -94,6 +107,6 @@
 
 <script src="assets/js/app.js" defer></script>
 <script type="module" src="assets/js/booking.js"></script>
-<script type="module" src="assets/js/auth.js"></script>
+<script type="module" src="assets/js/assistant.js"></script>
 </body>
 </html>

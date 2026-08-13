@@ -9,7 +9,7 @@ Evidence is a file you can open or a test you can run. `pnpm test` runs
 everything; `BRANDORA_TEST_DATABASE_URL=… pnpm test` also runs the Postgres
 half.
 
-**387 tests pass.** The full customer journey has been driven in Chromium at
+**404 tests pass.** The full customer journey has been driven in Chromium at
 1440×900 and 390×844, against Postgres, on the real server.
 
 ---
@@ -47,6 +47,7 @@ half.
 | **Calendly** | `mountBooking` in `api.js`, `/api/settings` | One `BRANDORA_CALENDLY_URL`. Unset, the controls hide rather than falling back somewhere that is not a booking page. Verified against the account's real event on desktop and mobile |
 | **Persistence on serverless** | `postgres.ts`, `brandora-postgres.test.ts` | Postgres in production, SQLite in tests, the same assertions run against both. A customer's brand and paid order survive a process restart |
 | **Error handling** | `errors.ts`, `handle()` | One conversion point. A customer gets a sentence they can act on; the supplier's code goes to the admin log. No stack trace, no internal path, no blank screen |
+| **Ask Brandora** | `assistant.ts`, `assistant.html`, 17 tests | Answers from the stored Brand Profile and the real catalogue. The model writes the sentences; **the catalogue writes the numbers** — product cards are rendered from our data, so a wrong figure in its prose cannot become a wrong price on screen. An id it invents is dropped and logged |
 | **Homepage film** | `index.html`, `app.js` | Full-bleed above the hero. Not downloaded at all on Data Saver, 2G or reduced-motion — 8.5MB matters on metered mobile data. Falls back to the poster and restores the lockup if the codec is unavailable |
 
 ## Partial
@@ -62,7 +63,6 @@ half.
 
 | Feature | Why it is listed |
 | --- | --- |
-| **Ask Brandora AI assistant** | The brief's "intelligent layer connecting the platform". The Brand Profile, the catalogue and the matching engine it would draw on are all built and queryable; the conversational surface over them is not. This is the largest remaining gap |
 | **Logo image generation** | The logo *brief* is generated and written to be handed to a designer or an image model. The brand book shows the monogram in the brand's own typeface and colours and says that is what it is. Nothing calls an image model |
 | **Brand-kit download as a zip** | The guidelines document is generated and downloadable as Markdown. The manifest lists what a full kit would contain; no archive is produced |
 | **Paystack webhook route** | `paystackSignatureValid` is implemented and tested; nothing mounts it as an endpoint. Payment is confirmed by the customer's return to the order page, which verifies server-side — a webhook would make that robust against a customer who closes the tab |
@@ -78,8 +78,7 @@ half.
 
 In the order I would do it:
 
-1. **Ask Brandora.** Everything it needs to answer from is already queryable.
-2. **Notifications.** The events exist; they need a channel. Email first.
-3. **Verify the AliExpress signature** against the console, then make one live call behind a flag.
-4. **The Paystack webhook**, so a closed tab cannot lose a payment.
-5. **Supplier and product admin**, once there is more than one supplier to manage.
+1. **Notifications.** The events exist; they need a channel. Email first.
+2. **Verify the AliExpress signature** against the console, then make one live call behind a flag.
+3. **The Paystack webhook**, so a closed tab cannot lose a payment.
+4. **Supplier and product admin**, once there is more than one supplier to manage.

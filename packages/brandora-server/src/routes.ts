@@ -83,6 +83,7 @@ import {
   signValue,
 } from "./http.js";
 import { type PricingSettings, priceProject, recommendProducts } from "./pricing.js";
+import { MAX_QUESTION_LENGTH, ask } from "./assistant.js";
 import {
   type PaymentProvider,
   assertAmountMatches,
@@ -682,6 +683,71 @@ export function createRouter(deps: ServerDeps): Router {
         score: entry.score,
         reasons: entry.reasons,
       })),
+    });
+  });
+
+  /* --- Ask Brandora -------------------------------------------------------- */
+
+  /**
+   * The assistant, grounded in this customer's brand and the real catalogue.
+   *
+   * Behind `requireUser` and scoped to a project they own, because the answer
+   * is built from their brand — and because it costs a paid model call, which
+   * is not something to leave open to the internet.
+   */
+  router.post("/api/projects/:id/assistant", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+
+    if (generateLimiter.exceeded(user.id)) {
+      throw new RateLimitedError(`assistant rate limit for ${user.id}`);
+    }
+
+    const bundle = await loadProjectBundle(repos, project.id, user.id);
+    const strategy = bundle?.strategy;
+    if (!strategy) {
+      throw new ValidationError("brand", "build your brand first — the assistant answers from it");
+    }
+
+    const question = requireString(ctx.body, "question", MAX_QUESTION_LENGTH);
+
+    const result = await ask({
+      question,
+      brand: {
+        name: strategy.name,
+        description: strategy.description,
+        industry: strategy.industry,
+        positioning: strategy.positioning,
+        targetCustomer: strategy.targetCustomer,
+        personality: strategy.personality,
+        promise: strategy.promise,
+        toneOfVoice: strategy.toneOfVoice,
+        palette: bundle?.identity?.palette ?? [],
+        typography: bundle?.identity?.typography
+          ? {
+              primary: bundle.identity.typography.primary,
+              secondary: bundle.identity.typography.secondary,
+            }
+          : null,
+      },
+      catalog,
+      provider: deps.strategy,
+    });
+
+    // A cited id that was never offered means the model invented a product.
+    // The customer never sees it — `products` is resolved from the catalogue —
+    // but an administrator should know it happened.
+    if (result.unreferencedClaims.length > 0) {
+      deps.logger.error(
+        `assistant invented product ids for ${project.id}: ${result.unreferencedClaims.join(", ")}`,
+      );
+    }
+
+    return json(200, {
+      answer: result.answer,
+      quantity: result.quantity,
+      // Rendered from our data, never from the model's prose.
+      products: result.products.map(productView),
     });
   });
 

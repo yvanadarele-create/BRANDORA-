@@ -163,6 +163,7 @@ export const fr: Catalogue = {
   /* Compte et tableau de bord */
   "nav.admin": "Administration",
   "cta.book": "Réserver un appel",
+  "assistant.send": "Demander",
   "auth.eyebrow": "Votre compte",
   "auth.email": "E-mail",
   "auth.password": "Mot de passe",

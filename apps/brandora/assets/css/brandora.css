@@ -897,3 +897,66 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 @media (max-width: 48rem) {
   .header-tools [data-book-call] { display: none !important; }
 }
+
+/* --- Ask Brandora ----------------------------------------------------------- */
+
+/*
+ * Deliberately not a chat bubble UI. §12 rules out "generic chatbot visuals",
+ * and the reason is more than taste: bubbles imply a conversation with a person
+ * who knows things. This is a column of questions and considered answers, set
+ * like a document, which is what it actually is.
+ */
+.thread { display: grid; gap: var(--s5); margin: var(--s6) 0; }
+
+.turn { display: grid; gap: var(--s2); }
+
+.turn__who {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+.turn__body { margin: 0; max-width: 60ch; white-space: pre-wrap; }
+
+.turn--you .turn__body {
+  color: var(--ink-muted);
+  border-inline-start: 2px solid var(--border-strong);
+  padding-inline-start: var(--s4);
+}
+
+.turn--brandora .turn__body {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  border-inline-start: 2px solid var(--accent);
+  padding-inline-start: var(--s4);
+}
+
+/* A steady pulse, not a bouncing ellipsis. §12: controlled motion. */
+.turn__body--waiting { color: var(--ink-faint); animation: brandora-waiting 1.6s ease-in-out infinite; }
+
+@keyframes brandora-waiting {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
+.turn__meta { font-size: 0.82rem; color: var(--ink-faint); margin: 0; }
+
+.suggested-grid { margin-top: var(--s3); }
+.suggested { gap: var(--s2); }
+
+.ask { display: grid; gap: var(--s3); }
+@media (min-width: 40rem) {
+  .ask { grid-template-columns: 1fr auto; align-items: end; }
+}
+.ask textarea { resize: vertical; min-height: 3.4rem; }
+
+[data-suggestions] { list-style: none; padding: 0; margin: 0 0 var(--s4); }
+
+/*
+ * A pill inside a column card is a flex item, so it stretches to the card's
+ * width and stops reading as a pill. It should be as wide as its words.
+ */
+.card > .tag,
+.suggested > .tag { align-self: flex-start; }
