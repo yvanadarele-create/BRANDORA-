@@ -228,8 +228,11 @@ export type PaymentStatus = "unpaid" | "pending" | "paid" | "failed" | "refunded
 export type FulfillmentStatus =
   | "pending"
   | "confirmed"
+  /** The human gate (§17): a paid order waits here for an administrator. */
+  | "awaiting-approval"
   | "sourcing"
   | "processing"
+  | "quality-check"
   | "shipped"
   | "delivered"
   | "cancelled";

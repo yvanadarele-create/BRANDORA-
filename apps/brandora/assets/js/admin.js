@@ -21,14 +21,23 @@ const node = {
   error: document.querySelector('[data-error]'),
 };
 
-const FULFILMENT_STEPS = [
-  'confirmed',
-  'sourcing',
-  'processing',
-  'shipped',
-  'delivered',
-  'cancelled',
-];
+/**
+ * What an order may move to from where it is.
+ *
+ * Mirrors the server's transition table. The server is the authority and will
+ * refuse an illegal move; this only stops an operator being offered one.
+ */
+const FULFILMENT_FLOW = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['awaiting-approval', 'cancelled'],
+  'awaiting-approval': ['sourcing', 'cancelled'],
+  sourcing: ['processing', 'cancelled'],
+  processing: ['quality-check', 'cancelled'],
+  'quality-check': ['shipped', 'processing', 'cancelled'],
+  shipped: ['delivered'],
+  delivered: [],
+  cancelled: [],
+};
 
 function countCard(label, value) {
   return el('div', { class: 'card card--flat' }, [
@@ -84,11 +93,17 @@ function renderOverview(payload) {
 function renderOrders(orders) {
   clear(node.orders);
   orders.forEach((order) => {
+    const next = FULFILMENT_FLOW[order.fulfillmentStatus] ?? [];
     const select = el(
       'select',
-      { class: 'control', 'data-fulfilment-for': order.id, 'aria-label': `Fulfilment for ${order.reference}` },
-      [el('option', { value: '', text: 'Move to…' })].concat(
-        FULFILMENT_STEPS.map((step) => el('option', { value: step, text: step })),
+      {
+        class: 'control',
+        'data-fulfilment-for': order.id,
+        'aria-label': `Fulfilment for ${order.reference}`,
+        disabled: next.length === 0,
+      },
+      [el('option', { value: '', text: next.length === 0 ? 'No further step' : 'Move to…' })].concat(
+        next.map((step) => el('option', { value: step, text: step })),
       ),
     );
 
@@ -108,7 +123,13 @@ function renderOrders(orders) {
               })
             : null,
         ]),
-        el('td', { text: order.fulfillmentStatus }),
+        el('td', {}, [
+          el('span', { text: order.fulfillmentStatus }),
+          // The one step that spends money is worth marking on the list.
+          order.fulfillmentStatus === 'awaiting-approval'
+            ? el('span', { class: 'tag tag--ok', text: 'needs you' })
+            : null,
+        ]),
         el('td', { text: price(order.total) }),
         el('td', {}, [select]),
       ]),

@@ -429,7 +429,8 @@ describe("brandora api", () => {
       assert.equal(verified.status, 200, JSON.stringify(verified.json));
       assert.equal(verified.json["settled"], true);
       assert.equal(verified.json["order"].paymentStatus, "paid");
-      assert.equal(verified.json["order"].fulfillmentStatus, "confirmed");
+      // §17: a paid order goes to a person, not to a supplier.
+      assert.equal(verified.json["order"].fulfillmentStatus, "awaiting-approval");
 
       // 10. The dashboard shows it.
       const dashboard = await client.get("/api/dashboard");
@@ -708,6 +709,99 @@ describe("brandora api", () => {
           );
         }
       }
+    });
+  });
+
+  describe("the human approval gate (§17)", () => {
+    /** Walk a customer to a paid order and hand back its id. */
+    async function paidOrder(email: string): Promise<string> {
+      const client = await signUp(h, email);
+      const projectId = await projectWithBrand(client);
+      await client.post(`/api/projects/${projectId}/package/items`, {
+        productId: "prd_cup_kraft_250",
+        quantity: 50,
+      });
+      const quote = (await client.post(`/api/projects/${projectId}/quote`)).json["quote"];
+      const order = (await client.post(`/api/quotes/${quote.id}/checkout`)).json["order"];
+
+      h.payments.paid = true;
+      h.payments.reported = money(quote.total.amount, "XOF");
+      await client.post(`/api/orders/${order.id}/verify`);
+      h.payments.paid = false;
+      h.payments.reported = null;
+
+      return order.id;
+    }
+
+    it("stops a paid order at approval rather than sending it to a supplier", async () => {
+      const orderId = await paidOrder("gate@example.com");
+      const order = h.app.repos.orders.findAsAdmin(orderId);
+      assert.equal((await order)?.paymentStatus, "paid");
+      assert.equal((await order)?.fulfillmentStatus, "awaiting-approval");
+    });
+
+    it("records why the order is waiting, so a customer is not left guessing", async () => {
+      const orderId = await paidOrder("gate-events@example.com");
+      const events = await h.app.repos.orders.events(orderId);
+      assert.ok(
+        events.some((event) => event.kind === "awaiting-operations-approval"),
+        `no approval event recorded: ${events.map((e) => e.kind).join(", ")}`,
+      );
+    });
+
+    it("refuses a move that skips the lifecycle", async () => {
+      const orderId = await paidOrder("gate-skip@example.com");
+      const admin = await signUp(h, "gate-admin@example.com");
+      await makeAdmin(h, "gate-admin@example.com");
+
+      // Straight to shipped, skipping sourcing, production and the check.
+      const jump = await admin.patch(`/api/admin/orders/${orderId}`, { fulfillmentStatus: "shipped" });
+      assert.equal(jump.status, 400);
+      assert.equal(
+        (await h.app.repos.orders.findAsAdmin(orderId))?.fulfillmentStatus,
+        "awaiting-approval",
+        "the order moved despite the refusal",
+      );
+    });
+
+    it("lets an administrator release it, one step at a time", async () => {
+      const orderId = await paidOrder("gate-release@example.com");
+      const admin = await signUp(h, "gate-release-admin@example.com");
+      await makeAdmin(h, "gate-release-admin@example.com");
+
+      for (const step of ["sourcing", "processing", "quality-check", "shipped", "delivered"]) {
+        const response = await admin.patch(`/api/admin/orders/${orderId}`, { fulfillmentStatus: step });
+        assert.equal(response.status, 200, `${step} was refused: ${JSON.stringify(response.json)}`);
+      }
+
+      assert.equal((await h.app.repos.orders.findAsAdmin(orderId))?.fulfillmentStatus, "delivered");
+    });
+
+    it("names the administrator who released it", async () => {
+      const orderId = await paidOrder("gate-audit@example.com");
+      const admin = await signUp(h, "gate-audit-admin@example.com");
+      await makeAdmin(h, "gate-audit-admin@example.com");
+      const adminRow = await h.app.repos.users.findByEmail("gate-audit-admin@example.com");
+
+      await admin.patch(`/api/admin/orders/${orderId}`, { fulfillmentStatus: "sourcing" });
+
+      const events = await h.app.repos.orders.events(orderId);
+      const release = events.find((event) => event.kind === "fulfilment:sourcing");
+      assert.ok(release, "no event recorded for the release");
+      assert.equal(release.actor, `admin:${adminRow?.id}`);
+    });
+
+    it("does not let a customer move their own order", async () => {
+      const orderId = await paidOrder("gate-customer@example.com");
+      const customer = await signUp(h, "gate-customer2@example.com");
+      const response = await customer.patch(`/api/admin/orders/${orderId}`, {
+        fulfillmentStatus: "sourcing",
+      });
+      assert.equal(response.status, 403);
+      assert.equal(
+        (await h.app.repos.orders.findAsAdmin(orderId))?.fulfillmentStatus,
+        "awaiting-approval",
+      );
     });
   });
 

@@ -194,8 +194,13 @@ CREATE TABLE IF NOT EXISTS orders (
   quote_id           TEXT NOT NULL REFERENCES quotes(id),
   reference          TEXT NOT NULL UNIQUE,
   payment_status     TEXT NOT NULL CHECK (payment_status IN ('unpaid','pending','paid','failed','refunded')),
+  -- `awaiting-approval` is the human gate §17 requires: a paid order stops
+  -- here until a named administrator releases it to a supplier. `quality-check`
+  -- is the inspection before it ships. Both are states a customer is told
+  -- about, so both are states the database knows about.
   fulfillment_status TEXT NOT NULL CHECK (fulfillment_status IN
-                       ('pending','confirmed','sourcing','processing','shipped','delivered','cancelled')),
+                       ('pending','confirmed','awaiting-approval','sourcing','processing',
+                        'quality-check','shipped','delivered','cancelled')),
   total              INTEGER NOT NULL,
   currency           TEXT NOT NULL,
   supplier_order_id  TEXT,

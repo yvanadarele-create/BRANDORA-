@@ -44,8 +44,13 @@ const PAYMENT_WORDS = {
 const FULFILMENT_WORDS = {
   pending: 'Waiting to be confirmed',
   confirmed: 'Confirmed',
+  // §17: a paid order stops with a person before it reaches a supplier, and the
+  // customer is told that is what is happening rather than left watching
+  // "Confirmed" for two days.
+  'awaiting-approval': 'With our team for approval',
   sourcing: 'Sourcing your products',
   processing: 'In production',
+  'quality-check': 'Being checked before it ships',
   shipped: 'On its way',
   delivered: 'Delivered',
   cancelled: 'Cancelled',

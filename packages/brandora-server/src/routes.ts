@@ -89,6 +89,14 @@ import {
   paymentReference,
 } from "./payments.js";
 import {
+  AFTER_PAYMENT,
+  FULFILMENT_STATUSES,
+  PAYMENT_STATUSES,
+  assertFulfilmentTransition,
+  isFulfilmentStatus,
+  isPaymentStatus,
+} from "./fulfilment.js";
+import {
   SESSION_COOKIE,
   type SessionContext,
   currentUser,
@@ -963,8 +971,17 @@ export function createRouter(deps: ServerDeps): Router {
 
     await repos.payments.markPaid(pending.reference, now().toISOString());
     await repos.orders.setPaymentStatus(order.id, "paid");
-    await repos.orders.setFulfillmentStatus(order.id, "confirmed");
+
+    // §17: a paid order goes to a person, not to a supplier. Nothing automated
+    // moves it past this point.
+    await repos.orders.setFulfillmentStatus(order.id, AFTER_PAYMENT);
     await repos.orders.addEvent(order.id, "paid", "system", pending.reference);
+    await repos.orders.addEvent(
+      order.id,
+      "awaiting-operations-approval",
+      "system",
+      "a Brandora administrator reviews this before it reaches a supplier",
+    );
 
     const settled = await repos.orders.findForOwner(order.id, user.id);
     return json(200, {
@@ -1120,15 +1137,21 @@ export function createRouter(deps: ServerDeps): Router {
     const payment = optionalString(ctx.body, "paymentStatus", 40);
 
     if (fulfillment) {
-      if (!FULFILLMENT_STATUSES.includes(fulfillment)) {
-        throw new ValidationError("fulfillmentStatus", `expected one of ${FULFILLMENT_STATUSES.join(", ")}`);
+      if (!isFulfilmentStatus(fulfillment)) {
+        throw new ValidationError("fulfillmentStatus", `expected one of ${FULFILMENT_STATUSES.join(", ")}`);
       }
-      await repos.orders.setFulfillmentStatus(order.id, fulfillment as never);
+      // Checked against the lifecycle, not merely against the list of names.
+      // Without this an order could go from `pending` straight to `shipped`,
+      // skipping the approval, the production record and the quality check —
+      // each of which is a promise made to a customer.
+      assertFulfilmentTransition(order.fulfillmentStatus, fulfillment);
+
+      await repos.orders.setFulfillmentStatus(order.id, fulfillment);
       await repos.orders.addEvent(order.id, `fulfilment:${fulfillment}`, `admin:${admin.id}`);
     }
 
     if (payment) {
-      if (!PAYMENT_STATUSES.includes(payment)) {
+      if (!isPaymentStatus(payment)) {
         throw new ValidationError("paymentStatus", `expected one of ${PAYMENT_STATUSES.join(", ")}`);
       }
       // §45: an admin marking a manual transfer received is a human decision,
@@ -1166,18 +1189,6 @@ export function createRouter(deps: ServerDeps): Router {
 }
 
 /* --- Shared shapes --------------------------------------------------------- */
-
-const FULFILLMENT_STATUSES = [
-  "pending",
-  "confirmed",
-  "sourcing",
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-];
-
-const PAYMENT_STATUSES = ["unpaid", "pending", "paid", "failed", "refunded"];
 
 /** Never includes `margin` — the type it accepts may carry it; this does not. */
 function quoteView(quote: {
