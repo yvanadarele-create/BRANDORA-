@@ -1,54 +1,59 @@
 /**
- * Database connection and the conversions every repository needs.
+ * Opening a database, and the conversions every repository needs.
  *
- * `node:sqlite` is built into Node 22, which is why it is used here: it adds no
- * dependency, no native build step and no connection pool to misconfigure. The
- * same choice Harmony made, for the same reasons.
+ * Which backend you get is decided by the environment, once, here:
+ * `BRANDORA_DATABASE_URL` means Postgres; its absence means SQLite at
+ * `BRANDORA_DATABASE_PATH`. Nothing above this file knows or asks.
  */
-
-import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { type CurrencyCode, type Money, isCurrency, money } from "@brandora/shared";
 
-const here = dirname(fileURLToPath(import.meta.url));
+import type { SqlDriver } from "./driver.js";
+import { PostgresDriver } from "./postgres.js";
+import { SqliteDriver } from "./sqlite.js";
 
-export type Db = DatabaseSync;
+export interface OpenOptions {
+  /** A Postgres connection string. Takes precedence over `path`. */
+  url?: string | undefined;
+  /** A SQLite file, or `:memory:`. Used when no URL is given. */
+  path?: string | undefined;
+  warn?: (message: string) => void;
+}
 
 /**
- * Open a database and apply the schema.
+ * Open the database this deployment is configured for, schema applied.
  *
  * `:memory:` gives every test an isolated database with nothing to clean up,
  * which keeps the suite parallel-safe and free of shared fixture state.
  */
-export function openDatabase(location = ":memory:"): Db {
-  const db = new DatabaseSync(location);
-  db.exec("PRAGMA foreign_keys = ON;");
-  if (location !== ":memory:") db.exec("PRAGMA journal_mode = WAL;");
-  db.exec(readFileSync(resolve(here, "schema.sql"), "utf8"));
-  return db;
+export async function openDatabase(options: OpenOptions = {}): Promise<SqlDriver> {
+  if (options.url && options.url.trim() !== "") {
+    const driver = await PostgresDriver.connect({
+      connectionString: options.url.trim(),
+      ...(options.warn ? { warn: options.warn } : {}),
+    });
+    await driver.migrate();
+    return driver;
+  }
+  return SqliteDriver.open(options.path ?? ":memory:");
 }
 
+/** A SQLite database, for tests and for a single-process deployment. */
+export const openSqlite = (location = ":memory:"): SqlDriver => SqliteDriver.open(location);
+
 /** Run `fn` in a transaction, rolling back if it throws. */
-export function transaction<T>(db: Db, fn: () => T): T {
-  db.exec("BEGIN");
-  try {
-    const out = fn();
-    db.exec("COMMIT");
-    return out;
-  } catch (err) {
-    db.exec("ROLLBACK");
-    throw err;
-  }
-}
+export const transaction = <T>(db: SqlDriver, fn: (tx: SqlDriver) => Promise<T>): Promise<T> =>
+  db.transaction(fn);
 
 export const nowIso = (): string => new Date().toISOString();
 
 export const toJson = (value: unknown): string => JSON.stringify(value ?? null);
 
 export function fromJson<T>(value: unknown, fallback: T): T {
+  // Postgres `json`/`jsonb` columns come back already parsed; SQLite hands back
+  // the string it stored. Both are handled rather than one being assumed, or
+  // the same row would read differently on the two backends.
+  if (value !== null && typeof value === "object") return value as T;
   if (typeof value !== "string" || value.length === 0) return fallback;
   try {
     const parsed = JSON.parse(value) as T;
@@ -63,6 +68,12 @@ export const text = (value: unknown): string => (typeof value === "string" ? val
 export const optionalText = (value: unknown): string | undefined =>
   typeof value === "string" && value !== "" ? value : undefined;
 
+/**
+ * A whole number from a column.
+ *
+ * Handles `bigint` because Postgres returns `COUNT(*)` as one, and `Number(123n)`
+ * is fine while `123n + 1` is a TypeError three lines later.
+ */
 export const int = (value: unknown): number => {
   const parsed = typeof value === "bigint" ? Number(value) : Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;

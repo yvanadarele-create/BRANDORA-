@@ -221,6 +221,24 @@ export function databasePath(source: Env = env()): string {
 }
 
 /**
+ * A Postgres connection string. Its presence is what selects Postgres.
+ *
+ * Required in any serverless deployment: a function's local filesystem is
+ * discarded between invocations, so a file-backed database there loses the
+ * account it created a moment earlier. Use the provider's *pooled* endpoint —
+ * a direct one exhausts `max_connections` under load, and the symptom reads
+ * like a random outage rather than a configuration mistake.
+ *
+ * SECRET: it carries the database password.
+ */
+export function databaseUrl(source: Env = env()): string {
+  return optional("BRANDORA_DATABASE_URL", "", source);
+}
+
+export const postgresConfigured = (source: Env = env()): boolean =>
+  databaseUrl(source) !== "";
+
+/**
  * Signs session cookies.
  *
  * Required rather than defaulted: a development fallback here is a fallback

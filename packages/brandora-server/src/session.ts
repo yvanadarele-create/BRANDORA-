@@ -35,23 +35,29 @@ export interface SessionContext {
  * leaving it means a stale row keeps answering "found" to every later lookup
  * until the sweep runs.
  */
-export function currentUser(ctx: RequestContext, session: SessionContext): UserRow | null {
+export async function currentUser(
+  ctx: RequestContext,
+  session: SessionContext,
+): Promise<UserRow | null> {
   const token = unsignValue(ctx.cookies[SESSION_COOKIE], session.authSecret);
   if (!token) return null;
 
-  const row = session.repos.sessions.find(token);
+  const row = await session.repos.sessions.find(token);
   if (!row) return null;
 
   if (!sessionIsLive(row.expiresAt)) {
-    session.repos.sessions.destroy(token);
+    await session.repos.sessions.destroy(token);
     return null;
   }
 
   return session.repos.users.findById(row.userId);
 }
 
-export function requireUser(ctx: RequestContext, session: SessionContext): UserRow {
-  const user = currentUser(ctx, session);
+export async function requireUser(
+  ctx: RequestContext,
+  session: SessionContext,
+): Promise<UserRow> {
+  const user = await currentUser(ctx, session);
   if (!user) throw new UnauthenticatedError(`${ctx.method} ${ctx.path} without a live session`);
   return user;
 }
@@ -63,8 +69,11 @@ export function requireUser(ctx: RequestContext, session: SessionContext): UserR
  * resource id, the *existence* of `/api/admin/orders` is not a secret, and a
  * 404 here would send a genuine admin looking for a typo.
  */
-export function requireAdmin(ctx: RequestContext, session: SessionContext): UserRow {
-  const user = requireUser(ctx, session);
+export async function requireAdmin(
+  ctx: RequestContext,
+  session: SessionContext,
+): Promise<UserRow> {
+  const user = await requireUser(ctx, session);
   if (user.role !== "admin") {
     throw new ForbiddenError(`user ${user.id} (${user.role}) attempted ${ctx.method} ${ctx.path}`);
   }

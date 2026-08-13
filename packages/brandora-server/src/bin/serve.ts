@@ -15,7 +15,7 @@ import { createApp } from "../app.js";
 const port = Number(process.env["PORT"] ?? 4100);
 const staticRoot = process.env["BRANDORA_STATIC_ROOT"] ?? resolve(process.cwd(), "apps/brandora");
 
-const app = createApp({ staticRoot });
+const app = await createApp({ staticRoot });
 const server = app.listen(port);
 
 // Presence, never values (§29). `describeConfig` cannot return a credential.
@@ -28,8 +28,7 @@ for (const [key, value] of Object.entries(describeConfig())) {
 const shutdown = (signal: string): void => {
   console.log(`[brandora] ${signal} — closing`);
   server.close(() => {
-    app.db.close();
-    process.exit(0);
+    void app.db.close().finally(() => process.exit(0));
   });
   // A request that will not finish must not hold the process open forever.
   setTimeout(() => process.exit(0), 5_000).unref();

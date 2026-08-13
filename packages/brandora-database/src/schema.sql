@@ -1,5 +1,9 @@
 -- Brandora schema.
 --
+-- Portable between SQLite and Postgres. Both understand every type, constraint
+-- and index below; nothing here is dialect-specific, and `schema.ts` asserts
+-- that rather than trusting it.
+--
 -- Constraints live in the database rather than in application code. An order
 -- pointing at a missing quote, a project with no owner, or a status nobody
 -- defined should be impossible to persist, not merely unlikely — application
@@ -9,13 +13,15 @@
 -- and never as a bare number. XOF is zero-decimal and USD is not, so an amount
 -- without its currency is not a price, it is a number.
 
-PRAGMA foreign_keys = ON;
-
 /* --- People --------------------------------------------------------------- */
 
 CREATE TABLE IF NOT EXISTS users (
   id         TEXT PRIMARY KEY,
-  email      TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  -- Stored and looked up lowercased (see the users repository), so a plain
+  -- UNIQUE is case-insensitive in practice on both dialects. SQLite's
+  -- COLLATE NOCASE has no Postgres equivalent short of CITEXT, and a
+  -- constraint that behaves differently per backend is worse than none.
+  email      TEXT NOT NULL UNIQUE,
   name       TEXT NOT NULL,
   role       TEXT NOT NULL CHECK (role IN ('customer','admin','supplier')),
   locale     TEXT NOT NULL DEFAULT 'en' CHECK (locale IN ('en','fr','es')),

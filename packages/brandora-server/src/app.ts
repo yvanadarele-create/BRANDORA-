@@ -22,13 +22,14 @@ import {
   aiConfigured,
   authSecret,
   databasePath,
+  databaseUrl,
   defaultCurrency,
   deliverySettings,
   logisticsRate,
   marginRate,
   publicBaseUrl,
 } from "@brandora/config";
-import { type Db, type Repositories, createRepositories, openDatabase } from "@brandora/database";
+import { type Repositories, type SqlDriver, createRepositories, openDatabase } from "@brandora/database";
 import { money } from "@brandora/shared";
 
 import { type ServerLogger, consoleLogger, handle } from "./http.js";
@@ -40,8 +41,8 @@ import { SECURITY_HEADERS, resolveStaticFile, sendStatic } from "./static.js";
 export interface AppOptions {
   /** Absolute path to the static site. Omit to run API-only. */
   staticRoot?: string;
-  /** Injected in tests. Defaults to the file named by BRANDORA_DATABASE_PATH. */
-  db?: Db;
+  /** Injected in tests. Otherwise chosen by the environment — see openDatabase. */
+  db?: SqlDriver;
   strategy?: StrategyProvider;
   payments?: PaymentProvider;
   logger?: ServerLogger;
@@ -55,16 +56,24 @@ export interface AppOptions {
 export interface BrandoraApp {
   listener: (req: IncomingMessage, res: ServerResponse) => void;
   repos: Repositories;
-  db: Db;
+  db: SqlDriver;
   deps: ServerDeps;
   listen(port: number, host?: string): Server;
 }
 
-export function createApp(options: AppOptions = {}): BrandoraApp {
+/**
+ * Build the application.
+ *
+ * Async because opening a Postgres connection is: the pool has to be created
+ * and the schema applied before the first request can be served. A synchronous
+ * factory here would mean either blocking the event loop at start-up or serving
+ * requests against a database that is not ready.
+ */
+export async function createApp(options: AppOptions = {}): Promise<BrandoraApp> {
   const env = options.env ?? process.env;
   const logger = options.logger ?? consoleLogger;
 
-  const db = options.db ?? openDatabaseAt(databasePath(env));
+  const db = options.db ?? (await openConfiguredDatabase(env, logger));
   const repos = createRepositories(db);
 
   const currency = defaultCurrency(env);
@@ -161,9 +170,30 @@ export function createApp(options: AppOptions = {}): BrandoraApp {
   };
 }
 
-function openDatabaseAt(location: string): Db {
-  if (location !== ":memory:") mkdirSync(dirname(resolve(location)), { recursive: true });
-  return openDatabase(location);
+/**
+ * Postgres when a URL is set, SQLite otherwise.
+ *
+ * The URL is what selects Postgres, and on any serverless deployment it is
+ * required: a function's local disk is discarded between invocations, so the
+ * account created by one request would not exist for the next.
+ */
+async function openConfiguredDatabase(
+  env: Record<string, string | undefined>,
+  logger: ServerLogger,
+): Promise<SqlDriver> {
+  const url = databaseUrl(env);
+
+  if (url === "") {
+    const location = databasePath(env);
+    if (location !== ":memory:") mkdirSync(dirname(resolve(location)), { recursive: true });
+    logger.error(
+      `BRANDORA_DATABASE_URL is not set — using SQLite at ${location}. ` +
+        "On serverless this does not persist between invocations.",
+    );
+    return openDatabase({ path: location });
+  }
+
+  return openDatabase({ url, warn: (message) => logger.error(message) });
 }
 
 /**

@@ -16,10 +16,12 @@
     "build": "tsc -p tsconfig.json && node scripts/copy-schema.mjs"
   },
   "dependencies": {
-    "@brandora/shared": "workspace:*"
+    "@brandora/shared": "workspace:*",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.2",
-    "@types/node": "^22.10.2"
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.21.0",
+    "typescript": "^5.7.2"
   }
 }

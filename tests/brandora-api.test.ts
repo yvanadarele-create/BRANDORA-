@@ -18,7 +18,7 @@ import type { AddressInfo } from "node:net";
 
 import { createApp } from "@brandora/server";
 import type { PaymentProvider, PaymentIntent, VerificationResult } from "@brandora/server";
-import { openDatabase } from "@brandora/database";
+import { openSqlite } from "@brandora/database";
 import { type Money, money } from "@brandora/shared";
 import type { StrategyProvider } from "@brandora/brand-engine";
 
@@ -109,7 +109,7 @@ const LIMITS = {
 interface Harness {
   base: string;
   server: Server;
-  app: ReturnType<typeof createApp>;
+  app: Awaited<ReturnType<typeof createApp>>;
   strategy: StubStrategyProvider;
   payments: StubPaymentProvider;
   close(): Promise<void>;
@@ -118,8 +118,8 @@ interface Harness {
 async function start(): Promise<Harness> {
   const strategy = new StubStrategyProvider();
   const payments = new StubPaymentProvider();
-  const app = createApp({
-    db: openDatabase(":memory:"),
+  const app = await createApp({
+    db: openSqlite(":memory:"),
     env: ENV,
     strategy,
     payments,
@@ -141,8 +141,7 @@ async function start(): Promise<Harness> {
     close: () =>
       new Promise<void>((done) => {
         server.close(() => {
-          app.db.close();
-          done();
+          void app.db.close().finally(done);
         });
       }),
   };
@@ -212,10 +211,10 @@ async function signUp(h: Harness, email: string): Promise<Client> {
 }
 
 /** Promote a user to admin the way an operator would: directly in the database. */
-function makeAdmin(h: Harness, email: string): void {
-  const user = h.app.repos.users.findByEmail(email);
+async function makeAdmin(h: Harness, email: string): Promise<void> {
+  const user = await h.app.repos.users.findByEmail(email);
   assert.ok(user);
-  h.app.repos.users.setRole(user.id, "admin");
+  await h.app.repos.users.setRole(user.id, "admin");
 }
 
 const ANSWERS = [
@@ -677,14 +676,14 @@ describe("brandora api", () => {
         await attempt;
       }
 
-      const promoted = h.app.repos.users.findByEmail("climber2@example.com");
+      const promoted = await h.app.repos.users.findByEmail("climber2@example.com");
       assert.equal(promoted?.role, "customer", "signup honoured a role from the request body");
-      assert.equal(h.app.repos.users.findByEmail("climber@example.com")?.role, "customer");
+      assert.equal((await h.app.repos.users.findByEmail("climber@example.com"))?.role, "customer");
     });
 
     it("shows an admin the operational picture", async () => {
       const admin = await signUp(h, "admin@example.com");
-      makeAdmin(h, "admin@example.com");
+      await makeAdmin(h, "admin@example.com");
 
       const overview = await admin.get("/api/admin/overview");
       assert.equal(overview.status, 200);
@@ -697,7 +696,7 @@ describe("brandora api", () => {
 
     it("masks credentials on the integrations page and never returns a value", async () => {
       const admin = await signUp(h, "admin-integrations@example.com");
-      makeAdmin(h, "admin-integrations@example.com");
+      await makeAdmin(h, "admin-integrations@example.com");
 
       const response = await admin.get("/api/admin/integrations");
       assert.equal(response.status, 200);
@@ -736,7 +735,7 @@ describe("brandora api", () => {
 
     it("gives an admin the margin the customer never saw", async () => {
       const admin = await signUp(h, "margin-admin@example.com");
-      makeAdmin(h, "margin-admin@example.com");
+      await makeAdmin(h, "margin-admin@example.com");
       const response = await admin.get("/api/admin/quotes");
       assert.equal(response.status, 200);
       if (response.json["quotes"].length > 0) {
@@ -792,8 +791,8 @@ describe("brandora api", () => {
 
   describe("rate limiting", () => {
     it("throttles repeated login attempts from one address", async () => {
-      const app = createApp({
-        db: openDatabase(":memory:"),
+      const app = await createApp({
+        db: openSqlite(":memory:"),
         env: ENV,
         strategy: new StubStrategyProvider(),
         payments: new StubPaymentProvider(),
@@ -818,7 +817,7 @@ describe("brandora api", () => {
         assert.ok(statuses.includes(429), `no attempt was throttled: ${statuses.join(", ")}`);
       } finally {
         await new Promise<void>((done) => server.close(() => done()));
-        app.db.close();
+        await app.db.close();
       }
     });
   });
@@ -839,8 +838,8 @@ describe("brandora api", () => {
 
 describe("brandora api without credentials", () => {
   it("refuses to generate a brand rather than inventing one", async () => {
-    const app = createApp({
-      db: openDatabase(":memory:"),
+    const app = await createApp({
+      db: openSqlite(":memory:"),
       env: ENV,
       secureCookies: false,
       logger: { error: () => {} },
@@ -866,16 +865,16 @@ describe("brandora api without credentials", () => {
       assert.equal(generated.json["error"], "brand.generation-failed");
 
       // And nothing fabricated was saved.
-      assert.equal(app.repos.strategies.findForProject(projectId), null);
+      assert.equal(await app.repos.strategies.findForProject(projectId), null);
     } finally {
       await new Promise<void>((done) => server.close(() => done()));
-      app.db.close();
+      await app.db.close();
     }
   });
 
   it("places a real order with no payment provider, and never marks it paid", async () => {
-    const app = createApp({
-      db: openDatabase(":memory:"),
+    const app = await createApp({
+      db: openSqlite(":memory:"),
       env: ENV,
       strategy: new StubStrategyProvider(),
       secureCookies: false,
@@ -915,7 +914,7 @@ describe("brandora api without credentials", () => {
       assert.equal(verified.json["order"].paymentStatus, "pending");
     } finally {
       await new Promise<void>((done) => server.close(() => done()));
-      app.db.close();
+      await app.db.close();
     }
   });
 });

@@ -220,16 +220,16 @@ export function createRouter(deps: ServerDeps): Router {
   const byId = new Map(catalog.map((p) => [p.id, p]));
 
   /** Load a project the caller owns, or 404. */
-  const ownedProject = (ctx: { params: Record<string, string> }, user: UserRow) => {
+  const ownedProject = async (ctx: { params: Record<string, string> }, user: UserRow) => {
     const id = ctx.params["id"] ?? "";
-    const project = repos.projects.findForOwner(id, user.id);
+    const project = await repos.projects.findForOwner(id, user.id);
     if (!project) throw new NotFoundError("project", id);
     return project;
   };
 
-  const setSessionCookie = (userId: string): HttpResult["cookies"] => {
+  const setSessionCookie = async (userId: string): Promise<HttpResult["cookies"]> => {
     const token = newSessionToken();
-    repos.sessions.create(userId, token, sessionExpiry(now()));
+    await repos.sessions.create(userId, token, sessionExpiry(now()));
     return [
       { name: SESSION_COOKIE, value: signValue(token, deps.authSecret), maxAgeSeconds: SESSION_MAX_AGE },
     ];
@@ -237,7 +237,7 @@ export function createRouter(deps: ServerDeps): Router {
 
   /* --- Health and reference data ----------------------------------------- */
 
-  router.get("/api/health", () =>
+  router.get("/api/health", async () =>
     json(200, {
       status: "ok",
       time: now().toISOString(),
@@ -247,7 +247,7 @@ export function createRouter(deps: ServerDeps): Router {
 
   // Public: the interview is the front door, and a visitor sees it before they
   // have an account.
-  router.get("/api/interview/questions", () =>
+  router.get("/api/interview/questions", async () =>
     json(200, {
       questions: INTERVIEW_QUESTIONS.map((q) => ({
         field: q.field,
@@ -264,7 +264,7 @@ export function createRouter(deps: ServerDeps): Router {
 
   /* --- Authentication ----------------------------------------------------- */
 
-  router.post("/api/auth/signup", (ctx) => {
+  router.post("/api/auth/signup", async (ctx) => {
     if (signupLimiter.exceeded(ctx.ip)) {
       throw new RateLimitedError(`signup rate limit from ${ctx.ip}`);
     }
@@ -281,7 +281,7 @@ export function createRouter(deps: ServerDeps): Router {
     // *not* attempted here: an account creation form must tell you the address
     // is taken, or you cannot proceed. The enumeration defence lives on login,
     // where it costs the user nothing.
-    if (repos.users.findByEmail(email)) {
+    if (await repos.users.findByEmail(email)) {
       throw new ValidationError("email", "an account already exists for this address");
     }
 
@@ -289,7 +289,7 @@ export function createRouter(deps: ServerDeps): Router {
     const country = optionalString(ctx.body, "country", 80);
     const phone = optionalString(ctx.body, "phone", 40);
 
-    const user = repos.users.create({
+    const user = await repos.users.create({
       email,
       name,
       role: "customer",
@@ -299,12 +299,12 @@ export function createRouter(deps: ServerDeps): Router {
     });
 
     const record = hashPassword(password);
-    repos.users.setCredentials(user.id, record.hash, record.salt);
+    await repos.users.setCredentials(user.id, record.hash, record.salt);
 
-    return json(201, { user: publicUser(user) }, { cookies: setSessionCookie(user.id) });
+    return json(201, { user: publicUser(user) }, { cookies: await setSessionCookie(user.id) });
   });
 
-  router.post("/api/auth/login", (ctx) => {
+  router.post("/api/auth/login", async (ctx) => {
     if (loginLimiter.exceeded(ctx.ip)) {
       throw new RateLimitedError(`login rate limit from ${ctx.ip}`);
     }
@@ -312,8 +312,8 @@ export function createRouter(deps: ServerDeps): Router {
     const email = requireString(ctx.body, "email", 254);
     const password = requireString(ctx.body, "password", 512);
 
-    const user = repos.users.findByEmail(email);
-    const credentials = user ? repos.users.credentialsFor(user.id) : null;
+    const user = await repos.users.findByEmail(email);
+    const credentials = user ? await repos.users.credentialsFor(user.id) : null;
 
     if (!user || !credentials) {
       // Burn the same work a real verification costs, so the response time does
@@ -329,14 +329,14 @@ export function createRouter(deps: ServerDeps): Router {
     if (!ok) throw new ValidationError("credentials", `bad password for ${user.id}`);
 
     loginLimiter.reset(ctx.ip);
-    return json(200, { user: publicUser(user) }, { cookies: setSessionCookie(user.id) });
+    return json(200, { user: publicUser(user) }, { cookies: await setSessionCookie(user.id) });
   });
 
-  router.post("/api/auth/logout", (ctx) => {
-    const user = requireUser(ctx, session);
+  router.post("/api/auth/logout", async (ctx) => {
+    const user = await requireUser(ctx, session);
     // Every session, not just this cookie: "log out" on a shared phone should
     // mean it, and a single-device logout is the surprising behaviour here.
-    repos.sessions.destroyAllFor(user.id);
+    await repos.sessions.destroyAllFor(user.id);
     return json(200, { ok: true }, { cookies: [{ name: SESSION_COOKIE, value: "", clear: true }] });
   });
 
@@ -349,104 +349,96 @@ export function createRouter(deps: ServerDeps): Router {
    * error on every page a signed-out visitor opened, which buries the errors
    * that do matter. Routes that actually need a user still answer 401.
    */
-  router.get("/api/auth/me", (ctx) => {
-    const user = currentUser(ctx, session);
+  router.get("/api/auth/me", async (ctx) => {
+    const user = await currentUser(ctx, session);
     return json(200, { user: user ? publicUser(user) : null });
   });
 
-  router.get("/api/auth/password-policy", () =>
+  router.get("/api/auth/password-policy", async () =>
     json(200, { minimumLength: MIN_PASSWORD_LENGTH }),
   );
 
   /* --- Projects ----------------------------------------------------------- */
 
-  router.get("/api/projects", (ctx) => {
-    const user = requireUser(ctx, session);
-    const projects = repos.projects.listForOwner(user.id);
+  router.get("/api/projects", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    // One joined query, not three per project: see listSummariesForOwner.
+    const projects = await repos.projects.listSummariesForOwner(user.id);
     return json(200, {
-      projects: projects.map((project) => {
-        const strategy = repos.strategies.findForProject(project.id);
-        const identity = repos.identities.findForProject(project.id);
-        const items = repos.packages.listForProject(project.id);
-        return {
-          ...project,
-          brandName: strategy?.name ?? null,
-          slogan: strategy?.slogan ?? null,
-          palette: identity?.palette ?? null,
-          packageItems: items.length,
-          // What "Resume" should do, computed here so every surface agrees.
-          nextStep: nextStepFor(project.status, !!strategy, items.length),
-        };
-      }),
+      projects: projects.map((project) => ({
+        ...project,
+        // What "Resume" should do, computed here so every surface agrees.
+        nextStep: nextStepFor(project.status, project.brandName !== null, project.packageItems),
+      })),
     });
   });
 
-  router.post("/api/projects", (ctx) => {
-    const user = requireUser(ctx, session);
+  router.post("/api/projects", async (ctx) => {
+    const user = await requireUser(ctx, session);
     const name = requireString(ctx.body, "name", 120);
-    const project = repos.projects.create(user.id, name);
+    const project = await repos.projects.create(user.id, name);
     return json(201, { project });
   });
 
-  router.get("/api/projects/:id", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    const bundle = loadProjectBundle(repos, project.id, user.id);
+  router.get("/api/projects/:id", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    const bundle = await loadProjectBundle(repos, project.id, user.id);
     if (!bundle) throw new NotFoundError("project", project.id);
 
-    const items = repos.packages.listForProject(project.id);
+    const items = await repos.packages.listForProject(project.id);
     return json(200, {
       project: bundle.project,
       interview: bundle.interview,
       strategy: bundle.strategy,
       identity: bundle.identity,
       packageItems: items.length,
-      quotes: repos.quotes.listForProject(project.id, user.id).map(quoteView),
+      quotes: (await repos.quotes.listForProject(project.id, user.id)).map(quoteView),
       nextStep: nextStepFor(project.status, !!bundle.strategy, items.length),
     });
   });
 
-  router.patch("/api/projects/:id", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+  router.patch("/api/projects/:id", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
     const name = requireString(ctx.body, "name", 120);
-    repos.projects.rename(project.id, user.id, name);
-    return json(200, { project: repos.projects.findForOwner(project.id, user.id) });
+    await repos.projects.rename(project.id, user.id, name);
+    return json(200, { project: await repos.projects.findForOwner(project.id, user.id) });
   });
 
   /* --- Interview ---------------------------------------------------------- */
 
-  router.put("/api/projects/:id/interview", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+  router.put("/api/projects/:id/interview", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
 
     const answers = readAnswers(ctx.body);
     const complete = isComplete(answers);
 
-    const row = repos.interviews.save(project.id, { answers }, complete);
-    repos.projects.setStatus(project.id, user.id, complete ? "interviewing" : "draft");
+    const row = await repos.interviews.save(project.id, { answers }, complete);
+    await repos.projects.setStatus(project.id, user.id, complete ? "interviewing" : "draft");
 
     return json(200, { interview: row, complete });
   });
 
-  router.get("/api/projects/:id/interview", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    const row = repos.interviews.findForProject(project.id);
+  router.get("/api/projects/:id/interview", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    const row = await repos.interviews.findForProject(project.id);
     return json(200, { interview: row });
   });
 
   /* --- Generation --------------------------------------------------------- */
 
   router.post("/api/projects/:id/generate", async (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
 
     if (generateLimiter.exceeded(user.id)) {
       throw new RateLimitedError(`generation rate limit for ${user.id}`);
     }
 
-    const stored = repos.interviews.findForProject(project.id);
+    const stored = await repos.interviews.findForProject(project.id);
     if (!stored) throw new ValidationError("interview", "finish the interview first");
 
     const answers = readAnswers(stored.responses);
@@ -463,7 +455,7 @@ export function createRouter(deps: ServerDeps): Router {
       now: now(),
     });
 
-    repos.strategies.save(
+    await repos.strategies.save(
       project.id,
       {
         name: result.strategy.name,
@@ -483,23 +475,23 @@ export function createRouter(deps: ServerDeps): Router {
       result.raw,
     );
 
-    repos.identities.save(project.id, {
+    await repos.identities.save(project.id, {
       palette: result.profile.palette,
       typography: result.profile.typography,
       logoBrief: result.profile.logoBrief,
     });
 
-    repos.projects.setStatus(project.id, user.id, "generated");
+    await repos.projects.setStatus(project.id, user.id, "generated");
     if (project.name === "Untitled brand" || project.name.trim() === "") {
-      repos.projects.rename(project.id, user.id, result.strategy.name);
+      await repos.projects.rename(project.id, user.id, result.strategy.name);
     }
 
     return json(201, { strategy: result.strategy, identity: identityView(result.profile) });
   });
 
   router.post("/api/projects/:id/regenerate", async (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
 
     if (generateLimiter.exceeded(user.id)) {
       throw new RateLimitedError(`regeneration rate limit for ${user.id}`);
@@ -510,8 +502,8 @@ export function createRouter(deps: ServerDeps): Router {
       throw new ValidationError("field", `expected one of ${REGENERABLE_FIELDS.join(", ")}`);
     }
 
-    const stored = repos.strategies.findForProject(project.id);
-    const interview = repos.interviews.findForProject(project.id);
+    const stored = await repos.strategies.findForProject(project.id);
+    const interview = await repos.interviews.findForProject(project.id);
     if (!stored || !interview) throw new ValidationError("strategy", "generate a brand first");
 
     const brief = buildBrief(readAnswers(interview.responses), user.locale);
@@ -536,7 +528,7 @@ export function createRouter(deps: ServerDeps): Router {
       field as RegenerableField,
     );
 
-    repos.strategies.save(project.id, { ...updated }, updated);
+    await repos.strategies.save(project.id, { ...updated }, updated);
     return json(200, { strategy: updated });
   });
 
@@ -546,12 +538,12 @@ export function createRouter(deps: ServerDeps): Router {
    * The variation is a seed, so "show me another" is reproducible rather than
    * random — a founder who liked the third one can get it back.
    */
-  router.post("/api/projects/:id/identity/regenerate", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+  router.post("/api/projects/:id/identity/regenerate", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
 
-    const interview = repos.interviews.findForProject(project.id);
-    const strategy = repos.strategies.findForProject(project.id);
+    const interview = await repos.interviews.findForProject(project.id);
+    const strategy = await repos.strategies.findForProject(project.id);
     if (!interview || !strategy) throw new ValidationError("identity", "generate a brand first");
 
     const variation = requireInteger(ctx.body, "variation", 0, 99);
@@ -559,7 +551,7 @@ export function createRouter(deps: ServerDeps): Router {
     const palette = derivePalette(brief, { variation });
     const typography = deriveTypography(brief);
 
-    const saved = repos.identities.save(project.id, {
+    const saved = await repos.identities.save(project.id, {
       palette,
       typography,
       logoBrief: buildLogoBrief(brief, palette, typography, strategy.name),
@@ -570,10 +562,10 @@ export function createRouter(deps: ServerDeps): Router {
 
   /* --- The brand ---------------------------------------------------------- */
 
-  router.get("/api/projects/:id/brand", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    const bundle = loadProjectBundle(repos, project.id, user.id);
+  router.get("/api/projects/:id/brand", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    const bundle = await loadProjectBundle(repos, project.id, user.id);
     if (!bundle) throw new NotFoundError("project", project.id);
 
     const profile = toBrandProfile(bundle);
@@ -587,10 +579,10 @@ export function createRouter(deps: ServerDeps): Router {
     });
   });
 
-  router.get("/api/projects/:id/brand/guidelines", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    const bundle = loadProjectBundle(repos, project.id, user.id);
+  router.get("/api/projects/:id/brand/guidelines", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    const bundle = await loadProjectBundle(repos, project.id, user.id);
     const profile = bundle ? toBrandProfile(bundle) : null;
     if (!profile) throw new NotFoundError("brand", project.id);
 
@@ -606,7 +598,7 @@ export function createRouter(deps: ServerDeps): Router {
 
   /* --- Catalogue ---------------------------------------------------------- */
 
-  router.get("/api/catalog", (ctx) => {
+  router.get("/api/catalog", async (ctx) => {
     const quantityRaw = ctx.query.get("quantity");
     const quantity = quantityRaw ? Number(quantityRaw) : undefined;
     const category = ctx.query.get("category") ?? undefined;
@@ -633,16 +625,16 @@ export function createRouter(deps: ServerDeps): Router {
     });
   });
 
-  router.get("/api/catalog/:productId", (ctx) => {
+  router.get("/api/catalog/:productId", async (ctx) => {
     const product = byId.get(ctx.params["productId"] ?? "");
     if (!product) throw new NotFoundError("product", ctx.params["productId"] ?? "");
     return json(200, { product: productView(product) });
   });
 
-  router.get("/api/projects/:id/recommendations", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    const strategy = repos.strategies.findForProject(project.id);
+  router.get("/api/projects/:id/recommendations", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    const strategy = await repos.strategies.findForProject(project.id);
     if (!strategy) throw new ValidationError("strategy", "generate a brand first");
 
     const quantityRaw = Number(ctx.query.get("quantity") ?? 25);
@@ -670,8 +662,8 @@ export function createRouter(deps: ServerDeps): Router {
 
   /* --- The package -------------------------------------------------------- */
 
-  const packageResponse = (projectId: string) => {
-    const items = repos.packages.listForProject(projectId);
+  const packageResponse = async (projectId: string) => {
+    const items = await repos.packages.listForProject(projectId);
     if (items.length === 0) {
       return { items: [], totals: null, adjustments: [], currency: deps.pricing.currency };
     }
@@ -716,15 +708,15 @@ export function createRouter(deps: ServerDeps): Router {
     };
   };
 
-  router.get("/api/projects/:id/package", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    return json(200, packageResponse(project.id));
+  router.get("/api/projects/:id/package", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    return json(200, await packageResponse(project.id));
   });
 
-  router.post("/api/projects/:id/package/items", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+  router.post("/api/projects/:id/package/items", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
 
     const productId = requireString(ctx.body, "productId", 80);
     const product = byId.get(productId);
@@ -742,41 +734,41 @@ export function createRouter(deps: ServerDeps): Router {
       }
     }
 
-    repos.packages.add(project.id, productId, quantity, method ?? "");
-    return json(201, packageResponse(project.id));
+    await repos.packages.add(project.id, productId, quantity, method ?? "");
+    return json(201, await packageResponse(project.id));
   });
 
-  router.patch("/api/projects/:id/package/items/:itemId", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+  router.patch("/api/projects/:id/package/items/:itemId", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
     const quantity = requireInteger(ctx.body, "quantity", 1, 1_000_000);
     // Scoped to the project: an item id belonging to someone else's package
     // updates nothing rather than updating theirs.
-    repos.packages.setQuantity(project.id, ctx.params["itemId"] ?? "", quantity);
-    return json(200, packageResponse(project.id));
+    await repos.packages.setQuantity(project.id, ctx.params["itemId"] ?? "", quantity);
+    return json(200, await packageResponse(project.id));
   });
 
-  router.delete("/api/projects/:id/package/items/:itemId", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    repos.packages.remove(project.id, ctx.params["itemId"] ?? "");
-    return json(200, packageResponse(project.id));
+  router.delete("/api/projects/:id/package/items/:itemId", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    await repos.packages.remove(project.id, ctx.params["itemId"] ?? "");
+    return json(200, await packageResponse(project.id));
   });
 
-  router.delete("/api/projects/:id/package", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
-    repos.packages.clear(project.id);
-    return json(200, packageResponse(project.id));
+  router.delete("/api/projects/:id/package", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
+    await repos.packages.clear(project.id);
+    return json(200, await packageResponse(project.id));
   });
 
   /* --- Quotes -------------------------------------------------------------- */
 
-  router.post("/api/projects/:id/quote", (ctx) => {
-    const user = requireUser(ctx, session);
-    const project = ownedProject(ctx, user);
+  router.post("/api/projects/:id/quote", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const project = await ownedProject(ctx, user);
 
-    const items = repos.packages.listForProject(project.id);
+    const items = await repos.packages.listForProject(project.id);
     if (items.length === 0) throw new ValidationError("package", "add a product first");
 
     const priced = priceProject(
@@ -802,7 +794,7 @@ export function createRouter(deps: ServerDeps): Router {
     // field it could travel in.
     const margin = multiply(subtotal, deps.pricing.serviceRate);
 
-    const quote = insertQuoteWithUniqueReference(repos, issuedAt, {
+    const quote = await insertQuoteWithUniqueReference(repos, issuedAt, {
       projectId: project.id,
       userId: user.id,
       currency,
@@ -821,18 +813,18 @@ export function createRouter(deps: ServerDeps): Router {
       validUntil: validUntil.toISOString(),
     });
 
-    repos.projects.setStatus(project.id, user.id, "active");
+    await repos.projects.setStatus(project.id, user.id, "active");
     return json(201, { quote: quoteView(quote) });
   });
 
-  router.get("/api/quotes", (ctx) => {
-    const user = requireUser(ctx, session);
-    return json(200, { quotes: repos.quotes.listForOwner(user.id).map(quoteView) });
+  router.get("/api/quotes", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    return json(200, { quotes: (await repos.quotes.listForOwner(user.id)).map(quoteView) });
   });
 
-  router.get("/api/quotes/:id", (ctx) => {
-    const user = requireUser(ctx, session);
-    const quote = repos.quotes.findForOwner(ctx.params["id"] ?? "", user.id);
+  router.get("/api/quotes/:id", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const quote = await repos.quotes.findForOwner(ctx.params["id"] ?? "", user.id);
     if (!quote) throw new NotFoundError("quote", ctx.params["id"] ?? "");
     return json(200, { quote: quoteView(quote) });
   });
@@ -848,21 +840,21 @@ export function createRouter(deps: ServerDeps): Router {
    * customer never touched.
    */
   router.post("/api/quotes/:id/checkout", async (ctx) => {
-    const user = requireUser(ctx, session);
+    const user = await requireUser(ctx, session);
     const quoteId = ctx.params["id"] ?? "";
-    const quote = repos.quotes.findForOwner(quoteId, user.id);
+    const quote = await repos.quotes.findForOwner(quoteId, user.id);
     if (!quote) throw new NotFoundError("quote", quoteId);
 
     if (quote.status === "rejected" || quote.status === "expired") {
       throw new ValidationError("quote", `quote ${quote.reference} is ${quote.status}`);
     }
     if (new Date(quote.validUntil).getTime() < now().getTime()) {
-      repos.quotes.setStatus(quote.id, "expired");
+      await repos.quotes.setStatus(quote.id, "expired");
       throw new ValidationError("quote", `quote ${quote.reference} expired on ${quote.validUntil}`);
     }
 
     const issuedAt = now();
-    const order = insertOrderWithUniqueReference(repos, issuedAt, {
+    const order = await insertOrderWithUniqueReference(repos, issuedAt, {
       userId: user.id,
       projectId: quote.projectId,
       quoteId: quote.id,
@@ -870,11 +862,11 @@ export function createRouter(deps: ServerDeps): Router {
       currency: quote.currency,
     });
 
-    repos.quotes.setStatus(quote.id, "approved");
-    repos.orders.addEvent(order.id, "created", `customer:${user.id}`, `from quote ${quote.reference}`);
+    await repos.quotes.setStatus(quote.id, "approved");
+    await repos.orders.addEvent(order.id, "created", `customer:${user.id}`, `from quote ${quote.reference}`);
 
-    const reference = paymentReference(order.reference, repos.payments.listForOrder(order.id).length + 1);
-    repos.payments.create({
+    const reference = paymentReference(order.reference, (await repos.payments.listForOrder(order.id)).length + 1);
+    await repos.payments.create({
       orderId: order.id,
       provider: deps.payments.name,
       reference,
@@ -890,17 +882,17 @@ export function createRouter(deps: ServerDeps): Router {
     });
 
     if (deps.payments.configured) {
-      repos.orders.setPaymentStatus(order.id, "pending");
-      repos.orders.addEvent(order.id, "payment-initialised", "system", `${deps.payments.name} ${reference}`);
+      await repos.orders.setPaymentStatus(order.id, "pending");
+      await repos.orders.addEvent(order.id, "payment-initialised", "system", `${deps.payments.name} ${reference}`);
     } else {
       // No provider: the order is real and awaiting an arranged payment. It is
       // never marked paid by anything on this path.
-      repos.orders.setPaymentStatus(order.id, "pending");
-      repos.orders.addEvent(order.id, "payment-manual", "system", "awaiting arranged payment");
+      await repos.orders.setPaymentStatus(order.id, "pending");
+      await repos.orders.addEvent(order.id, "payment-manual", "system", "awaiting arranged payment");
     }
 
     return json(201, {
-      order: orderView(repos.orders.findForOwner(order.id, user.id) ?? order),
+      order: orderView(await repos.orders.findForOwner(order.id, user.id) ?? order),
       payment: {
         reference: intent.reference,
         authorizationUrl: intent.authorizationUrl,
@@ -920,11 +912,11 @@ export function createRouter(deps: ServerDeps): Router {
    * unpaid.
    */
   router.post("/api/orders/:id/verify", async (ctx) => {
-    const user = requireUser(ctx, session);
-    const order = repos.orders.findForOwner(ctx.params["id"] ?? "", user.id);
+    const user = await requireUser(ctx, session);
+    const order = await repos.orders.findForOwner(ctx.params["id"] ?? "", user.id);
     if (!order) throw new NotFoundError("order", ctx.params["id"] ?? "");
 
-    const attempts = repos.payments.listForOrder(order.id);
+    const attempts = await repos.payments.listForOrder(order.id);
     const pending = attempts.find((p) => p.status === "initialised") ?? attempts[0];
     if (!pending) throw new ValidationError("payment", "no payment has been started for this order");
 
@@ -947,70 +939,69 @@ export function createRouter(deps: ServerDeps): Router {
     try {
       assertAmountMatches(pending.amount, result.amount);
     } catch (err) {
-      repos.payments.markStatus(pending.reference, "mismatch");
-      repos.orders.addEvent(order.id, "payment-mismatch", "system", pending.reference);
+      await repos.payments.markStatus(pending.reference, "mismatch");
+      await repos.orders.addEvent(order.id, "payment-mismatch", "system", pending.reference);
       throw err;
     }
 
-    repos.payments.markPaid(pending.reference, now().toISOString());
-    repos.orders.setPaymentStatus(order.id, "paid");
-    repos.orders.setFulfillmentStatus(order.id, "confirmed");
-    repos.orders.addEvent(order.id, "paid", "system", pending.reference);
+    await repos.payments.markPaid(pending.reference, now().toISOString());
+    await repos.orders.setPaymentStatus(order.id, "paid");
+    await repos.orders.setFulfillmentStatus(order.id, "confirmed");
+    await repos.orders.addEvent(order.id, "paid", "system", pending.reference);
 
-    const settled = repos.orders.findForOwner(order.id, user.id);
+    const settled = await repos.orders.findForOwner(order.id, user.id);
     return json(200, {
       order: orderView(settled ?? order),
-      payment: paymentView(repos.payments.findByReference(pending.reference) ?? pending),
+      payment: paymentView(await repos.payments.findByReference(pending.reference) ?? pending),
       settled: true,
     });
   });
 
   /* --- Orders -------------------------------------------------------------- */
 
-  router.get("/api/orders", (ctx) => {
-    const user = requireUser(ctx, session);
-    return json(200, { orders: repos.orders.listForOwner(user.id).map(orderView) });
+  router.get("/api/orders", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    return json(200, { orders: (await repos.orders.listForOwner(user.id)).map(orderView) });
   });
 
-  router.get("/api/orders/:id", (ctx) => {
-    const user = requireUser(ctx, session);
-    const order = repos.orders.findForOwner(ctx.params["id"] ?? "", user.id);
+  router.get("/api/orders/:id", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const order = await repos.orders.findForOwner(ctx.params["id"] ?? "", user.id);
     if (!order) throw new NotFoundError("order", ctx.params["id"] ?? "");
 
-    const quote = repos.quotes.findForOwner(order.quoteId, user.id);
+    const quote = await repos.quotes.findForOwner(order.quoteId, user.id);
     return json(200, {
       order: orderView(order),
       quote: quote ? quoteView(quote) : null,
-      events: repos.orders.events(order.id),
-      payments: repos.payments.listForOrder(order.id).map(paymentView),
+      events: await repos.orders.events(order.id),
+      payments: (await repos.payments.listForOrder(order.id)).map(paymentView),
     });
   });
 
   /* --- The customer dashboard --------------------------------------------- */
 
-  router.get("/api/dashboard", (ctx) => {
-    const user = requireUser(ctx, session);
-    const projects = repos.projects.listForOwner(user.id);
-    const quotes = repos.quotes.listForOwner(user.id);
-    const orders = repos.orders.listForOwner(user.id);
+  router.get("/api/dashboard", async (ctx) => {
+    const user = await requireUser(ctx, session);
+
+    // Three independent reads; nothing here waits on anything else's result.
+    const [projects, quotes, orders] = await Promise.all([
+      repos.projects.listSummariesForOwner(user.id),
+      repos.quotes.listForOwner(user.id),
+      repos.orders.listForOwner(user.id),
+    ]);
 
     return json(200, {
       user: publicUser(user),
-      projects: projects.map((project) => {
-        const strategy = repos.strategies.findForProject(project.id);
-        const identity = repos.identities.findForProject(project.id);
-        const items = repos.packages.listForProject(project.id);
-        return {
-          id: project.id,
-          name: strategy?.name ?? project.name,
-          status: project.status,
-          slogan: strategy?.slogan ?? null,
-          palette: identity?.palette ?? null,
-          packageItems: items.length,
-          updatedAt: project.updatedAt,
-          nextStep: nextStepFor(project.status, !!strategy, items.length),
-        };
-      }),
+      projects: projects.map((project) => ({
+        id: project.id,
+        name: project.brandName ?? project.name,
+        status: project.status,
+        slogan: project.slogan,
+        palette: project.palette,
+        packageItems: project.packageItems,
+        updatedAt: project.updatedAt,
+        nextStep: nextStepFor(project.status, project.brandName !== null, project.packageItems),
+      })),
       quotes: quotes.map(quoteView),
       orders: orders.map(orderView),
       counts: { projects: projects.length, quotes: quotes.length, orders: orders.length },
@@ -1019,10 +1010,10 @@ export function createRouter(deps: ServerDeps): Router {
 
   /* --- Admin --------------------------------------------------------------- */
 
-  router.get("/api/admin/overview", (ctx) => {
-    requireAdmin(ctx, session);
-    const orders = repos.orders.listAsAdmin(500);
-    const quotes = repos.quotes.listAsAdmin(500);
+  router.get("/api/admin/overview", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const orders = await repos.orders.listAsAdmin(500);
+    const quotes = await repos.quotes.listAsAdmin(500);
     const currency = deps.pricing.currency;
 
     const paid = orders.filter((o) => o.paymentStatus === "paid");
@@ -1033,8 +1024,8 @@ export function createRouter(deps: ServerDeps): Router {
 
     return json(200, {
       counts: {
-        customers: repos.users.listAsAdmin(1_000).length,
-        projects: repos.projects.listAsAdmin(1_000).length,
+        customers: (await repos.users.listAsAdmin(1_000)).length,
+        projects: (await repos.projects.listAsAdmin(1_000)).length,
         quotes: quotes.length,
         orders: orders.length,
         awaitingFulfilment: orders.filter(
@@ -1049,60 +1040,63 @@ export function createRouter(deps: ServerDeps): Router {
     });
   });
 
-  router.get("/api/admin/customers", (ctx) => {
-    requireAdmin(ctx, session);
+  router.get("/api/admin/customers", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const customers = await repos.users.listWithCountsAsAdmin(500);
     return json(200, {
-      customers: repos.users.listAsAdmin(500).map((u) => ({
-        ...publicUser(u),
-        createdAt: u.createdAt,
-        projects: repos.projects.listForOwner(u.id).length,
-        orders: repos.orders.listForOwner(u.id).length,
+      customers: customers.map((customer) => ({
+        ...publicUser(customer),
+        createdAt: customer.createdAt,
+        projects: customer.projectCount,
+        orders: customer.orderCount,
       })),
     });
   });
 
-  router.get("/api/admin/projects", (ctx) => {
-    requireAdmin(ctx, session);
-    return json(200, {
-      projects: repos.projects.listAsAdmin(500).map((project) => {
-        const strategy = repos.strategies.findForProject(project.id);
-        const owner = repos.users.findById(project.userId);
-        return {
-          ...project,
-          brandName: strategy?.name ?? null,
-          positioning: strategy?.positioning ?? null,
-          ownerEmail: owner?.email ?? null,
-        };
-      }),
-    });
+  router.get("/api/admin/projects", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const projects = await repos.projects.listSummariesAsAdmin(500);
+    return json(200, { projects });
   });
 
   // The only surface where margin is returned, and it is behind requireAdmin.
-  router.get("/api/admin/quotes", (ctx) => {
-    requireAdmin(ctx, session);
+  // The only surface where margin is returned, and it is behind requireAdmin.
+  router.get("/api/admin/quotes", async (ctx) => {
+    await requireAdmin(ctx, session);
+
+    const quotes = await repos.quotes.listAsAdmin(500);
+    // One lookup of every customer beats one lookup per quote: five hundred
+    // quotes from twenty customers is twenty rows, not five hundred queries.
+    const emails = await emailsFor(repos, quotes.map((quote) => quote.userId));
+
     return json(200, {
-      quotes: repos.quotes.listAsAdmin(500).map((quote) => ({
+      quotes: quotes.map((quote) => ({
         ...quoteView(quote),
         margin: asMoney(quote.margin),
-        ownerEmail: repos.users.findById(quote.userId)?.email ?? null,
+        ownerEmail: emails.get(quote.userId) ?? null,
       })),
     });
   });
 
-  router.get("/api/admin/orders", (ctx) => {
-    requireAdmin(ctx, session);
+  router.get("/api/admin/orders", async (ctx) => {
+    await requireAdmin(ctx, session);
+
+    const orders = await repos.orders.listAsAdmin(500);
+    const emails = await emailsFor(repos, orders.map((order) => order.userId));
+    const payments = await Promise.all(orders.map((order) => repos.payments.listForOrder(order.id)));
+
     return json(200, {
-      orders: repos.orders.listAsAdmin(500).map((order) => ({
+      orders: orders.map((order, index) => ({
         ...orderView(order),
-        ownerEmail: repos.users.findById(order.userId)?.email ?? null,
-        payments: repos.payments.listForOrder(order.id).map(paymentView),
+        ownerEmail: emails.get(order.userId) ?? null,
+        payments: (payments[index] ?? []).map(paymentView),
       })),
     });
   });
 
-  router.patch("/api/admin/orders/:id", (ctx) => {
-    const admin = requireAdmin(ctx, session);
-    const order = repos.orders.findAsAdmin(ctx.params["id"] ?? "");
+  router.patch("/api/admin/orders/:id", async (ctx) => {
+    const admin = await requireAdmin(ctx, session);
+    const order = await repos.orders.findAsAdmin(ctx.params["id"] ?? "");
     if (!order) throw new NotFoundError("order", ctx.params["id"] ?? "");
 
     const fulfillment = optionalString(ctx.body, "fulfillmentStatus", 40);
@@ -1112,8 +1106,8 @@ export function createRouter(deps: ServerDeps): Router {
       if (!FULFILLMENT_STATUSES.includes(fulfillment)) {
         throw new ValidationError("fulfillmentStatus", `expected one of ${FULFILLMENT_STATUSES.join(", ")}`);
       }
-      repos.orders.setFulfillmentStatus(order.id, fulfillment as never);
-      repos.orders.addEvent(order.id, `fulfilment:${fulfillment}`, `admin:${admin.id}`);
+      await repos.orders.setFulfillmentStatus(order.id, fulfillment as never);
+      await repos.orders.addEvent(order.id, `fulfilment:${fulfillment}`, `admin:${admin.id}`);
     }
 
     if (payment) {
@@ -1122,19 +1116,19 @@ export function createRouter(deps: ServerDeps): Router {
       }
       // §45: an admin marking a manual transfer received is a human decision,
       // recorded with their id. Nothing automatic ever reaches 'paid'.
-      repos.orders.setPaymentStatus(order.id, payment as never);
-      repos.orders.addEvent(order.id, `payment:${payment}`, `admin:${admin.id}`);
+      await repos.orders.setPaymentStatus(order.id, payment as never);
+      await repos.orders.addEvent(order.id, `payment:${payment}`, `admin:${admin.id}`);
     }
 
     if (!fulfillment && !payment) {
       throw new ValidationError("status", "nothing to change");
     }
 
-    return json(200, { order: orderView(repos.orders.findAsAdmin(order.id) ?? order) });
+    return json(200, { order: orderView(await repos.orders.findAsAdmin(order.id) ?? order) });
   });
 
-  router.get("/api/admin/integrations", (ctx) => {
-    requireAdmin(ctx, session);
+  router.get("/api/admin/integrations", async (ctx) => {
+    await requireAdmin(ctx, session);
     // Masks only. There is no variant of this route that returns a value.
     return json(200, {
       integrations: [
@@ -1149,7 +1143,7 @@ export function createRouter(deps: ServerDeps): Router {
   // Anything under /api that no route claimed is a 404 in JSON, not the static
   // fallback's index.html — an HTML body arriving where JSON was expected sends
   // whoever is debugging in entirely the wrong direction.
-  router.get("/api/:rest", () => json(404, { error: "not-found", message: "No such endpoint." }));
+  router.get("/api/:rest", async () => json(404, { error: "not-found", message: "No such endpoint." }));
 
   return router;
 }
@@ -1259,6 +1253,18 @@ function identityView(profile: { palette: unknown; typography: unknown; logoBrie
   return { palette: profile.palette, typography: profile.typography, logoBrief: profile.logoBrief };
 }
 
+/**
+ * Look up the distinct owners of a list of rows.
+ *
+ * `findById` per row is the shape that turns a fast admin page into a slow one
+ * the week the business gets busy, and it is invisible until then.
+ */
+async function emailsFor(repos: Repositories, userIds: readonly string[]): Promise<Map<string, string>> {
+  const distinct = [...new Set(userIds)];
+  const users = await Promise.all(distinct.map((id) => repos.users.findById(id)));
+  return new Map(users.filter((user) => user !== null).map((user) => [user.id, user.email]));
+}
+
 /** Where "Resume" should land. One definition, so every surface agrees. */
 function nextStepFor(status: string, hasStrategy: boolean, packageItems: number): string {
   if (!hasStrategy) return status === "draft" ? "interview" : "generate";
@@ -1314,17 +1320,17 @@ function isComplete(answers: readonly InterviewAnswer[]): boolean {
  * checking out in the same millisecond both compute the same number, and the
  * loser retries rather than failing.
  */
-function insertQuoteWithUniqueReference(
+async function insertQuoteWithUniqueReference(
   repos: Repositories,
   at: Date,
   input: Omit<Parameters<Repositories["quotes"]["create"]>[0], "reference">,
 ) {
   const prefix = `BRA-${at.getUTCFullYear()}-`;
-  let sequence = repos.quotes.nextSequence(prefix);
+  let sequence = await repos.quotes.nextSequence(prefix);
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
     try {
-      return repos.quotes.create({ ...input, reference: quoteReference(at, sequence) });
+      return await repos.quotes.create({ ...input, reference: quoteReference(at, sequence) });
     } catch (err) {
       if (!isUniqueViolation(err)) throw err;
       sequence += 1;
@@ -1333,17 +1339,17 @@ function insertQuoteWithUniqueReference(
   throw new ValidationError("reference", "could not allocate a quote reference");
 }
 
-function insertOrderWithUniqueReference(
+async function insertOrderWithUniqueReference(
   repos: Repositories,
   at: Date,
   input: Omit<Parameters<Repositories["orders"]["create"]>[0], "reference">,
 ) {
   const prefix = `ORD-${at.getUTCFullYear()}-`;
-  let sequence = repos.orders.nextSequence(prefix);
+  let sequence = await repos.orders.nextSequence(prefix);
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
     try {
-      return repos.orders.create({
+      return await repos.orders.create({
         ...input,
         reference: `${prefix}${String(sequence).padStart(4, "0")}`,
       });

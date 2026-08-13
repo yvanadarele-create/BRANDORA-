@@ -1,0 +1,199 @@
+/**
+ * The Postgres driver.
+ *
+ * This is what production runs on, and the reason is the deployment target: a
+ * serverless function's filesystem is discarded between invocations, so a
+ * file-backed database there loses the account it created a moment earlier.
+ * Postgres is a server, and does not care which instance the request landed on.
+ *
+ * Two things about serverless that shape this file:
+ *
+ * **The pool is tiny and module-scoped.** A serverless instance handles one
+ * request at a time, so a large pool would open connections nothing uses while
+ * counting against the server's limit — and Postgres runs out of connections
+ * long before it runs out of anything else. The pool is created once per cold
+ * start and reused across invocations on the same warm instance.
+ *
+ * **The connection string must be a pooled one.** Every managed provider offers
+ * a pgbouncer endpoint alongside the direct one. Pointing hundreds of function
+ * instances at a direct endpoint exhausts `max_connections`, and the symptom is
+ * not a slow site — it is `too many clients already` on a fraction of requests,
+ * which reads like a random outage. `assertPooledUrl` warns when the URL looks
+ * direct, because the failure appears under load and never in testing.
+ */
+
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import type { Pool, PoolClient } from "pg";
+
+import { type Row, type SqlDriver, toPositional } from "./driver.js";
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * The schema as individual statements.
+ *
+ * `pg` will not accept a multi-statement string through a parameterised query,
+ * so the file is split. Comments are stripped *before* splitting rather than
+ * after: the schema's prose is full of semicolons, and splitting first would
+ * cut statements in half at a comma splice.
+ */
+export function schemaStatements(): string[] {
+  const sql = readFileSync(resolve(here, "schema.sql"), "utf8");
+  return stripComments(sql)
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.length > 0)
+    .map((statement) => `${statement};`);
+}
+
+function stripComments(sql: string): string {
+  return sql.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--[^\n]*/g, "");
+}
+
+/**
+ * Warn when the URL looks like a direct connection.
+ *
+ * Not an error: a single long-lived process on a direct endpoint is correct,
+ * and refusing to start would break that deployment to protect a different one.
+ * The log line is what someone reads when the errors start.
+ */
+export function assertPooledUrl(url: string, warn: (message: string) => void): void {
+  // A loopback database is a developer's own; there is no fleet of function
+  // instances to exhaust its connections, so the warning would be noise.
+  const isLocal = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/i.test(url);
+  const looksPooled = /-pooler|pgbouncer|pool|6543/.test(url);
+  if (!looksPooled && !isLocal) {
+    warn(
+      "DATABASE_URL does not look like a pooled endpoint. On serverless this exhausts " +
+        "Postgres connections under load — use your provider's pooled/pgbouncer URL.",
+    );
+  }
+}
+
+export interface PostgresOptions {
+  connectionString: string;
+  /** One connection per instance: a serverless invocation serves one request. */
+  max?: number;
+  /** Overrides the decision `wantsTls` makes from the URL. */
+  ssl?: boolean;
+  warn?: (message: string) => void;
+}
+
+/**
+ * Whether to negotiate TLS.
+ *
+ * Decided from the URL rather than forced on. Every managed provider requires
+ * TLS and every local Postgres is built without it, so a hardcoded `ssl: true`
+ * fails local development with "the server does not support SSL connections" —
+ * and a hardcoded `false` sends a production password over plaintext. The URL
+ * already carries the answer: `sslmode` when it is stated, and otherwise the
+ * host, since nothing on loopback is crossing a network worth protecting.
+ */
+export function wantsTls(url: string): boolean {
+  const explicit = /[?&]sslmode=([a-z-]+)/i.exec(url)?.[1]?.toLowerCase();
+  if (explicit) return explicit !== "disable";
+  return !/@(localhost|127\.0\.0\.1|\[::1\]|host\.docker\.internal)[:/]/i.test(url);
+}
+
+export class PostgresDriver implements SqlDriver {
+  readonly dialect = "postgres" as const;
+
+  private constructor(
+    private readonly pool: Pool,
+    /** Set when this driver is bound to one client inside a transaction. */
+    private readonly client: PoolClient | null = null,
+  ) {}
+
+  /**
+   * `pg` is imported dynamically so the package works with it absent.
+   *
+   * The test suite runs on SQLite and should not require a Postgres client to
+   * be installed to do it; and a build that fails on a missing optional
+   * dependency fails at the least useful moment.
+   */
+  static async connect(options: PostgresOptions): Promise<PostgresDriver> {
+    const warn = options.warn ?? ((message: string) => console.warn(`[brandora] ${message}`));
+    assertPooledUrl(options.connectionString, warn);
+
+    const pg = await import("pg").catch(() => {
+      throw new Error(
+        "BRANDORA_DATABASE_URL is set but the `pg` package is not installed. Run `pnpm add pg`.",
+      );
+    });
+
+    const pool = new pg.default.Pool({
+      connectionString: options.connectionString,
+      max: options.max ?? 1,
+      // `rejectUnauthorized: false` because managed providers commonly present
+      // a chain Node does not carry a root for, and failing to connect at all
+      // is worse than not pinning. The password is still encrypted in flight.
+      ...((options.ssl ?? wantsTls(options.connectionString))
+        ? { ssl: { rejectUnauthorized: false } }
+        : {}),
+      idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 10_000,
+    });
+
+    return new PostgresDriver(pool);
+  }
+
+  private async query(sql: string, params: readonly unknown[]): Promise<Row[]> {
+    const text = toPositional(sql);
+    const runner = this.client ?? this.pool;
+    const result = await runner.query(text, params as unknown[]);
+    return result.rows as Row[];
+  }
+
+  async all(sql: string, params: readonly unknown[] = []): Promise<Row[]> {
+    return this.query(sql, params);
+  }
+
+  async get(sql: string, params: readonly unknown[] = []): Promise<Row | null> {
+    const rows = await this.query(sql, params);
+    return rows[0] ?? null;
+  }
+
+  async run(sql: string, params: readonly unknown[] = []): Promise<void> {
+    await this.query(sql, params);
+  }
+
+  /**
+   * A transaction is bound to one client for its whole life.
+   *
+   * Issuing BEGIN on a pool and COMMIT on whatever connection the pool hands
+   * out next is a transaction that silently does nothing — and with a pooler in
+   * front, it is not even reliably the same server session.
+   */
+  async transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T> {
+    if (this.client) return fn(this);
+
+    const client = await this.pool.connect();
+    const bound = new PostgresDriver(this.pool, client);
+    try {
+      await client.query("BEGIN");
+      const out = await fn(bound);
+      await client.query("COMMIT");
+      return out;
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /** Apply the schema. Every statement is `IF NOT EXISTS`, so this is idempotent. */
+  async migrate(): Promise<void> {
+    for (const statement of schemaStatements()) {
+      await this.run(statement);
+    }
+  }
+
+  async close(): Promise<void> {
+    if (this.client) return;
+    await this.pool.end();
+  }
+}
