@@ -151,11 +151,63 @@ export function paystackConfigured(source: Env = env()): boolean {
   return typeof v === "string" && v.trim() !== "";
 }
 
+/**
+ * SECRET. The key a Paystack webhook signature is verified against.
+ *
+ * Paystack signs webhooks with the account's secret key, so this is normally
+ * the same value. It is read through its own function — falling back to
+ * `PAYSTACK_SECRET_KEY` — so a deployment that uses a distinct webhook secret,
+ * or rotates one without the other, has somewhere to put it.
+ *
+ * Returns "" rather than throwing when neither is set: the webhook route reads
+ * this to decide whether the endpoint exists at all, and a deployment with no
+ * payment provider must still boot.
+ */
+export function paystackWebhookSecret(source: Env = env()): string {
+  const dedicated = source["PAYSTACK_WEBHOOK_SECRET"];
+  if (typeof dedicated === "string" && dedicated.trim() !== "") return dedicated.trim();
+  const key = source["PAYSTACK_SECRET_KEY"];
+  return typeof key === "string" ? key.trim() : "";
+}
+
 export function paystackIntegrationStatus(source: Env = env()): IntegrationStatus {
   return {
     name: "Paystack",
     connected: paystackConfigured(source),
-    fields: [{ label: "Secret Key", masked: maskCredential(source["PAYSTACK_SECRET_KEY"]) }],
+    fields: [
+      { label: "Secret Key", masked: maskCredential(source["PAYSTACK_SECRET_KEY"]) },
+      // A secret in its own right, and masked like one. What an administrator
+      // actually needs from this row is whether a webhook signature can be
+      // checked at all, and `connected` plus a mask says that without ever
+      // putting the value in an HTML response.
+      { label: "Webhook Secret", masked: maskCredential(paystackWebhookSecret(source) || undefined) },
+    ],
+  };
+}
+
+/* --- Notifications -------------------------------------------------------- */
+
+export function notificationsConfigured(source: Env = env()): boolean {
+  const key = source["RESEND_API_KEY"];
+  const from = source["BRANDORA_EMAIL_FROM"];
+  // Both, or neither. A key with no From address is a 422 on every send.
+  return typeof key === "string" && key.trim() !== "" && typeof from === "string" && from.trim() !== "";
+}
+
+export function notificationsIntegrationStatus(source: Env = env()): IntegrationStatus {
+  return {
+    name: "Email (Resend)",
+    connected: notificationsConfigured(source),
+    // Masks only, like every other integration. The From address is not a
+    // secret, but this list has exactly one shape and a test asserts it — an
+    // integrations page with one field that returns a real value is one edit
+    // away from an integrations page that returns a key. `connected` is false
+    // until both the key and the From address are set, which is the fact an
+    // administrator is actually reading this row for.
+    fields: [
+      { label: "API Key", masked: maskCredential(source["RESEND_API_KEY"]) },
+      { label: "From address", masked: maskCredential(source["BRANDORA_EMAIL_FROM"]) },
+    ],
   };
 }
 

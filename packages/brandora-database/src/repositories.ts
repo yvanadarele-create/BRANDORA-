@@ -637,6 +637,16 @@ export interface Repositories {
     setFulfillmentStatus(id: string, status: FulfillmentStatus): Promise<void>;
     addEvent(orderId: string, kind: string, actor: string, detail?: string): Promise<void>;
     events(orderId: string): Promise<{ at: string; kind: string; actor: string; detail?: string }[]>;
+    /**
+     * Who to tell about this order, and what to call it.
+     *
+     * Unscoped, like `findByReference`, because a payment provider's webhook
+     * carries no session — but deliberately narrower than an admin read. Two
+     * fields are what addressing an email needs; handing the settlement path a
+     * whole order row would put an admin-shaped object somewhere a customer's
+     * response is assembled.
+     */
+    notificationTarget(orderId: string): Promise<{ userId: string; reference: string } | null>;
     findAsAdmin(id: string): Promise<OrderRow | null>;
     listAsAdmin(limit?: number): Promise<OrderRow[]>;
   };
@@ -1359,6 +1369,11 @@ export function createRepositories(db: SqlDriver): Repositories {
           actor: text(row["actor"]),
           detail: optionalText(row["detail"]),
         }));
+      },
+
+      async notificationTarget(orderId) {
+        const row = await get(`SELECT user_id, reference FROM orders WHERE id = ?`, orderId);
+        return row ? { userId: text(row["user_id"]), reference: text(row["reference"]) } : null;
       },
 
       async findAsAdmin(id) {

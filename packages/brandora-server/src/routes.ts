@@ -67,7 +67,13 @@ import {
   wasteVerificationTime,
 } from "@brandora/auth";
 import { DEFAULT_VALIDITY_DAYS, quoteReference } from "@brandora/quotes";
-import { aliexpressIntegrationStatus, calendlyUrl, paystackIntegrationStatus } from "@brandora/config";
+import {
+  aliexpressIntegrationStatus,
+  calendlyUrl,
+  notificationsIntegrationStatus,
+  paystackIntegrationStatus,
+  paystackWebhookSecret,
+} from "@brandora/config";
 
 import {
   type HttpResult,
@@ -88,7 +94,14 @@ import {
   type PaymentProvider,
   assertAmountMatches,
   paymentReference,
+  paystackSignatureValid,
 } from "./payments.js";
+import {
+  type NotificationTransport,
+  deliverOne,
+  deliverPending,
+  resolveNotificationTransport,
+} from "./notifications.js";
 import {
   AFTER_PAYMENT,
   FULFILMENT_STATUSES,
@@ -112,6 +125,8 @@ export interface ServerDeps {
   /** Generates brand strategy. Unconfigured providers fail loudly, never fake. */
   strategy: StrategyProvider;
   payments: PaymentProvider;
+  /** Delivers queued notifications. Unconfigured, the queue fills honestly. */
+  notifications?: NotificationTransport;
   pricing: PricingSettings;
   publicBaseUrl: string;
   logger: ServerLogger;
@@ -242,6 +257,51 @@ export function createRouter(deps: ServerDeps): Router {
     return [
       { name: SESSION_COOKIE, value: signValue(token, deps.authSecret), maxAgeSeconds: SESSION_MAX_AGE },
     ];
+  };
+
+  const transport = deps.notifications ?? resolveNotificationTransport(deps.env ?? process.env);
+
+  /**
+   * Queue a notification, and try to deliver it now.
+   *
+   * The record is written first and unconditionally: the fact that a customer
+   * should have been told about their payment is worth keeping even in a
+   * deployment with no email provider connected, and it is what the queue
+   * drains from once one is.
+   *
+   * Delivery failure never fails the request that caused it. A customer whose
+   * payment settled has paid; an email provider having a bad afternoon must not
+   * turn that into a 500 and a retry against an order that is already paid. The
+   * attempt is recorded on the row and the queue picks it up again.
+   */
+  const notify = async (
+    userId: string,
+    orderId: string | undefined,
+    kind: string,
+    message: { subject: string; body: string; channel?: "email" | "sms" | "whatsapp" | "in-app" },
+  ): Promise<void> => {
+    let row;
+    try {
+      row = await repos.notifications.create({
+        userId,
+        ...(orderId ? { orderId } : {}),
+        kind,
+        channel: message.channel ?? "email",
+        subject: message.subject,
+        body: message.body,
+      });
+    } catch (err) {
+      deps.logger.error(`notification ${kind} could not be recorded: ${String(err)}`);
+      return;
+    }
+
+    if (!transport.configured) return;
+
+    try {
+      await deliverOne(repos, transport, row);
+    } catch (err) {
+      deps.logger.error(`notification ${kind} delivery threw: ${String(err)}`);
+    }
   };
 
   /* --- Health and reference data ----------------------------------------- */
@@ -995,6 +1055,80 @@ export function createRouter(deps: ServerDeps): Router {
   });
 
   /**
+   * Settle one payment reference, whoever asked.
+   *
+   * The customer returning from the payment page and Paystack's webhook are two
+   * signals about the same fact, and they must not be two implementations of
+   * it — a webhook path that settles more cheaply than the browser path is how
+   * an order gets marked paid without the amount ever being checked.
+   *
+   * Neither caller supplies an amount or a status. Both are read from the
+   * provider, and the amount is compared against the `payments` row written at
+   * initialisation, which itself came from the stored quote.
+   *
+   * Idempotent: a reference already `paid` returns settled without touching the
+   * order again. Paystack retries a webhook it did not get a 200 for, so this
+   * runs more than once as a matter of course.
+   */
+  const settlePayment = async (
+    reference: string,
+    actor: string,
+  ): Promise<{ settled: boolean; providerStatus: string; orderId: string | null }> => {
+    const payment = await repos.payments.findByReference(reference);
+    if (!payment) return { settled: false, providerStatus: "unknown-reference", orderId: null };
+
+    if (payment.status === "paid") {
+      return { settled: true, providerStatus: "already-settled", orderId: payment.orderId };
+    }
+    if (payment.status === "mismatch") {
+      // Refused once on the amount. It does not become correct on a retry.
+      return { settled: false, providerStatus: "mismatch", orderId: payment.orderId };
+    }
+
+    const result = await deps.payments.verify(reference);
+    if (!result.paid) {
+      return { settled: false, providerStatus: result.providerStatus, orderId: payment.orderId };
+    }
+
+    try {
+      assertAmountMatches(payment.amount, result.amount);
+    } catch (err) {
+      await repos.payments.markStatus(reference, "mismatch");
+      await repos.orders.addEvent(payment.orderId, "payment-mismatch", actor, reference);
+      throw err;
+    }
+
+    await repos.payments.markPaid(reference, now().toISOString());
+    await repos.orders.setPaymentStatus(payment.orderId, "paid");
+
+    // §17: a paid order goes to a person, not to a supplier. Nothing automated
+    // moves it past this point.
+    await repos.orders.setFulfillmentStatus(payment.orderId, AFTER_PAYMENT);
+    await repos.orders.addEvent(payment.orderId, "paid", actor, reference);
+    await repos.orders.addEvent(
+      payment.orderId,
+      "awaiting-operations-approval",
+      "system",
+      "a Brandora administrator reviews this before it reaches a supplier",
+    );
+
+    const target = await repos.orders.notificationTarget(payment.orderId);
+    if (target) {
+      await notify(target.userId, payment.orderId, "order.paid", {
+        subject: `Payment received — order ${target.reference}`,
+        body: [
+          `We have your payment for order ${target.reference}.`,
+          "",
+          "A member of the Brandora team reviews every paid order before it reaches a supplier.",
+          "You will hear from us when it moves to production.",
+        ].join("\n"),
+      });
+    }
+
+    return { settled: true, providerStatus: result.providerStatus, orderId: payment.orderId };
+  };
+
+  /**
    * Confirm a payment with the provider.
    *
    * Called on return from the payment page. The amount comparison is the point:
@@ -1015,39 +1149,15 @@ export function createRouter(deps: ServerDeps): Router {
       return json(200, { order: orderView(order), payment: paymentView(pending) });
     }
 
-    const result = await deps.payments.verify(pending.reference);
+    const outcome = await settlePayment(pending.reference, "system");
 
-    if (!result.paid) {
+    if (!outcome.settled) {
       return json(200, {
-        order: orderView(order),
-        payment: { ...paymentView(pending), providerStatus: result.providerStatus },
+        order: orderView((await repos.orders.findForOwner(order.id, user.id)) ?? order),
+        payment: { ...paymentView(pending), providerStatus: outcome.providerStatus },
         settled: false,
       });
     }
-
-    // Throws AmountMismatchError, which is a 409 the customer sees as a generic
-    // failure and the admin sees with both figures in the log.
-    try {
-      assertAmountMatches(pending.amount, result.amount);
-    } catch (err) {
-      await repos.payments.markStatus(pending.reference, "mismatch");
-      await repos.orders.addEvent(order.id, "payment-mismatch", "system", pending.reference);
-      throw err;
-    }
-
-    await repos.payments.markPaid(pending.reference, now().toISOString());
-    await repos.orders.setPaymentStatus(order.id, "paid");
-
-    // §17: a paid order goes to a person, not to a supplier. Nothing automated
-    // moves it past this point.
-    await repos.orders.setFulfillmentStatus(order.id, AFTER_PAYMENT);
-    await repos.orders.addEvent(order.id, "paid", "system", pending.reference);
-    await repos.orders.addEvent(
-      order.id,
-      "awaiting-operations-approval",
-      "system",
-      "a Brandora administrator reviews this before it reaches a supplier",
-    );
 
     const settled = await repos.orders.findForOwner(order.id, user.id);
     return json(200, {
@@ -1055,6 +1165,75 @@ export function createRouter(deps: ServerDeps): Router {
       payment: paymentView(await repos.payments.findByReference(pending.reference) ?? pending),
       settled: true,
     });
+  });
+
+  /**
+   * Paystack's webhook.
+   *
+   * The customer's return to the order page is the happy path, and it is the
+   * one that breaks: a closed tab, a dead battery, a bank app that swallows the
+   * redirect. Paystack tells us anyway — this is the endpoint that hears it.
+   *
+   * Four things make it safe to expose without a session.
+   *
+   * **The signature is checked against the raw bytes.** `ctx.rawBody` is the
+   * body exactly as it arrived; re-serialising the parsed object reorders keys
+   * and invalidates the HMAC. Compared in constant time.
+   *
+   * **The payload is a trigger, not evidence.** Nothing is read from it except
+   * the reference. Whether the charge succeeded, and for how much, comes from
+   * calling Paystack back — so a forged body with a valid-looking shape cannot
+   * mark anything paid, and neither can a replayed one.
+   *
+   * **It is idempotent.** Paystack retries anything it did not get a 200 for.
+   * `settlePayment` returns early on a reference that is already `paid`.
+   *
+   * **It always answers 200 once the signature holds.** A reference we do not
+   * recognise, or an event we do not act on, is still a well-formed message
+   * from Paystack; answering 4xx makes them retry it for hours.
+   */
+  router.post("/api/webhooks/paystack", async (ctx) => {
+    const secret = paystackWebhookSecret(deps.env ?? process.env);
+
+    // Nothing to verify against means nothing can be trusted. 404 rather than
+    // 503: in a deployment with no Paystack, this endpoint does not exist, and
+    // saying so tells a prober nothing about the configuration.
+    if (secret === "") throw new NotFoundError("route", "/api/webhooks/paystack");
+
+    const header = ctx.headers["x-paystack-signature"];
+    const signature = Array.isArray(header) ? header[0] : header;
+
+    if (!paystackSignatureValid(ctx.rawBody, signature, secret)) {
+      // No detail. A response that distinguishes "missing" from "wrong" is a
+      // free oracle for someone forging one.
+      deps.logger.error("paystack webhook rejected: signature did not verify");
+      return json(401, { error: { message: "Unauthorized" } });
+    }
+
+    const event = typeof ctx.body["event"] === "string" ? ctx.body["event"] : "";
+    const data = ctx.body["data"];
+    const reference =
+      typeof data === "object" && data !== null && typeof (data as Record<string, unknown>)["reference"] === "string"
+        ? ((data as Record<string, unknown>)["reference"] as string)
+        : "";
+
+    if (event !== "charge.success" || reference === "") {
+      return json(200, { received: true, acted: false });
+    }
+
+    try {
+      const outcome = await settlePayment(reference, "paystack-webhook");
+      return json(200, { received: true, acted: outcome.settled });
+    } catch (err) {
+      // An amount mismatch throws. It is already recorded against the payment
+      // and the order, and Paystack must not be asked to redeliver it — the
+      // next attempt would reach the same conclusion and the row is already
+      // marked `mismatch` for an administrator to pick up.
+      deps.logger.error(
+        `paystack webhook could not settle ${reference}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return json(200, { received: true, acted: false });
+    }
   });
 
   /* --- Orders -------------------------------------------------------------- */
@@ -1136,6 +1315,7 @@ export function createRouter(deps: ServerDeps): Router {
       integrations: [
         aliexpressIntegrationStatus(deps.env ?? process.env),
         paystackIntegrationStatus(deps.env ?? process.env),
+        notificationsIntegrationStatus(deps.env ?? process.env),
       ],
     });
   });
@@ -1240,8 +1420,37 @@ export function createRouter(deps: ServerDeps): Router {
       integrations: [
         aliexpressIntegrationStatus(deps.env ?? process.env),
         paystackIntegrationStatus(deps.env ?? process.env),
+        notificationsIntegrationStatus(deps.env ?? process.env),
       ],
     });
+  });
+
+  /**
+   * The notification queue, and what actually happened to each row.
+   *
+   * `sent` here means a provider accepted the message. Nothing on this route
+   * counts a row as delivered because the code path that created it completed.
+   */
+  router.get("/api/admin/notifications", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const pending = await repos.notifications.pending(100);
+    return json(200, {
+      transport: { name: transport.name, configured: transport.configured },
+      pending: pending.map(notificationView),
+    });
+  });
+
+  /**
+   * Drain the queue by hand.
+   *
+   * Delivery is attempted inline when an event happens, so this is for the
+   * cases that leaves behind: a provider that was down, a key added after the
+   * fact, a run of rows that failed once and are waiting for a retry.
+   */
+  router.post("/api/admin/notifications/deliver", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const report = await deliverPending(repos, transport, { limit: 50 });
+    return json(200, { report });
   });
 
   /* --- Guard rails --------------------------------------------------------- */
@@ -1340,6 +1549,37 @@ function paymentView(payment: {
     status: payment.status,
     verifiedAt: payment.verifiedAt ?? null,
     createdAt: payment.createdAt,
+  };
+}
+
+/**
+ * A queued notification, for the admin queue view.
+ *
+ * `body` is deliberately absent: this is a list of what is waiting, and the
+ * message to a customer can carry their order details. `attempts` and
+ * `lastError` are what an administrator actually needs to see.
+ */
+function notificationView(notification: {
+  id: string;
+  kind: string;
+  channel: string;
+  subject: string;
+  status: string;
+  attempts: number;
+  lastError?: string;
+  sentAt?: string;
+  createdAt: string;
+}) {
+  return {
+    id: notification.id,
+    kind: notification.kind,
+    channel: notification.channel,
+    subject: notification.subject,
+    status: notification.status,
+    attempts: notification.attempts,
+    lastError: notification.lastError ?? null,
+    sentAt: notification.sentAt ?? null,
+    createdAt: notification.createdAt,
   };
 }
 

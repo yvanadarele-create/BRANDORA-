@@ -34,6 +34,7 @@ import { money } from "@brandora/shared";
 
 import { type ServerLogger, consoleLogger, handle } from "./http.js";
 import { type PaymentProvider, resolvePaymentProvider } from "./payments.js";
+import { type NotificationTransport, resolveNotificationTransport } from "./notifications.js";
 import type { PricingSettings } from "./pricing.js";
 import { type ServerDeps, createRouter } from "./routes.js";
 import { SECURITY_HEADERS, resolveStaticFile, sendStatic } from "./static.js";
@@ -45,6 +46,7 @@ export interface AppOptions {
   db?: SqlDriver;
   strategy?: StrategyProvider;
   payments?: PaymentProvider;
+  notifications?: NotificationTransport;
   logger?: ServerLogger;
   env?: Record<string, string | undefined>;
   now?: () => Date;
@@ -98,6 +100,7 @@ export async function createApp(options: AppOptions = {}): Promise<BrandoraApp> 
     authSecret: authSecret(env),
     strategy: options.strategy ?? resolveStrategyProvider(env, logger),
     payments: options.payments ?? resolvePaymentProvider(env),
+    notifications: options.notifications ?? resolveNotificationTransport(env),
     pricing,
     publicBaseUrl: baseUrl,
     logger,
