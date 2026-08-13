@@ -883,3 +883,17 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   .scheduler { padding: 0; }
   .scheduler__panel { width: 100%; height: 100%; border-radius: 0; border: 0; }
 }
+
+/*
+ * The header's booking control is a secondary action, and at 390px the header
+ * already carries the lockup, the account control, the language select and the
+ * theme toggle. Adding a fifth pushed the row 48px past the viewport.
+ *
+ * Hidden here rather than made smaller: shrinking it would give a 390px screen
+ * five cramped controls instead of four legible ones. Booking is still offered
+ * where someone actually decides they want it — the landing page's closing call
+ * to action and the quote page, both of which show it at every width.
+ */
+@media (max-width: 48rem) {
+  .header-tools [data-book-call] { display: none !important; }
+}
