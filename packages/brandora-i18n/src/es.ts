@@ -155,6 +155,7 @@ export const es: Catalogue = {
 
   /* Cuenta y panel */
   "nav.admin": "Administración",
+  "cta.book": "Reservar una llamada",
   "auth.eyebrow": "Tu cuenta",
   "auth.email": "Correo electrónico",
   "auth.password": "Contraseña",

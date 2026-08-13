@@ -167,6 +167,7 @@ export const en = {
 
   /* Account and dashboard */
   "nav.admin": "Admin",
+  "cta.book": "Book a call",
   "auth.eyebrow": "Your account",
   "auth.email": "Email",
   "auth.password": "Password",

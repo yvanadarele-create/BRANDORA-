@@ -32,6 +32,7 @@
     </nav>
 
     <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
       <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
       <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
       <label class="visually-hidden" for="locale">Language</label>
@@ -77,6 +78,7 @@
       <div class="hero__actions">
         <button class="btn btn--primary" type="button" data-checkout>Place this order</button>
         <a class="btn btn--ghost" href="package.html" data-package-link data-i18n="nav.package">My package</a>
+        <button class="btn btn--ghost" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
       </div>
     </div>
   </section>
@@ -94,6 +96,7 @@
 </footer>
 
 <script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
 <script type="module" src="assets/js/quote.js"></script>
 </body>
 </html>

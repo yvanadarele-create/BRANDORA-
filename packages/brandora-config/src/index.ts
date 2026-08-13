@@ -107,6 +107,26 @@ export const aiConfigured = (source: Env = env()): boolean => {
   return typeof v === "string" && v.trim() !== "";
 };
 
+/* --- Scheduling ---------------------------------------------------------- */
+
+/**
+ * The one booking link.
+ *
+ * Every "Book a call" control on the site resolves to this, fetched at runtime
+ * rather than typed into each page. Hard-coding it in nine places is how a
+ * business ends up with three different links live at once, two of them
+ * pointing at an event that was renamed a year ago.
+ *
+ * Not a secret — it is a public scheduling page — but it belongs in the
+ * environment because it is deployment configuration, and because changing it
+ * should not require a code change.
+ */
+export function calendlyUrl(source: Env = env()): string {
+  return optional("BRANDORA_CALENDLY_URL", "", source);
+}
+
+export const schedulingConfigured = (source: Env = env()): boolean => calendlyUrl(source) !== "";
+
 /* --- Payments ------------------------------------------------------------ */
 
 const PAYSTACK_HINT =

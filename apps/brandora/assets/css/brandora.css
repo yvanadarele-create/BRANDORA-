@@ -837,3 +837,49 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
 }
 .masked { font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
+
+/* --- The scheduler ---------------------------------------------------------- */
+
+/*
+ * Calendly's own popup is not used: it injects an overlay whose focus handling
+ * and close affordance cannot be corrected from here. The inline embed mounts
+ * inside this dialog instead, so the close button, the escape key and the
+ * scroll lock behave like everything else on the site.
+ */
+.scheduler {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: var(--s4);
+  background: color-mix(in srgb, var(--deep-black) 78%, transparent);
+}
+
+.scheduler__panel {
+  position: relative;
+  width: min(100%, 46rem);
+  height: min(90vh, 46rem);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.scheduler__close {
+  position: absolute;
+  top: var(--s3);
+  inset-inline-end: var(--s3);
+  z-index: 1;
+}
+
+.scheduler__embed { width: 100%; height: 100%; }
+.scheduler__embed .notice { margin: var(--s7) var(--s5); }
+
+/* Full-bleed on a phone: a month grid in a letterboxed card leaves too little
+   room for the dates and the times underneath them. */
+@media (max-width: 40rem) {
+  .scheduler { padding: 0; }
+  .scheduler__panel { width: 100%; height: 100%; border-radius: 0; border: 0; }
+}

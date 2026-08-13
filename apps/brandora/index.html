@@ -37,6 +37,7 @@
     </nav>
 
     <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
       <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
       <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
       <label class="visually-hidden" for="locale">Language</label>
@@ -203,7 +204,10 @@
   <section class="section">
     <div class="wrap" style="text-align:center">
       <h2 style="font-size:clamp(1.8rem,5vw,2.8rem)" data-i18n="cta.final">Your idea deserves a brand.</h2>
-      <p><a class="btn btn--primary" href="create.html" data-i18n="hero.cta.primary">Create My Brand</a></p>
+      <p class="hero__actions" style="justify-content:center">
+        <a class="btn btn--primary" href="create.html" data-i18n="hero.cta.primary">Create My Brand</a>
+        <button class="btn btn--ghost" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
+      </p>
     </div>
   </section>
 
@@ -220,6 +224,7 @@
 </footer>
 
 <script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
 <script type="module" src="assets/js/landing.js"></script>
 </body>
 </html>

@@ -67,7 +67,7 @@ import {
   wasteVerificationTime,
 } from "@brandora/auth";
 import { DEFAULT_VALIDITY_DAYS, quoteReference } from "@brandora/quotes";
-import { aliexpressIntegrationStatus, paystackIntegrationStatus } from "@brandora/config";
+import { aliexpressIntegrationStatus, calendlyUrl, paystackIntegrationStatus } from "@brandora/config";
 
 import {
   type HttpResult,
@@ -242,6 +242,23 @@ export function createRouter(deps: ServerDeps): Router {
       status: "ok",
       time: now().toISOString(),
       payments: deps.payments.configured ? deps.payments.name : "not-configured",
+    }),
+  );
+
+  /**
+   * Public configuration the front end needs to render itself.
+   *
+   * Only values that are already public by nature. There is no branch of this
+   * route that returns a credential, because `describeConfig` and the
+   * integration statuses cannot produce one.
+   */
+  router.get("/api/settings", () =>
+    json(200, {
+      currency: deps.pricing.currency,
+      // Empty when unset, and every booking control hides itself rather than
+      // linking somewhere that is not a booking page.
+      calendlyUrl: calendlyUrl(deps.env ?? process.env),
+      locales: ["en", "fr", "es"],
     }),
   );
 

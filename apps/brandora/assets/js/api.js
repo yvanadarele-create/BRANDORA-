@@ -247,3 +247,113 @@ export function hideError(node) {
 
 /** Money always arrives pre-formatted from the server. The browser never divides. */
 export const price = (money) => (money ? money.display : '—');
+
+/* --- Booking ---------------------------------------------------------------- */
+
+/**
+ * Wire every booking control to the one Calendly event.
+ *
+ * The URL is fetched from `/api/settings`, not written into the markup, so the
+ * owner changes it in one environment variable rather than in nine files. When
+ * it is unset, the controls stay hidden — a "Book a call" button that opens the
+ * contact page instead is worse than no button, because it teaches a visitor
+ * that the button does not work.
+ *
+ * The scheduler opens inside Brandora's own dialog rather than through
+ * Calendly's popup, whose focus handling and close affordance cannot be
+ * corrected from here. Their script is loaded on first open, not on page load:
+ * a visitor who never books should not pay for it, and this product is used on
+ * metered mobile data.
+ */
+let schedulingUrl = null;
+let calendlyScript = null;
+
+export async function mountBooking() {
+  const controls = document.querySelectorAll('[data-book-call]');
+  if (controls.length === 0) return;
+
+  try {
+    schedulingUrl = (await api.get('/api/settings')).calendlyUrl || null;
+  } catch (err) {
+    schedulingUrl = null;
+  }
+
+  controls.forEach((control) => {
+    control.hidden = !schedulingUrl;
+    if (!schedulingUrl) return;
+    control.addEventListener('click', (event) => {
+      event.preventDefault();
+      openScheduler();
+    });
+  });
+}
+
+function loadCalendly() {
+  if (calendlyScript) return calendlyScript;
+  calendlyScript = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  return calendlyScript;
+}
+
+function openScheduler() {
+  if (!schedulingUrl) return;
+
+  const dialog = el('div', { class: 'scheduler', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Book a call' }, [
+    el('div', { class: 'scheduler__panel' }, [
+      el('button', {
+        class: 'btn btn--ghost btn--small scheduler__close',
+        type: 'button',
+        'aria-label': 'Close',
+        text: 'Close',
+      }),
+      el('div', { class: 'scheduler__embed', 'data-embed': true }),
+    ]),
+  ]);
+
+  const previouslyFocused = document.activeElement;
+  const close = () => {
+    dialog.remove();
+    document.body.style.removeProperty('overflow');
+    if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (event) => {
+    if (event.key === 'Escape') close();
+  };
+
+  dialog.querySelector('.scheduler__close').addEventListener('click', close);
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) close();
+  });
+  document.addEventListener('keydown', onKey);
+
+  document.body.appendChild(dialog);
+  // Scroll lock: a month grid behind a scrolling page is unusable on a phone.
+  document.body.style.overflow = 'hidden';
+  dialog.querySelector('.scheduler__close').focus();
+
+  loadCalendly()
+    .then(() => {
+      window.Calendly.initInlineWidget({
+        url: schedulingUrl,
+        parentElement: dialog.querySelector('[data-embed]'),
+      });
+    })
+    .catch(() => {
+      // The embed could not load. Give them the link rather than a blank panel.
+      const embed = dialog.querySelector('[data-embed]');
+      clear(embed);
+      embed.appendChild(
+        el('p', { class: 'notice' }, [
+          el('span', { text: 'The scheduler could not load. ' }),
+          el('a', { href: schedulingUrl, target: '_blank', rel: 'noopener', text: 'Open it in a new tab' }),
+        ]),
+      );
+    });
+}
