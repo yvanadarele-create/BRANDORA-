@@ -1,200 +1,192 @@
 # Deploying Brandora
 
-Brandora and Harmony Verify are unrelated products that share a repository. This
-document covers how they stay apart, how to run Brandora, what to set, and the
-one architectural decision that has to be made before real customers use it.
+## Why the production domain returned 404
+
+This repository contained a README and a logo. No `package.json`, no
+`index.html`, no source. Vercel deployed `main`, the build "succeeded" because
+there was nothing to build, and the result was an empty output — so `/` had
+nothing to serve.
+
+None of the usual suspects was the cause: not the root directory, not framework
+detection, not the build command, not SPA rewrites, not the production alias.
+Changing any of them would not have helped. The fix was to put the application
+in the repository.
+
+The application is now here.
 
 ---
 
-## Read this first: where the data lives
-
-Brandora is **one Node process that serves the site and the API from one
-origin**, storing its data in SQLite on the local filesystem. That is a good fit
-for a single small server and a bad fit for serverless, because a serverless
-function's filesystem does not survive between invocations.
-
-So there are two deployment shapes, and they are not equivalent:
-
-| | Long-lived process (recommended) | Vercel serverless |
-| --- | --- | --- |
-| Site | served by the same process | served by Vercel's CDN |
-| API | same process | `apps/brandora/api/index.js` |
-| Accounts, brands, orders | **persist** | **do not persist between cold starts** |
-| Suitable for | production | the marketing pages, and a demo API |
-| Verified here | yes — the full journey was driven in a browser against it | no — no deploy was run from this environment |
-
-**If you deploy to Vercel as it stands, a customer can create an account, build
-a brand and place an order, and a later request may find none of it.** The
-function answers correctly; the disk underneath it is thrown away. Nothing in
-the code hides this, and nothing in the code can fix it — it is a property of
-the storage.
-
-Two honest ways forward:
-
-1. **Run the long-lived process** on any host that gives you a disk — a small
-   VPS, Railway, Render, Fly, Hetzner. This is the shape that was built and
-   tested, and it needs no code changes.
-2. **Keep Vercel and move the database.** `@brandora/database` is one file of
-   SQL and one file of repositories behind a `Repositories` interface. Porting
-   it to a hosted Postgres is a contained piece of work — every query is in
-   `packages/brandora-database/src/repositories.ts` and nothing above it knows
-   what the storage is. **This has not been done.**
-
----
-
-## Running it
+## Running it locally
 
 ```bash
 pnpm install
-pnpm run build:brandora     # builds the packages, emits the front-end data, checks the site
-pnpm run brandora           # serves apps/brandora and /api/* on :4100
-```
-
-The server needs `BRANDORA_AUTH_SECRET` and refuses to start without it. That is
-deliberate: a development fallback for a signing secret is a fallback that
-reaches production, and a known signing secret lets anyone mint a session for
-any account.
-
-```bash
+pnpm run build
 export BRANDORA_AUTH_SECRET="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
-export BRANDORA_DATABASE_PATH=./data/brandora.db
-export BRANDORA_PUBLIC_BASE_URL=https://your-domain
-pnpm run brandora
+pnpm run dev            # site and /api/* on :4100
 ```
 
-Put a TLS terminator in front of it (Caddy, nginx, or your host's). The session
-cookie is marked `Secure` automatically unless `BRANDORA_PUBLIC_BASE_URL` starts
-with `http://`.
+Without `BRANDORA_DATABASE_URL` it uses SQLite at `./data/brandora.db`, which is
+right for local work and wrong for serverless — see below.
 
-### Making the first administrator
-
-There is no route that grants a role — by design, so no request can escalate
-one. Promote the first admin directly:
-
-```bash
-node -e "
-  const { openDatabase, createRepositories } = require('@brandora/database');
-  const repos = createRepositories(openDatabase(process.env.BRANDORA_DATABASE_PATH));
-  const user = repos.users.findByEmail(process.argv[1]);
-  if (!user) throw new Error('no such account — sign up first');
-  repos.users.setRole(user.id, 'admin');
-  console.log('promoted', user.email);
-" you@example.com
-```
-
----
-
-## Environment variables
-
-### Required
-
-| Variable | What it does | If unset |
-| --- | --- | --- |
-| `BRANDORA_AUTH_SECRET` | Signs session cookies | **The server refuses to start** |
-
-### Needed for the product to be complete
-
-| Variable | What it does | If unset |
-| --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Writes brand strategy | Generation **fails with a clear message**. It does not invent a brand |
-| `PAYSTACK_SECRET_KEY` | Takes payment | Orders are placed and sit at `pending` until an admin confirms an arranged payment |
-| `ALIEXPRESS_APP_KEY` / `_APP_SECRET` / `_ACCESS_TOKEN` / `_REFRESH_TOKEN` | Live supplier sourcing | The catalogue serves Brandora's own product layer; no supplier call is made |
-
-### Everything else has a working default
-
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `BRANDORA_DATABASE_PATH` | `./data/brandora.db` | Separate from Harmony's on purpose |
-| `BRANDORA_PUBLIC_BASE_URL` | `http://localhost:4100` | Must match what the browser sees — it is the payment return URL |
-| `BRANDORA_STATIC_ROOT` | `./apps/brandora` | |
-| `BRANDORA_DEFAULT_CURRENCY` | `XOF` | Zero-decimal; see `money.ts` |
-| `BRANDORA_MARGIN_RATE` | `0.35` | |
-| `BRANDORA_LOGISTICS_RATE` | `0.08` | |
-| `BRANDORA_DELIVERY_FLAT` | `3000` | Minor units. For XOF, whole francs |
-| `BRANDORA_DELIVERY_PER_KG` | `1200` | |
-| `BRANDORA_ROUNDING_STEP` | `100` | Always rounds up |
-| `BRANDORA_SOURCING_SMALL_MAX` | `50` | |
-| `BRANDORA_SOURCING_MEDIUM_MAX` | `500` | |
-| `BRANDORA_SUPPLIER_CACHE_TTL_MINUTES` | `360` | |
-| `ANTHROPIC_MODEL` | `claude-sonnet-5` | |
-| `ALIEXPRESS_ENDPOINT` | `https://api-sg.aliexpress.com/sync` | |
-| `PAYSTACK_ENDPOINT` | `https://api.paystack.co` | |
-
-Never put a value for any of the secret ones in a file, a screenshot, a chat
-message or a commit. If one has ever appeared in any of those, rotate it in the
-provider's console before doing anything else.
+The server refuses to start without `BRANDORA_AUTH_SECRET`. That is deliberate:
+a development fallback for a signing secret is a fallback that reaches
+production, and a known signing secret lets anyone mint a session for any
+account.
 
 ---
 
 ## Vercel
 
-### The manual step — this cannot be done from code
+### 1. Provision Postgres — do this first
 
-`vercel.json` at the repository root is **Harmony's**: it sets `outputDirectory`
-to `apps/web`. Editing it would take the Harmony site down. Brandora ships its
-own `apps/brandora/vercel.json`, which Vercel reads only when a project's **Root
-Directory** is set to `apps/brandora`.
+Brandora stores accounts, brands, quotes and orders in a database. A serverless
+function's filesystem is discarded between invocations, so a file-backed
+database there loses the account it created a moment earlier. **Without a
+Postgres URL the deployment will appear to work and quietly forget everything.**
+
+Any managed Postgres works. In Vercel: **Storage → Create Database → Postgres**,
+which injects the variables for you. Otherwise Neon, Supabase, or anything else
+that speaks Postgres.
+
+**Use the provider's pooled endpoint, not the direct one.** Hundreds of function
+instances against a direct endpoint exhaust `max_connections`, and the symptom
+is `too many clients already` on a fraction of requests — which reads like a
+random outage rather than a configuration mistake.
+
+| Provider | The pooled host looks like |
+| --- | --- |
+| Neon | `…-pooler.region.aws.neon.tech` |
+| Supabase | `aws-0-region.pooler.supabase.com:6543` |
+| Vercel Postgres | the injected `POSTGRES_URL` is already pooled |
+
+The schema is applied automatically on the first connection. There is no
+migration step to run.
+
+### 2. Create the project
 
 In the Vercel dashboard:
 
-1. **Add New → Project**, and import this same repository again.
-2. Name it `brandora`.
-3. Open **Settings → General → Root Directory**, click **Edit**, and set it to
-   `apps/brandora`. Save.
-4. Leave **Framework Preset** as **Other**. Build and install commands come from
-   `apps/brandora/vercel.json`; do not override them.
-5. Open **Settings → Environment Variables** and add, for **Production**,
-   **Preview** and **Development**:
+1. **Add New → Project**, import `yvanadarele-create/BRANDORA-`.
+2. Leave **Framework Preset** as **Other**. The build and install commands come
+   from `apps/brandora/vercel.json`; do not override them.
+3. **Settings → General → Root Directory → Edit** → `apps/brandora` → **Save**.
 
-   | Name | Value |
-   | --- | --- |
-   | `BRANDORA_AUTH_SECRET` | a fresh 32-byte base64 string — generate it locally, paste it here, and nowhere else |
-   | `BRANDORA_PUBLIC_BASE_URL` | `https://<your-vercel-domain>` |
-   | `BRANDORA_DATABASE_PATH` | `/tmp/brandora.db` — the only writable path on Vercel, **and it is discarded** |
-   | `ANTHROPIC_API_KEY` | your key, if brand generation should work |
-   | `PAYSTACK_SECRET_KEY` | your key, if checkout should take payment |
-   | `ALIEXPRESS_APP_KEY` | if live sourcing should work |
-   | `ALIEXPRESS_APP_SECRET` | " |
-   | `ALIEXPRESS_ACCESS_TOKEN` | " |
-   | `ALIEXPRESS_REFRESH_TOKEN` | " |
+The third step is the one that is easy to miss. Vercel reads one config per
+project, and Brandora's lives in `apps/brandora/vercel.json`; without the root
+directory set, Vercel never sees it.
 
-6. **Deploy.**
+### 3. Environment variables
 
-Adding a variable is: **Settings → Environment Variables → Add New →** type the
-name, paste the value, tick all three environments, **Save**. Then
-**Deployments → ⋯ → Redeploy**, because environment changes do not apply to an
-existing build.
+**Settings → Environment Variables → Add New.** For each row: type the name,
+paste the value, tick **Production**, **Preview** and **Development**, **Save**.
 
-### What you will get, honestly
+| Name | Value | Without it |
+| --- | --- | --- |
+| `BRANDORA_DATABASE_URL` | your **pooled** Postgres string | Data does not persist between invocations |
+| `BRANDORA_AUTH_SECRET` | a fresh 32-byte base64 string | **The server refuses to start** |
+| `BRANDORA_PUBLIC_BASE_URL` | `https://<your-domain>` | Payment returns land on the wrong host |
+| `ANTHROPIC_API_KEY` | your key | Brand generation fails with a clear message. It does not invent a brand |
+| `PAYSTACK_SECRET_KEY` | your key | Orders are placed and wait for an admin to confirm an arranged payment |
+| `BRANDORA_CALENDLY_URL` | `https://calendly.com/yvanadarele/30min` | The "Book a call" controls hide themselves |
+| `ALIEXPRESS_APP_KEY` | | No supplier call is made; the Brandora catalogue still serves |
+| `ALIEXPRESS_APP_SECRET` | | " |
+| `ALIEXPRESS_ACCESS_TOKEN` | | " |
+| `ALIEXPRESS_REFRESH_TOKEN` | | " |
 
-The static site — landing, catalogue, every page — will work. `/api/*` will
-answer. And the database will be gone by the next cold start, per the table at
-the top of this document. **The Vercel path has not been deployed or verified
-from this environment**; the configuration is written against Vercel's
-documented behaviour, not against a run.
+Generate the auth secret locally and paste it here and nowhere else:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### 4. Deploy, then verify
+
+**Deployments → ⋯ → Redeploy** — environment changes do not apply to an existing
+build. Then check, in this order:
+
+```bash
+curl -i https://<your-domain>/            # 200, HTML with "Brandora" in it
+curl -s https://<your-domain>/api/health  # {"status":"ok",…}
+```
+
+Then in a browser: sign up, answer the interview, generate a brand, and reload
+the brand page. If the brand is still there, persistence is working. If you are
+signed out or the brand is gone, `BRANDORA_DATABASE_URL` is not set.
+
+### 5. Make the first administrator
+
+There is no route that grants a role — by design, so no request can escalate
+one. Promote yourself directly against the database:
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
+```
 
 ---
 
-## What is separate, and what is shared
+## Environment variables in full
 
-**Code.** Brandora has no dependency on Harmony in either direction:
+### Required
+
+| Variable | What it does |
+| --- | --- |
+| `BRANDORA_AUTH_SECRET` | Signs session cookies. The server will not start without it |
+
+### Required on serverless
+
+| Variable | What it does |
+| --- | --- |
+| `BRANDORA_DATABASE_URL` | Postgres connection string. Its presence selects Postgres |
+
+### Needed for the product to be complete
+
+| Variable | Unset behaviour |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Generation **fails with a clear message** rather than fabricating a brand |
+| `PAYSTACK_SECRET_KEY` | Orders are placed at `pending`; an admin confirms an arranged transfer |
+| `BRANDORA_CALENDLY_URL` | Booking controls hide themselves |
+| `ALIEXPRESS_*` | The Brandora catalogue serves; no supplier call is made |
+
+### Everything else has a working default
+
+| Variable | Default |
+| --- | --- |
+| `BRANDORA_DATABASE_PATH` | `./data/brandora.db` (used only when no URL is set) |
+| `BRANDORA_PUBLIC_BASE_URL` | `http://localhost:4100` |
+| `BRANDORA_STATIC_ROOT` | `./apps/brandora` |
+| `BRANDORA_DEFAULT_CURRENCY` | `XOF` — zero-decimal; see `money.ts` |
+| `BRANDORA_MARGIN_RATE` | `0.35` |
+| `BRANDORA_LOGISTICS_RATE` | `0.08` |
+| `BRANDORA_DELIVERY_FLAT` | `3000` (minor units — whole francs for XOF) |
+| `BRANDORA_DELIVERY_PER_KG` | `1200` |
+| `BRANDORA_ROUNDING_STEP` | `100` (always rounds up) |
+| `BRANDORA_SOURCING_SMALL_MAX` | `50` |
+| `BRANDORA_SOURCING_MEDIUM_MAX` | `500` |
+| `BRANDORA_SUPPLIER_CACHE_TTL_MINUTES` | `360` |
+| `ANTHROPIC_MODEL` | `claude-sonnet-5` |
+| `ALIEXPRESS_ENDPOINT` | `https://api-sg.aliexpress.com/sync` |
+| `PAYSTACK_ENDPOINT` | `https://api.paystack.co` |
+
+Never put a value for a secret one in a file, a screenshot, a chat message or a
+commit. If one has ever appeared in any of those, rotate it in the provider's
+console before anything else.
+
+---
+
+## Running it as one process instead
+
+Brandora is a single Node process that serves the site and the API from one
+origin. That works unchanged on any host with a disk — a small VPS, Railway,
+Render, Fly:
 
 ```bash
-grep -rn "@harmony/" packages/brandora-*/src packages/brandora-*/package.json apps/brandora
-# no matches
+pnpm install && pnpm run build
+BRANDORA_AUTH_SECRET=… BRANDORA_PUBLIC_BASE_URL=https://… pnpm run dev
 ```
 
-Either product could move to its own repository by copying `packages/brandora-*`,
-`apps/brandora`, its tests and its scripts. Nothing would need rewriting.
-
-**Shared, and harmlessly so:** the pnpm workspace and lockfile, `turbo.json`
-(generic task names), `tsconfig.base.json` (compiler settings), and
-`.env.example` (documents both, in separate sections; each product reads only
-its own variables at runtime).
-
-**Not shared:** `pnpm build:brandora` and `pnpm build:web` build different
-package sets. Brandora's tests are `tests/brandora-*.test.ts`. Harmony's are
-untouched.
+Postgres is still the better choice, but SQLite is legitimate here because the
+disk survives. Put a TLS terminator in front; the session cookie is marked
+`Secure` automatically unless `BRANDORA_PUBLIC_BASE_URL` starts with `http://`.
 
 ---
 
@@ -204,18 +196,12 @@ untouched.
 HMAC-SHA256 over the sorted `key + value` concatenation, uppercase hex, declared
 as `sign_method=hmac-sha256`.
 
-**This has not been verified against AliExpress's own documentation** — the
+**This has not been verified against AliExpress's own documentation** — their
 developer portal is unreachable from the environment this was written in. The
-platform has shipped more than one scheme (an MD5 variant wrapping the payload
-in the secret, an HMAC-MD5 one, and this one), and the wrong choice fails every
+platform has shipped more than one scheme, and the wrong choice fails every
 request with "invalid signature".
 
-`signRequest` is exported and pure, so checking it costs one call:
-
-```js
-import { signRequest, SIGN_METHOD } from '@brandora/sourcing';
-// Compare against a known-good signature from the AliExpress console.
-```
-
-Until that check is done, leave the AliExpress variables unset. Brandora serves
-its own product layer and makes no supplier call.
+`signRequest` is exported and pure, so checking it costs one call against a
+known-good signature from the AliExpress console. Until that is done, leave the
+`ALIEXPRESS_*` variables unset — Brandora serves its own catalogue and makes no
+supplier call.
