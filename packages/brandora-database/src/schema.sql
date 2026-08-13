@@ -163,6 +163,80 @@ CREATE TABLE IF NOT EXISTS package_items (
 
 CREATE INDEX IF NOT EXISTS idx_package_items_project ON package_items(project_id);
 
+/* --- Suppliers ------------------------------------------------------------ */
+
+-- The supplier layer the procurement agent reasons over.
+--
+-- Reliability is stored as recorded counts rather than as an opinion: a score
+-- that someone typed cannot be recomputed when the weighting changes, and
+-- cannot be audited when a supplier disputes it. `completed_orders`,
+-- `late_orders` and `defect_reports` are facts; the score is derived.
+CREATE TABLE IF NOT EXISTS suppliers (
+  id                 TEXT PRIMARY KEY,
+  name               TEXT NOT NULL,
+  platform           TEXT NOT NULL CHECK (platform IN ('aliexpress','alibaba','local','direct')),
+  external_id        TEXT,
+  external_url       TEXT,
+  country            TEXT,
+  city               TEXT,
+  contact_name       TEXT,
+  contact_email      TEXT,
+  contact_phone      TEXT,
+  categories         TEXT NOT NULL DEFAULT '[]',
+  certifications     TEXT NOT NULL DEFAULT '[]',
+  customization      TEXT NOT NULL DEFAULT '[]',
+  minimum_order      INTEGER NOT NULL DEFAULT 1,
+  lead_time_days     INTEGER,
+  -- Recorded outcomes. Every one of these is something that happened.
+  completed_orders   INTEGER NOT NULL DEFAULT 0,
+  late_orders        INTEGER NOT NULL DEFAULT 0,
+  defect_reports     INTEGER NOT NULL DEFAULT 0,
+  disputes           INTEGER NOT NULL DEFAULT 0,
+  status             TEXT NOT NULL DEFAULT 'active'
+                       CHECK (status IN ('active','paused','blocked','unverified')),
+  risk_flag          TEXT,
+  notes              TEXT,
+  verified_at        TEXT,
+  created_at         TEXT NOT NULL,
+  updated_at         TEXT NOT NULL,
+  UNIQUE (platform, external_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_suppliers_status ON suppliers(status);
+
+-- What a supplier offers for a Brandora product, at what quantity.
+--
+-- Several suppliers can offer the same Brandora product — that is the whole
+-- point of the normalised product layer — so price lives here, per supplier
+-- per tier, and never on the product itself.
+CREATE TABLE IF NOT EXISTS supplier_offers (
+  id                 TEXT PRIMARY KEY,
+  supplier_id        TEXT NOT NULL REFERENCES suppliers(id) ON DELETE CASCADE,
+  product_id         TEXT NOT NULL,
+  external_product_id  TEXT,
+  external_product_url TEXT,
+  -- The tier this price applies from. A row per break, so a quote can pick the
+  -- right one instead of interpolating between numbers nobody quoted.
+  from_quantity      INTEGER NOT NULL DEFAULT 1 CHECK (from_quantity > 0),
+  unit_cost          INTEGER NOT NULL,
+  currency           TEXT NOT NULL,
+  customization_cost INTEGER NOT NULL DEFAULT 0,
+  setup_cost         INTEGER NOT NULL DEFAULT 0,
+  minimum_order      INTEGER NOT NULL DEFAULT 1,
+  available_quantity INTEGER NOT NULL DEFAULT 0,
+  production_days    INTEGER,
+  shipping_cost      INTEGER,
+  customization      TEXT NOT NULL DEFAULT '[]',
+  -- §75: a price nobody has confirmed since March is not a price.
+  last_checked_at    TEXT NOT NULL,
+  created_at         TEXT NOT NULL,
+  updated_at         TEXT NOT NULL,
+  UNIQUE (supplier_id, product_id, from_quantity)
+);
+
+CREATE INDEX IF NOT EXISTS idx_offers_product ON supplier_offers(product_id);
+CREATE INDEX IF NOT EXISTS idx_offers_supplier ON supplier_offers(supplier_id);
+
 /* --- Quotes and orders ---------------------------------------------------- */
 
 CREATE TABLE IF NOT EXISTS quotes (
@@ -231,6 +305,74 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+
+-- Quality checks (§9 of the procurement brief, §17 of the product spec).
+--
+-- A `quality-check` fulfilment state says an order is being inspected. This
+-- says what was found. They are different facts and only one of them survives
+-- a dispute.
+CREATE TABLE IF NOT EXISTS quality_checks (
+  id           TEXT PRIMARY KEY,
+  order_id     TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  kind         TEXT NOT NULL CHECK (kind IN ('sample','production','pre-shipment')),
+  outcome      TEXT NOT NULL CHECK (outcome IN ('pending','passed','failed','passed-with-notes')),
+  inspected_by TEXT NOT NULL,
+  defects      TEXT NOT NULL DEFAULT '[]',
+  notes        TEXT,
+  evidence     TEXT NOT NULL DEFAULT '[]',
+  inspected_at TEXT,
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_quality_order ON quality_checks(order_id);
+
+-- Shipments.
+--
+-- Tracking lived on the order as two nullable columns, which cannot express a
+-- split shipment and cannot hold a delay. Nothing here is ever invented: §38
+-- means an estimated date is only stored when a carrier gave one.
+CREATE TABLE IF NOT EXISTS shipments (
+  id            TEXT PRIMARY KEY,
+  order_id      TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  carrier       TEXT,
+  tracking_number TEXT,
+  tracking_url  TEXT,
+  status        TEXT NOT NULL DEFAULT 'preparing'
+                  CHECK (status IN ('preparing','shipped','in-transit','customs','out-for-delivery','delivered','exception')),
+  -- Only ever set from a carrier. Null means "not quoted", not "unknown soon".
+  estimated_delivery TEXT,
+  actual_delivery    TEXT,
+  exception_note TEXT,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_shipments_order ON shipments(order_id);
+
+-- Notification records, and whether delivery actually happened.
+--
+-- A notification row that only says "we meant to email them" is worth nothing
+-- during a complaint. `status` and `attempts` record what the transport did.
+CREATE TABLE IF NOT EXISTS notifications (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  order_id    TEXT REFERENCES orders(id) ON DELETE CASCADE,
+  kind        TEXT NOT NULL,
+  channel     TEXT NOT NULL CHECK (channel IN ('email','sms','whatsapp','in-app')),
+  subject     TEXT NOT NULL,
+  body        TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending','sent','failed','abandoned')),
+  attempts    INTEGER NOT NULL DEFAULT 0,
+  last_error  TEXT,
+  sent_at     TEXT,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications(status);
 
 -- Append-only. An order's history is evidence when a customer asks why their
 -- order sat for three days, so rows are never updated or deleted.

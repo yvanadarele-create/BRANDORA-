@@ -88,8 +88,13 @@ interface Backend {
 
 const TABLES = [
   "order_events",
+  "notifications",
+  "shipments",
+  "quality_checks",
   "payments",
   "orders",
+  "supplier_offers",
+  "suppliers",
   "quotes",
   "package_items",
   "brand_identities",
@@ -319,6 +324,281 @@ for (const backend of BACKENDS) {
 
       const adminView = await repos.quotes.findAsAdmin(quote.id);
       assert.equal(adminView?.margin.amount, 4_242);
+    });
+
+    /* --- Suppliers ------------------------------------------------------- */
+
+    it("records a supplier as unverified until someone checks it", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({
+        name: "Yiwu Pack Co", platform: "alibaba", externalId: "yw-1",
+        categories: ["packaging", "tableware"], customization: ["print"],
+      });
+
+      assert.equal(supplier.status, "unverified");
+      assert.equal(supplier.verifiedAt, undefined);
+      assert.deepEqual(supplier.categories, ["packaging", "tableware"]);
+
+      await repos.suppliers.markVerified(supplier.id);
+      const verified = await repos.suppliers.findById(supplier.id);
+      assert.equal(verified?.status, "active");
+      assert.ok(verified?.verifiedAt);
+    });
+
+    it("does not promote a blocked supplier when it is verified", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "Blocked", platform: "local" });
+      await repos.suppliers.setStatus(supplier.id, "blocked", "chargeback");
+      await repos.suppliers.markVerified(supplier.id);
+
+      const read = await repos.suppliers.findById(supplier.id);
+      assert.equal(read?.status, "blocked", "verifying a supplier un-blocked it");
+      assert.equal(read?.riskFlag, "chargeback");
+    });
+
+    it("stores recorded counts, not an opinion", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "Counts", platform: "direct" });
+
+      await repos.suppliers.recordOutcome(supplier.id, { completed: true });
+      await repos.suppliers.recordOutcome(supplier.id, { completed: true, late: true });
+      await repos.suppliers.recordOutcome(supplier.id, { defect: true, dispute: true });
+
+      const read = await repos.suppliers.findById(supplier.id);
+      assert.equal(read?.completedOrders, 2);
+      assert.equal(read?.lateOrders, 1);
+      assert.equal(read?.defectReports, 1);
+      assert.equal(read?.disputes, 1);
+      // Integers on both backends — a bigint here would poison every score.
+      assert.equal(typeof read?.completedOrders, "number");
+    });
+
+    it("leaves an omitted field alone when a supplier is updated", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({
+        name: "Partial", platform: "local", country: "CI", notes: "met at the fair",
+      });
+
+      const updated = await repos.suppliers.update(supplier.id, { name: "Partial SARL" });
+      assert.equal(updated?.name, "Partial SARL");
+      assert.equal(updated?.country, "CI");
+      assert.equal(updated?.notes, "met at the fair");
+    });
+
+    it("finds a supplier by its marketplace identity", async () => {
+      await backend.reset(db);
+      await repos.suppliers.create({ name: "AE", platform: "aliexpress", externalId: "ae-99" });
+      assert.ok(await repos.suppliers.findByExternal("aliexpress", "ae-99"));
+      assert.equal(await repos.suppliers.findByExternal("alibaba", "ae-99"), null);
+    });
+
+    it("filters suppliers by category without matching a longer word", async () => {
+      await backend.reset(db);
+      await repos.suppliers.create({ name: "A", platform: "local", categories: ["cup"] });
+      await repos.suppliers.create({ name: "B", platform: "local", categories: ["cupboard"] });
+
+      const found = await repos.suppliers.list({ category: "cup" });
+      assert.deepEqual(found.map((supplier) => supplier.name), ["A"]);
+    });
+
+    /* --- Offers ---------------------------------------------------------- */
+
+    it("keeps one row per price break and replaces it when re-checked", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "Tiered", platform: "alibaba" });
+
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_cup_kraft_250",
+        fromQuantity: 1, unitCost: 200, currency: "XOF", minimumOrder: 1,
+      });
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_cup_kraft_250",
+        fromQuantity: 500, unitCost: 120, currency: "XOF", minimumOrder: 1,
+      });
+      // The same tier again, at a new price.
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_cup_kraft_250",
+        fromQuantity: 1, unitCost: 190, currency: "XOF", minimumOrder: 1,
+      });
+
+      const offers = await repos.supplierOffers.listForSupplier(supplier.id);
+      assert.equal(offers.length, 2, "a re-check created a duplicate tier");
+      assert.equal(offers.find((offer) => offer.fromQuantity === 1)?.unitCost.amount, 190);
+    });
+
+    it("does not offer a price break the quantity has not reached", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "Breaks", platform: "alibaba" });
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_x", fromQuantity: 1,
+        unitCost: 200, currency: "XOF", minimumOrder: 1,
+      });
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_x", fromQuantity: 500,
+        unitCost: 120, currency: "XOF", minimumOrder: 1,
+      });
+
+      const atThirty = await repos.supplierOffers.listForProduct("prd_x", 30);
+      assert.deepEqual(atThirty.map((offer) => offer.unitCost.amount), [200]);
+
+      const atFiveHundred = await repos.supplierOffers.listForProduct("prd_x", 500);
+      assert.deepEqual(atFiveHundred.map((offer) => offer.unitCost.amount), [120, 200]);
+    });
+
+    it("excludes an offer whose own minimum the quantity does not meet", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "High MOQ", platform: "alibaba" });
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_y", fromQuantity: 1,
+        unitCost: 90, currency: "XOF", minimumOrder: 1_000,
+      });
+
+      assert.deepEqual(await repos.supplierOffers.listForProduct("prd_y", 30), []);
+      assert.equal((await repos.supplierOffers.listForProduct("prd_y", 1_000)).length, 1);
+    });
+
+    it("keeps an offer's money in its own currency, as an integer", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "Money", platform: "local" });
+      const offer = await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_z",
+        unitCost: 1_250, currency: "XOF", setupCost: 15_000, shippingCost: 40_000,
+      });
+
+      assert.equal(offer.unitCost.amount, 1_250);
+      assert.equal(offer.unitCost.currency, "XOF");
+      assert.equal(offer.setupCost.amount, 15_000);
+      assert.equal(offer.shippingCost?.amount, 40_000);
+      assert.equal(Number.isInteger(offer.unitCost.amount), true);
+    });
+
+    it("finds offers nobody has confirmed lately", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "Stale", platform: "local" });
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_old", unitCost: 1, currency: "XOF",
+        lastCheckedAt: "2020-01-01T00:00:00.000Z",
+      });
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_new", unitCost: 1, currency: "XOF",
+      });
+
+      const stale = await repos.supplierOffers.listStale("2024-01-01T00:00:00.000Z");
+      assert.deepEqual(stale.map((offer) => offer.productId), ["prd_old"]);
+    });
+
+    it("drops a supplier's offers with the supplier", async () => {
+      await backend.reset(db);
+      const supplier = await repos.suppliers.create({ name: "Gone", platform: "local" });
+      await repos.supplierOffers.save({
+        supplierId: supplier.id, productId: "prd_a", unitCost: 1, currency: "XOF",
+      });
+      await repos.suppliers.remove(supplier.id);
+      assert.deepEqual(await repos.supplierOffers.listForProduct("prd_a"), []);
+    });
+
+    /* --- Quality, shipments, notifications -------------------------------- */
+
+    const anOrder = async () => {
+      const user = await repos.users.create({ email: `o-${Math.random().toString(36).slice(2)}@example.com`, name: "Ada" });
+      const project = await repos.projects.create(user.id, "Luma");
+      const quote = await repos.quotes.create({
+        projectId: project.id, userId: user.id, reference: `BRA-${Math.random().toString(36).slice(2, 8)}`,
+        currency: "XOF", lineItems: [], subtotal: 1_000, shipping: 0, fees: 0,
+        total: 1_000, margin: 0, validUntil: "2099-01-01T00:00:00.000Z",
+      });
+      const order = await repos.orders.create({
+        userId: user.id, projectId: project.id, quoteId: quote.id,
+        reference: `ORD-${Math.random().toString(36).slice(2, 8)}`,
+        total: 1_000, currency: "XOF",
+      });
+      return { user, order };
+    };
+
+    it("opens a quality check without claiming it was inspected", async () => {
+      await backend.reset(db);
+      const { order } = await anOrder();
+
+      const check = await repos.qualityChecks.create({
+        orderId: order.id, kind: "sample", inspectedBy: "usr_admin",
+      });
+
+      assert.equal(check.outcome, "pending");
+      // The one that matters: an opened check is not a carried-out check.
+      assert.equal(check.inspectedAt, undefined);
+
+      const done = await repos.qualityChecks.recordOutcome(check.id, {
+        outcome: "failed", defects: ["print off-centre", "lid does not seat"],
+        notes: "Rejected, asked for a second sample.",
+      });
+      assert.equal(done?.outcome, "failed");
+      assert.deepEqual(done?.defects, ["print off-centre", "lid does not seat"]);
+      assert.ok(done?.inspectedAt, "a recorded outcome has no inspection time");
+    });
+
+    it("never invents an estimated delivery date", async () => {
+      await backend.reset(db);
+      const { order } = await anOrder();
+
+      const shipment = await repos.shipments.create({ orderId: order.id });
+      assert.equal(shipment.status, "preparing");
+      assert.equal(shipment.estimatedDelivery, undefined);
+      assert.equal(shipment.trackingNumber, undefined);
+
+      const updated = await repos.shipments.update(shipment.id, {
+        carrier: "DHL", trackingNumber: "JD0002", status: "in-transit",
+      });
+      assert.equal(updated?.carrier, "DHL");
+      assert.equal(updated?.status, "in-transit");
+      // Still not quoted, still not guessed.
+      assert.equal(updated?.estimatedDelivery, undefined);
+    });
+
+    it("queues a notification and records whether it was actually sent", async () => {
+      await backend.reset(db);
+      const { user, order } = await anOrder();
+
+      const notification = await repos.notifications.create({
+        userId: user.id, orderId: order.id, kind: "order.paid",
+        channel: "email", subject: "Your order", body: "We have your payment.",
+      });
+
+      assert.equal(notification.status, "pending");
+      assert.equal(notification.attempts, 0);
+      assert.equal((await repos.notifications.pending()).length, 1);
+
+      await repos.notifications.markSent(notification.id);
+      const sent = await repos.notifications.findById(notification.id);
+      assert.equal(sent?.status, "sent");
+      assert.equal(sent?.attempts, 1);
+      assert.ok(sent?.sentAt);
+      assert.deepEqual(await repos.notifications.pending(), []);
+    });
+
+    it("retries a failed notification, then abandons it", async () => {
+      await backend.reset(db);
+      const { user } = await anOrder();
+
+      const notification = await repos.notifications.create({
+        userId: user.id, kind: "order.paid", channel: "email",
+        subject: "s", body: "b",
+      });
+
+      await repos.notifications.markFailed(notification.id, "550 no such mailbox", 3);
+      let read = await repos.notifications.findById(notification.id);
+      assert.equal(read?.status, "pending", "a first failure should be retried");
+      assert.equal(read?.attempts, 1);
+      assert.equal(read?.lastError, "550 no such mailbox");
+
+      await repos.notifications.markFailed(notification.id, "550", 3);
+      await repos.notifications.markFailed(notification.id, "550", 3);
+      read = await repos.notifications.findById(notification.id);
+
+      // A permanently-bouncing address stops being retried rather than being
+      // attempted until the end of time.
+      assert.equal(read?.status, "abandoned");
+      assert.equal(read?.attempts, 3);
+      assert.deepEqual(await repos.notifications.pending(), []);
     });
   });
 }

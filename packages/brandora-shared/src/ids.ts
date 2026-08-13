@@ -22,6 +22,7 @@ const PREFIXES = {
   orderItem: "ori",
   payment: "pay",
   address: "adr",
+  qualityCheck: "qck",
   shipment: "shp",
   notification: "ntf",
   trend: "trd",

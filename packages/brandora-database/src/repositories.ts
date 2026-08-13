@@ -169,6 +169,195 @@ export interface IdentityRow {
   updatedAt: string;
 }
 
+/* --- Suppliers ------------------------------------------------------------ */
+
+export type SupplierStatus = "active" | "paused" | "blocked" | "unverified";
+
+export interface SupplierRow {
+  id: string;
+  name: string;
+  platform: string;
+  externalId?: string;
+  externalUrl?: string;
+  country?: string;
+  city?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  categories: string[];
+  certifications: string[];
+  customization: string[];
+  minimumOrder: number;
+  leadTimeDays?: number;
+  completedOrders: number;
+  lateOrders: number;
+  defectReports: number;
+  disputes: number;
+  status: SupplierStatus;
+  riskFlag?: string;
+  notes?: string;
+  verifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierOfferRow {
+  id: string;
+  supplierId: string;
+  productId: string;
+  externalProductId?: string;
+  externalProductUrl?: string;
+  fromQuantity: number;
+  unitCost: Money;
+  customizationCost: Money;
+  setupCost: Money;
+  minimumOrder: number;
+  availableQuantity: number;
+  productionDays?: number;
+  shippingCost?: Money;
+  customization: string[];
+  lastCheckedAt: string;
+}
+
+const toSupplier = (row: Record<string, unknown>): SupplierRow => ({
+  id: text(row["id"]),
+  name: text(row["name"]),
+  platform: text(row["platform"]),
+  externalId: optionalText(row["external_id"]),
+  externalUrl: optionalText(row["external_url"]),
+  country: optionalText(row["country"]),
+  city: optionalText(row["city"]),
+  contactName: optionalText(row["contact_name"]),
+  contactEmail: optionalText(row["contact_email"]),
+  contactPhone: optionalText(row["contact_phone"]),
+  categories: fromJson<string[]>(row["categories"], []),
+  certifications: fromJson<string[]>(row["certifications"], []),
+  customization: fromJson<string[]>(row["customization"], []),
+  minimumOrder: int(row["minimum_order"]),
+  leadTimeDays: row["lead_time_days"] === null ? undefined : int(row["lead_time_days"]),
+  completedOrders: int(row["completed_orders"]),
+  lateOrders: int(row["late_orders"]),
+  defectReports: int(row["defect_reports"]),
+  disputes: int(row["disputes"]),
+  status: text(row["status"]) as SupplierStatus,
+  riskFlag: optionalText(row["risk_flag"]),
+  notes: optionalText(row["notes"]),
+  verifiedAt: optionalText(row["verified_at"]),
+  createdAt: text(row["created_at"]),
+  updatedAt: text(row["updated_at"]),
+});
+
+const toOffer = (row: Record<string, unknown>): SupplierOfferRow => ({
+  id: text(row["id"]),
+  supplierId: text(row["supplier_id"]),
+  productId: text(row["product_id"]),
+  externalProductId: optionalText(row["external_product_id"]),
+  externalProductUrl: optionalText(row["external_product_url"]),
+  fromQuantity: int(row["from_quantity"]),
+  unitCost: readMoney(row["unit_cost"], row["currency"]),
+  customizationCost: readMoney(row["customization_cost"], row["currency"]),
+  setupCost: readMoney(row["setup_cost"], row["currency"]),
+  minimumOrder: int(row["minimum_order"]),
+  availableQuantity: int(row["available_quantity"]),
+  productionDays: row["production_days"] === null ? undefined : int(row["production_days"]),
+  shippingCost: row["shipping_cost"] === null ? undefined : readMoney(row["shipping_cost"], row["currency"]),
+  customization: fromJson<string[]>(row["customization"], []),
+  lastCheckedAt: text(row["last_checked_at"]),
+});
+
+/* --- Quality, shipments, notifications ------------------------------------ */
+
+export type QualityOutcome = "pending" | "passed" | "failed" | "passed-with-notes";
+
+export interface QualityCheckRow {
+  id: string;
+  orderId: string;
+  kind: "sample" | "production" | "pre-shipment";
+  outcome: QualityOutcome;
+  inspectedBy: string;
+  defects: string[];
+  notes?: string;
+  evidence: string[];
+  inspectedAt?: string;
+  createdAt: string;
+}
+
+const toQualityCheck = (row: Record<string, unknown>): QualityCheckRow => ({
+  id: text(row["id"]),
+  orderId: text(row["order_id"]),
+  kind: text(row["kind"]) as QualityCheckRow["kind"],
+  outcome: text(row["outcome"]) as QualityOutcome,
+  inspectedBy: text(row["inspected_by"]),
+  defects: fromJson<string[]>(row["defects"], []),
+  notes: optionalText(row["notes"]),
+  evidence: fromJson<string[]>(row["evidence"], []),
+  inspectedAt: optionalText(row["inspected_at"]),
+  createdAt: text(row["created_at"]),
+});
+
+export type ShipmentStatus =
+  | "preparing" | "shipped" | "in-transit" | "customs" | "out-for-delivery" | "delivered" | "exception";
+
+export interface ShipmentRow {
+  id: string;
+  orderId: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  status: ShipmentStatus;
+  estimatedDelivery?: string;
+  actualDelivery?: string;
+  exceptionNote?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const toShipment = (row: Record<string, unknown>): ShipmentRow => ({
+  id: text(row["id"]),
+  orderId: text(row["order_id"]),
+  carrier: optionalText(row["carrier"]),
+  trackingNumber: optionalText(row["tracking_number"]),
+  trackingUrl: optionalText(row["tracking_url"]),
+  status: text(row["status"]) as ShipmentStatus,
+  estimatedDelivery: optionalText(row["estimated_delivery"]),
+  actualDelivery: optionalText(row["actual_delivery"]),
+  exceptionNote: optionalText(row["exception_note"]),
+  createdAt: text(row["created_at"]),
+  updatedAt: text(row["updated_at"]),
+});
+
+export type NotificationStatus = "pending" | "sent" | "failed" | "abandoned";
+
+export interface NotificationRow {
+  id: string;
+  userId: string;
+  orderId?: string;
+  kind: string;
+  channel: "email" | "sms" | "whatsapp" | "in-app";
+  subject: string;
+  body: string;
+  status: NotificationStatus;
+  attempts: number;
+  lastError?: string;
+  sentAt?: string;
+  createdAt: string;
+}
+
+const toNotification = (row: Record<string, unknown>): NotificationRow => ({
+  id: text(row["id"]),
+  userId: text(row["user_id"]),
+  orderId: optionalText(row["order_id"]),
+  kind: text(row["kind"]),
+  channel: text(row["channel"]) as NotificationRow["channel"],
+  subject: text(row["subject"]),
+  body: text(row["body"]),
+  status: text(row["status"]) as NotificationStatus,
+  attempts: int(row["attempts"]),
+  lastError: optionalText(row["last_error"]),
+  sentAt: optionalText(row["sent_at"]),
+  createdAt: text(row["created_at"]),
+});
+
 /* --- Quotes and orders ---------------------------------------------------- */
 
 export type QuoteStatusRow = "draft" | "sent" | "approved" | "rejected" | "expired";
@@ -451,6 +640,164 @@ export interface Repositories {
     findAsAdmin(id: string): Promise<OrderRow | null>;
     listAsAdmin(limit?: number): Promise<OrderRow[]>;
   };
+
+  /**
+   * Suppliers.
+   *
+   * Admin-only throughout — there is no owner to scope these by, so no
+   * customer-facing route may call any of them. §7 of the procurement brief: a
+   * customer never sees a supplier name or a supplier cost.
+   */
+  suppliers: {
+    create(input: SupplierInput): Promise<SupplierRow>;
+    update(id: string, patch: Partial<SupplierInput>): Promise<SupplierRow | null>;
+    findById(id: string): Promise<SupplierRow | null>;
+    /** How a marketplace result is matched to a supplier we already know. */
+    findByExternal(platform: string, externalId: string): Promise<SupplierRow | null>;
+    list(options?: { status?: SupplierStatus; category?: string; limit?: number }): Promise<SupplierRow[]>;
+    setStatus(id: string, status: SupplierStatus, riskFlag?: string): Promise<void>;
+    /**
+     * Record something that happened.
+     *
+     * Counts, never a score. A stored score cannot be recomputed when the
+     * weighting changes and cannot be defended when a supplier disputes it;
+     * these four numbers can each be pointed back at individual orders.
+     */
+    recordOutcome(id: string, outcome: SupplierOutcome): Promise<void>;
+    markVerified(id: string, at?: string): Promise<void>;
+    remove(id: string): Promise<void>;
+  };
+
+  supplierOffers: {
+    /** Upsert on (supplier, product, tier) — re-checking a price replaces it. */
+    save(input: SupplierOfferInput): Promise<SupplierOfferRow>;
+    findById(id: string): Promise<SupplierOfferRow | null>;
+    /**
+     * Every offer for a product, cheapest applicable tier first.
+     *
+     * With a quantity, only tiers that quantity actually reaches are returned:
+     * a price break at 500 is not a price at 30.
+     */
+    listForProduct(productId: string, quantity?: number): Promise<SupplierOfferRow[]>;
+    listForSupplier(supplierId: string): Promise<SupplierOfferRow[]>;
+    /** Offers whose price has not been confirmed since `before`. */
+    listStale(before: string, limit?: number): Promise<SupplierOfferRow[]>;
+    remove(id: string): Promise<void>;
+  };
+
+  qualityChecks: {
+    create(input: QualityCheckInput): Promise<QualityCheckRow>;
+    findById(id: string): Promise<QualityCheckRow | null>;
+    listForOrder(orderId: string): Promise<QualityCheckRow[]>;
+    recordOutcome(id: string, outcome: QualityCheckOutcomeInput): Promise<QualityCheckRow | null>;
+  };
+
+  shipments: {
+    create(input: ShipmentInput): Promise<ShipmentRow>;
+    findById(id: string): Promise<ShipmentRow | null>;
+    listForOrder(orderId: string): Promise<ShipmentRow[]>;
+    update(id: string, patch: Partial<Omit<ShipmentInput, "orderId">>): Promise<ShipmentRow | null>;
+  };
+
+  notifications: {
+    create(input: NotificationInput): Promise<NotificationRow>;
+    findById(id: string): Promise<NotificationRow | null>;
+    /** The delivery worker's queue: unsent, oldest first. */
+    pending(limit?: number): Promise<NotificationRow[]>;
+    listForUser(userId: string, limit?: number): Promise<NotificationRow[]>;
+    markSent(id: string, at?: string): Promise<void>;
+    /**
+     * Record a failed attempt.
+     *
+     * `maxAttempts` decides whether it is worth trying again or the row is
+     * abandoned, so a permanently-bouncing address is not retried until the end
+     * of time.
+     */
+    markFailed(id: string, error: string, maxAttempts?: number): Promise<void>;
+  };
+}
+
+export interface SupplierInput {
+  name: string;
+  platform: string;
+  externalId?: string;
+  externalUrl?: string;
+  country?: string;
+  city?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  categories?: readonly string[];
+  certifications?: readonly string[];
+  customization?: readonly string[];
+  minimumOrder?: number;
+  leadTimeDays?: number;
+  status?: SupplierStatus;
+  riskFlag?: string;
+  notes?: string;
+}
+
+export interface SupplierOutcome {
+  completed?: boolean;
+  late?: boolean;
+  defect?: boolean;
+  dispute?: boolean;
+}
+
+export interface SupplierOfferInput {
+  supplierId: string;
+  productId: string;
+  externalProductId?: string;
+  externalProductUrl?: string;
+  fromQuantity?: number;
+  unitCost: number;
+  currency: CurrencyCode;
+  customizationCost?: number;
+  setupCost?: number;
+  minimumOrder?: number;
+  availableQuantity?: number;
+  productionDays?: number;
+  shippingCost?: number;
+  customization?: readonly string[];
+  lastCheckedAt?: string;
+}
+
+export interface QualityCheckInput {
+  orderId: string;
+  kind: QualityCheckRow["kind"];
+  inspectedBy: string;
+  outcome?: QualityOutcome;
+  defects?: readonly string[];
+  notes?: string;
+  evidence?: readonly string[];
+}
+
+export interface QualityCheckOutcomeInput {
+  outcome: QualityOutcome;
+  defects?: readonly string[];
+  notes?: string;
+  evidence?: readonly string[];
+  inspectedAt?: string;
+}
+
+export interface ShipmentInput {
+  orderId: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  status?: ShipmentStatus;
+  estimatedDelivery?: string;
+  actualDelivery?: string;
+  exceptionNote?: string;
+}
+
+export interface NotificationInput {
+  userId: string;
+  orderId?: string;
+  kind: string;
+  channel: NotificationRow["channel"];
+  subject: string;
+  body: string;
 }
 
 export function createRepositories(db: SqlDriver): Repositories {
@@ -1021,6 +1368,411 @@ export function createRepositories(db: SqlDriver): Repositories {
 
       async listAsAdmin(limit = 100) {
         return (await all(`SELECT * FROM orders ORDER BY created_at DESC LIMIT ?`, limit)).map(toOrder);
+      },
+    },
+
+    /* --- Suppliers -------------------------------------------------------- */
+
+    suppliers: {
+      async create(input) {
+        const now = nowIso();
+        const id = newId("supplier");
+        await run(`INSERT INTO suppliers
+             (id,name,platform,external_id,external_url,country,city,
+              contact_name,contact_email,contact_phone,
+              categories,certifications,customization,
+              minimum_order,lead_time_days,status,risk_flag,notes,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          id, input.name.trim(), input.platform,
+          input.externalId ?? null, input.externalUrl ?? null,
+          input.country ?? null, input.city ?? null,
+          input.contactName ?? null, input.contactEmail ?? null, input.contactPhone ?? null,
+          toJson(input.categories ?? []), toJson(input.certifications ?? []),
+          toJson(input.customization ?? []),
+          input.minimumOrder ?? 1, input.leadTimeDays ?? null,
+          // A supplier nobody has checked is `unverified`, not `active`. §12:
+          // a new supplier cannot take a large order without a sample, and the
+          // authorisation rule reads this column to know that.
+          input.status ?? "unverified",
+          input.riskFlag ?? null, input.notes ?? null, now, now,
+        );
+        const row = await get(`SELECT * FROM suppliers WHERE id = ?`, id);
+        if (!row) throw new Error("supplier vanished immediately after insert");
+        return toSupplier(row);
+      },
+
+      async update(id, patch) {
+        // Built from the keys actually present, so an omitted field is left
+        // alone rather than overwritten with undefined.
+        const columns: Record<string, unknown> = {};
+        const set = <K extends keyof SupplierInput>(key: K, column: string, map?: (value: NonNullable<SupplierInput[K]>) => unknown) => {
+          if (!(key in patch)) return;
+          const value = patch[key];
+          columns[column] = value === undefined || value === null ? null : map ? map(value as NonNullable<SupplierInput[K]>) : value;
+        };
+
+        set("name", "name", (value) => String(value).trim());
+        set("platform", "platform");
+        set("externalId", "external_id");
+        set("externalUrl", "external_url");
+        set("country", "country");
+        set("city", "city");
+        set("contactName", "contact_name");
+        set("contactEmail", "contact_email");
+        set("contactPhone", "contact_phone");
+        set("categories", "categories", toJson);
+        set("certifications", "certifications", toJson);
+        set("customization", "customization", toJson);
+        set("minimumOrder", "minimum_order");
+        set("leadTimeDays", "lead_time_days");
+        set("status", "status");
+        set("riskFlag", "risk_flag");
+        set("notes", "notes");
+
+        const names = Object.keys(columns);
+        if (names.length > 0) {
+          // Column names come from the fixed list above, never from the caller.
+          await run(
+            `UPDATE suppliers SET ${names.map((name) => `${name} = ?`).join(", ")}, updated_at = ? WHERE id = ?`,
+            ...names.map((name) => columns[name]), nowIso(), id,
+          );
+        }
+
+        const row = await get(`SELECT * FROM suppliers WHERE id = ?`, id);
+        return row ? toSupplier(row) : null;
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM suppliers WHERE id = ?`, id);
+        return row ? toSupplier(row) : null;
+      },
+
+      async findByExternal(platform, externalId) {
+        const row = await get(
+          `SELECT * FROM suppliers WHERE platform = ? AND external_id = ?`,
+          platform, externalId,
+        );
+        return row ? toSupplier(row) : null;
+      },
+
+      async list(options = {}) {
+        const where: string[] = [];
+        const params: unknown[] = [];
+        if (options.status) {
+          where.push("status = ?");
+          params.push(options.status);
+        }
+        if (options.category) {
+          // The categories column is JSON on both backends, and the two
+          // disagree about how to index into it. A LIKE on the serialised
+          // array is portable, and the quoted form stops "cup" matching
+          // "cupboard".
+          where.push("categories LIKE ?");
+          params.push(`%"${options.category}"%`);
+        }
+        const clause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+        const rows = await all(
+          `SELECT * FROM suppliers ${clause} ORDER BY name ASC LIMIT ?`,
+          ...params, options.limit ?? 200,
+        );
+        return rows.map(toSupplier);
+      },
+
+      async setStatus(id, status, riskFlag) {
+        await run(
+          `UPDATE suppliers SET status = ?, risk_flag = ?, updated_at = ? WHERE id = ?`,
+          status, riskFlag ?? null, nowIso(), id,
+        );
+      },
+
+      async recordOutcome(id, outcome) {
+        // Incremented in SQL rather than read-modify-written, so two orders
+        // completing at the same moment do not lose one of the counts.
+        const increments = [
+          outcome.completed ? "completed_orders = completed_orders + 1" : "",
+          outcome.late ? "late_orders = late_orders + 1" : "",
+          outcome.defect ? "defect_reports = defect_reports + 1" : "",
+          outcome.dispute ? "disputes = disputes + 1" : "",
+        ].filter(Boolean);
+        if (increments.length === 0) return;
+        await run(
+          `UPDATE suppliers SET ${increments.join(", ")}, updated_at = ? WHERE id = ?`,
+          nowIso(), id,
+        );
+      },
+
+      async markVerified(id, at) {
+        const now = nowIso();
+        await run(
+          `UPDATE suppliers SET verified_at = ?, status = CASE WHEN status = 'unverified' THEN 'active' ELSE status END, updated_at = ? WHERE id = ?`,
+          at ?? now, now, id,
+        );
+      },
+
+      async remove(id) {
+        await run(`DELETE FROM suppliers WHERE id = ?`, id);
+      },
+    },
+
+    /* --- Supplier offers -------------------------------------------------- */
+
+    supplierOffers: {
+      async save(input) {
+        const now = nowIso();
+        const id = newId("supplierProduct");
+        const fromQuantity = input.fromQuantity ?? 1;
+
+        await run(`INSERT INTO supplier_offers
+             (id,supplier_id,product_id,external_product_id,external_product_url,
+              from_quantity,unit_cost,currency,customization_cost,setup_cost,
+              minimum_order,available_quantity,production_days,shipping_cost,
+              customization,last_checked_at,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+           ON CONFLICT(supplier_id,product_id,from_quantity) DO UPDATE SET
+             external_product_id  = excluded.external_product_id,
+             external_product_url = excluded.external_product_url,
+             unit_cost            = excluded.unit_cost,
+             currency             = excluded.currency,
+             customization_cost   = excluded.customization_cost,
+             setup_cost           = excluded.setup_cost,
+             minimum_order        = excluded.minimum_order,
+             available_quantity   = excluded.available_quantity,
+             production_days      = excluded.production_days,
+             shipping_cost        = excluded.shipping_cost,
+             customization        = excluded.customization,
+             last_checked_at      = excluded.last_checked_at,
+             updated_at           = excluded.updated_at`,
+          id, input.supplierId, input.productId,
+          input.externalProductId ?? null, input.externalProductUrl ?? null,
+          fromQuantity, input.unitCost, input.currency,
+          input.customizationCost ?? 0, input.setupCost ?? 0,
+          input.minimumOrder ?? fromQuantity, input.availableQuantity ?? 0,
+          input.productionDays ?? null, input.shippingCost ?? null,
+          toJson(input.customization ?? []),
+          input.lastCheckedAt ?? now, now, now,
+        );
+
+        // Read back by the unique key rather than by `id`: on an update the
+        // row that exists is the one already there, not the id we generated.
+        const row = await get(
+          `SELECT * FROM supplier_offers WHERE supplier_id = ? AND product_id = ? AND from_quantity = ?`,
+          input.supplierId, input.productId, fromQuantity,
+        );
+        if (!row) throw new Error("supplier offer vanished immediately after write");
+        return toOffer(row);
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM supplier_offers WHERE id = ?`, id);
+        return row ? toOffer(row) : null;
+      },
+
+      async listForProduct(productId, quantity) {
+        if (quantity === undefined) {
+          return (await all(
+            `SELECT * FROM supplier_offers WHERE product_id = ? ORDER BY unit_cost ASC, from_quantity DESC`,
+            productId,
+          )).map(toOffer);
+        }
+        // The tier that applies is the highest break at or below the quantity,
+        // and the supplier's own minimum still has to be met. Ordered by tier
+        // descending so the caller taking the first row per supplier gets the
+        // right price rather than the list price.
+        return (await all(
+          `SELECT * FROM supplier_offers
+             WHERE product_id = ? AND from_quantity <= ? AND minimum_order <= ?
+             ORDER BY unit_cost ASC, from_quantity DESC`,
+          productId, quantity, quantity,
+        )).map(toOffer);
+      },
+
+      async listForSupplier(supplierId) {
+        return (await all(
+          `SELECT * FROM supplier_offers WHERE supplier_id = ? ORDER BY product_id ASC, from_quantity ASC`,
+          supplierId,
+        )).map(toOffer);
+      },
+
+      async listStale(before, limit = 200) {
+        return (await all(
+          `SELECT * FROM supplier_offers WHERE last_checked_at < ? ORDER BY last_checked_at ASC LIMIT ?`,
+          before, limit,
+        )).map(toOffer);
+      },
+
+      async remove(id) {
+        await run(`DELETE FROM supplier_offers WHERE id = ?`, id);
+      },
+    },
+
+    /* --- Quality checks --------------------------------------------------- */
+
+    qualityChecks: {
+      async create(input) {
+        const now = nowIso();
+        const id = newId("qualityCheck");
+        await run(`INSERT INTO quality_checks
+             (id,order_id,kind,outcome,inspected_by,defects,notes,evidence,inspected_at,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          id, input.orderId, input.kind, input.outcome ?? "pending", input.inspectedBy,
+          toJson(input.defects ?? []), input.notes ?? null, toJson(input.evidence ?? []),
+          // `inspected_at` stays null until someone actually looked. A check
+          // that was opened is not a check that was carried out.
+          null, now, now,
+        );
+        const row = await get(`SELECT * FROM quality_checks WHERE id = ?`, id);
+        if (!row) throw new Error("quality check vanished immediately after insert");
+        return toQualityCheck(row);
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM quality_checks WHERE id = ?`, id);
+        return row ? toQualityCheck(row) : null;
+      },
+
+      async listForOrder(orderId) {
+        return (await all(
+          `SELECT * FROM quality_checks WHERE order_id = ? ORDER BY created_at ASC`,
+          orderId,
+        )).map(toQualityCheck);
+      },
+
+      async recordOutcome(id, outcome) {
+        const now = nowIso();
+        await run(`UPDATE quality_checks
+             SET outcome = ?, defects = ?, notes = ?, evidence = ?, inspected_at = ?, updated_at = ?
+             WHERE id = ?`,
+          outcome.outcome, toJson(outcome.defects ?? []), outcome.notes ?? null,
+          toJson(outcome.evidence ?? []),
+          outcome.outcome === "pending" ? null : (outcome.inspectedAt ?? now),
+          now, id,
+        );
+        const row = await get(`SELECT * FROM quality_checks WHERE id = ?`, id);
+        return row ? toQualityCheck(row) : null;
+      },
+    },
+
+    /* --- Shipments -------------------------------------------------------- */
+
+    shipments: {
+      async create(input) {
+        const now = nowIso();
+        const id = newId("shipment");
+        await run(`INSERT INTO shipments
+             (id,order_id,carrier,tracking_number,tracking_url,status,
+              estimated_delivery,actual_delivery,exception_note,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          id, input.orderId, input.carrier ?? null,
+          input.trackingNumber ?? null, input.trackingUrl ?? null,
+          input.status ?? "preparing",
+          // Only ever what a carrier gave us. §38: never a guess dressed up as
+          // a date the customer can plan around.
+          input.estimatedDelivery ?? null, input.actualDelivery ?? null,
+          input.exceptionNote ?? null, now, now,
+        );
+        const row = await get(`SELECT * FROM shipments WHERE id = ?`, id);
+        if (!row) throw new Error("shipment vanished immediately after insert");
+        return toShipment(row);
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM shipments WHERE id = ?`, id);
+        return row ? toShipment(row) : null;
+      },
+
+      async listForOrder(orderId) {
+        return (await all(
+          `SELECT * FROM shipments WHERE order_id = ? ORDER BY created_at ASC`,
+          orderId,
+        )).map(toShipment);
+      },
+
+      async update(id, patch) {
+        const columns: Record<string, unknown> = {};
+        const map: Record<string, string> = {
+          carrier: "carrier",
+          trackingNumber: "tracking_number",
+          trackingUrl: "tracking_url",
+          status: "status",
+          estimatedDelivery: "estimated_delivery",
+          actualDelivery: "actual_delivery",
+          exceptionNote: "exception_note",
+        };
+        for (const [key, column] of Object.entries(map)) {
+          if (!(key in patch)) continue;
+          columns[column] = (patch as Record<string, unknown>)[key] ?? null;
+        }
+
+        const names = Object.keys(columns);
+        if (names.length > 0) {
+          await run(
+            `UPDATE shipments SET ${names.map((name) => `${name} = ?`).join(", ")}, updated_at = ? WHERE id = ?`,
+            ...names.map((name) => columns[name]), nowIso(), id,
+          );
+        }
+
+        const row = await get(`SELECT * FROM shipments WHERE id = ?`, id);
+        return row ? toShipment(row) : null;
+      },
+    },
+
+    /* --- Notifications ---------------------------------------------------- */
+
+    notifications: {
+      async create(input) {
+        const now = nowIso();
+        const id = newId("notification");
+        await run(`INSERT INTO notifications
+             (id,user_id,order_id,kind,channel,subject,body,status,attempts,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          id, input.userId, input.orderId ?? null, input.kind, input.channel,
+          input.subject, input.body, "pending", 0, now, now,
+        );
+        const row = await get(`SELECT * FROM notifications WHERE id = ?`, id);
+        if (!row) throw new Error("notification vanished immediately after insert");
+        return toNotification(row);
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM notifications WHERE id = ?`, id);
+        return row ? toNotification(row) : null;
+      },
+
+      async pending(limit = 50) {
+        return (await all(
+          `SELECT * FROM notifications WHERE status = 'pending' ORDER BY created_at ASC LIMIT ?`,
+          limit,
+        )).map(toNotification);
+      },
+
+      async listForUser(userId, limit = 50) {
+        return (await all(
+          `SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+          userId, limit,
+        )).map(toNotification);
+      },
+
+      async markSent(id, at) {
+        const now = nowIso();
+        await run(
+          `UPDATE notifications SET status = ?, attempts = attempts + 1, sent_at = ?, last_error = NULL, updated_at = ? WHERE id = ?`,
+          "sent", at ?? now, now, id,
+        );
+      },
+
+      async markFailed(id, error, maxAttempts = 5) {
+        const now = nowIso();
+        // `pending` means it will be picked up again; `abandoned` means it will
+        // not. Deciding that here rather than in the worker keeps a crashed
+        // worker from silently retrying a dead address for ever.
+        await run(`UPDATE notifications
+             SET attempts    = attempts + 1,
+                 last_error  = ?,
+                 status      = CASE WHEN attempts + 1 >= ? THEN 'abandoned' ELSE 'pending' END,
+                 updated_at  = ?
+             WHERE id = ?`,
+          error.slice(0, 500), maxAttempts, now, id,
+        );
       },
     },
   };

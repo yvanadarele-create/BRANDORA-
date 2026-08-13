@@ -2,6 +2,7 @@ export * from "./http.js";
 export * from "./pricing.js";
 export * from "./fulfilment.js";
 export * from "./assistant.js";
+export * from "./procurement.js";
 export * from "./payments.js";
 export * from "./session.js";
 export * from "./routes.js";
