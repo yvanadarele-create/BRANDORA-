@@ -2,7 +2,7 @@
   "name": "brandora",
   "version": "0.1.0",
   "private": true,
-  "description": "Brandora — AI-powered physical brand-building platform. Idea → Brand → Identity → Products → Sourcing → Quote → Production → Delivery.",
+  "description": "Brandora \u2014 AI-powered physical brand-building platform. Idea \u2192 Brand \u2192 Identity \u2192 Products \u2192 Sourcing \u2192 Quote \u2192 Production \u2192 Delivery.",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
@@ -18,5 +18,9 @@
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "@types/node": "^22.10.2"
+  },
+  "dependencies": {
+    "@brandora/server": "workspace:*",
+    "pg": "^8.23.0"
   }
 }

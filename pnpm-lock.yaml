@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@brandora/server':
+        specifier: workspace:*
+        version: link:packages/brandora-server
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
     devDependencies:
       '@types/node':
         specifier: ^22.10.2

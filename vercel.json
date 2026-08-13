@@ -1,0 +1,48 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pnpm install --frozen-lockfile=false",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "apps/brandora",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/index.js": {
+      "runtime": "nodejs22.x",
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index" }],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
+      "source": "/assets/fonts/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/assets/video/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/assets/img/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
+    },
+    {
+      "source": "/(data|locales)/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=(), payment=()" }
+      ]
+    }
+  ]
+}
