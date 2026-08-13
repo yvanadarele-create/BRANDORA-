@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operations — Brandora</title>
+<meta name="description" content="Brandora administration.">
+<meta name="theme-color" content="#050507">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__word">BRANDORA</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+    </nav>
+
+    <div class="header-tools">
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Administration</p>
+      <h1>Brandora operations</h1>
+
+      <p class="notice" data-error hidden role="alert"></p>
+
+      <div class="grid grid--4" data-admin-counts></div>
+
+      <h2 style="margin-top:3rem">Integrations</h2>
+      <p class="product__meta">Values are never shown — only whether a credential is installed, and its last four characters.</p>
+      <div class="grid grid--2" data-admin-integrations></div>
+
+      <h2 style="margin-top:3rem">Orders</h2>
+      <div class="scroll-x">
+        <table class="totals" data-admin-orders>
+          <caption class="visually-hidden">Orders</caption>
+          <thead><tr><th scope="col">Reference</th><th scope="col">Customer</th><th scope="col">Payment</th><th scope="col">Fulfilment</th><th scope="col">Total</th><th scope="col">Action</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top:3rem">Quotes</h2>
+      <div class="scroll-x">
+        <table class="totals" data-admin-quotes>
+          <caption class="visually-hidden">Quotes</caption>
+          <thead><tr><th scope="col">Reference</th><th scope="col">Customer</th><th scope="col">Total</th><th scope="col">Margin</th><th scope="col">Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top:3rem">Customers</h2>
+      <div class="scroll-x">
+        <table class="totals" data-admin-customers>
+          <caption class="visually-hidden">Customers</caption>
+          <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Projects</th><th scope="col">Orders</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__row">
+    <span>Brandora</span>
+    <a href="create.html" data-i18n="nav.create">Create my brand</a>
+    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/admin.js"></script>
+</body>
+</html>

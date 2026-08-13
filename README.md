@@ -1,424 +1,175 @@
-# BRANDORA-
-Brandora — AI-powered physical brand-building platform for creating, visualizing, sourcing, and launching business brands.
-REPOSITORY DESCRIPTION
+# BRANDORA
 
-Brandora — AI-powered physical brand-building platform for creating, visualizing, sourcing, and launching business brands.
+**Build your brand. Put it everywhere.**
 
-README.md
-BRANDORA
+Brandora is an AI-powered physical brand-building platform. It takes a person
+who has an idea and no brand, and gets them to a physical branded product they
+can sell — without separately finding a designer, a packaging supplier, a
+manufacturer and a sourcing agent.
 
-Build your brand. Put it everywhere.
+```
+IDEA → BRAND → IDENTITY → PRODUCTS → SOURCING → QUOTE → PRODUCTION → DELIVERY
+```
 
-Brandora is an AI-powered physical brand-building platform designed to help businesses transform an idea into a complete, recognizable physical brand.
+---
 
-Instead of forcing business owners to separately find designers, packaging suppliers, manufacturers, and sourcing agents, Brandora brings the journey into one intelligent workflow.
+## Running it
 
-Idea → Brand → Identity → Products → Sourcing → Quote → Production → Delivery
+```bash
+pnpm install
+pnpm run build      # builds the packages, emits the front-end data, checks the site
+pnpm test           # the full suite
+pnpm run dev        # serves the site and /api/* on :4100
+```
 
-What Brandora Does
+One process serves the front end and the API from a single origin. That is what
+lets the session live in an HttpOnly cookie the page's JavaScript cannot read,
+rather than in `localStorage` where any injected script can take it — and it
+removes CORS and a second deployment along the way.
 
-Brandora combines three major intelligence layers:
+`BRANDORA_AUTH_SECRET` is required and has no development fallback: a fallback
+for a signing secret is a fallback that reaches production, and a known signing
+secret lets anyone mint a session for any account.
 
-Creative Intelligence
+```bash
+export BRANDORA_AUTH_SECRET="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
+pnpm run dev
+```
 
-Create:
+See [`docs/deployment.md`](./docs/deployment.md) for every environment variable
+and what happens when each is unset.
 
-Brand names
-Positioning
-Logos
-Color systems
-Typography
-Brand guidelines
-Packaging concepts
-Product visualizations
-Commercial Intelligence
+## Layout
 
-Help customers decide:
+| Package | What it owns |
+| --- | --- |
+| `@brandora/shared` | Domain types, multi-currency money, prefixed ids, the customer/admin error split |
+| `@brandora/config` | The only module that reads a credential from the environment |
+| `@brandora/i18n` | English, French and Spanish catalogues, typed for completeness |
+| `@brandora/brand-engine` | The interview, strategy prompting and validation, palette, typography, logo brief |
+| `@brandora/catalog` | The Brandora product layer, quantity and customisation filters |
+| `@brandora/sourcing` | `SupplierAdapter`, the AliExpress adapter, scoring, freight, landed cost, caching |
+| `@brandora/quotes` | The quote engine and the order state machine |
+| `@brandora/database` | Schema and repositories; ownership lives in the query |
+| `@brandora/auth` | scrypt password hashing, session lifecycle, authorization policy |
+| `@brandora/ai` | The Anthropic-backed `StrategyProvider` and the generation flow |
+| `@brandora/server` | The HTTP layer, the authoritative price, payments, every API route |
+| `@brandora/web` (`apps/brandora`) | The front end |
 
-What products they need
-How many they need
-What fits their budget
-Which package configuration makes sense
-Which products complement their brand
-Sourcing Intelligence
+[`docs/architecture.md`](./docs/architecture.md) explains the decisions worth
+knowing — why money is integer minor units with a per-currency exponent, why the
+palette is derived rather than generated, and why the browser is never trusted
+with a price.
 
-Find and evaluate:
+---
 
-Products
-Suppliers
-Prices
-Availability
-Quantities
-Customization options
-Shipping information
-Supplier reliability
+## What Brandora does
 
-The first sourcing integration is designed around external marketplace/product data, beginning with AliExpress and remaining extensible to additional suppliers and manufacturers.
+### Creative intelligence
 
-Core Product
-Brandora Create
+Brand names, positioning, logos, colour systems, typography, brand guidelines,
+packaging concepts, product visualisations.
 
-Build the brand identity.
+### Commercial intelligence
 
-Brandora Pack
+What products a customer needs, how many, what fits their budget, which package
+configuration makes sense, which products complement their brand.
 
-Create physical branded products and packaging.
+### Sourcing intelligence
 
-Brandora Source
+Products, suppliers, prices, availability, quantities, customisation options,
+shipping information, supplier reliability.
 
-Discover and evaluate sourcing options.
+The first sourcing integration is built around external marketplace data,
+beginning with AliExpress and remaining extensible to additional suppliers and
+manufacturers.
 
-Brandora Launch
+## The product
 
-Turn the identity into a complete physical launch package.
+| Surface | What it is |
+| --- | --- |
+| **Brandora Create** | Build the brand identity |
+| **Brandora Pack** | Create physical branded products and packaging |
+| **Brandora Source** | Discover and evaluate sourcing options |
+| **Brandora Launch** | Turn the identity into a complete physical launch package |
+| **Brandora Business** | Future: reordering, inventory, formalisation, business management |
 
-Brandora Business
+## Brand Memory
 
-Future expansion into recurring business operations, reordering, inventory, formalization, and business management.
+Brandora maintains a structured Brand Profile — business information, target
+audience, positioning, brand personality, approved logo, colours, typography,
+guidelines, product preferences and previous decisions.
 
-MVP
+The AI uses this throughout the customer's experience, so Brandora keeps brand
+consistency instead of treating every request as a new conversation.
 
-The MVP includes:
+## Smart sourcing
 
-Premium landing page
-Authentication
-AI brand onboarding
-Brand profile
-Brand identity generation
-Logo workflow
-Brand guidelines
-Ask Brandora AI assistant
-Multilingual interface
-Product catalogue
-Product intelligence
-Supplier data
-AliExpress integration
-Customization verification
-Smart product matching
-Package builder
-Product visualizer
-Smart quote engine
-Checkout
-Order management
-Order tracking
-Notifications
-Admin dashboard
-Supplier management
-Product management
-Analytics
-Brand Memory
+Brandora does not display raw marketplace listings. External product data is
+normalised into a Brandora product layer carrying its own id, category,
+description, images, material, dimensions, variants, minimum and available
+quantity, customisation capability and method, supplier, supplier price,
+shipping information, external id and URL, and the timestamp it was last
+verified.
 
-Brandora maintains a structured Brand Profile containing:
+That architecture lets several suppliers eventually provide the same Brandora
+product.
 
-Business information
-Target audience
-Positioning
-Brand personality
-Approved logo
-Colors
-Typography
-Brand guidelines
-Product preferences
-Previous decisions
+## Product matching
 
-The AI uses this information throughout the customer's experience.
+Asked for *"30 premium cups"*, Brandora weighs minimum quantity, available
+quantity, customisation, budget, shipping, supplier reliability, product quality
+and brand compatibility — and explains why it chose what it chose. It does not
+rank by cheapest price.
 
-This allows Brandora to maintain brand consistency instead of treating every AI request as a completely new conversation.
+## Human verification
 
-Smart Sourcing
+AI assists with sourcing; it does not have unrestricted authority to place
+supplier orders.
 
-Brandora does not simply display raw marketplace listings.
+```
+Customer → Brandora AI → Product discovery → Smart recommendation → Quote
+  → Customer confirmation → Brandora operations approval → Supplier
+  → Production → Quality verification → Shipping → Customer
+```
 
-External product data is converted into a normalized Brandora product layer.
+The human approval layer protects customers while the sourcing infrastructure
+matures.
 
-A product can contain:
+## Quotes
 
-Product ID
-Category
-Description
-Images
-Material
-Dimensions
-Variants
-Minimum quantity
-Available quantity
-Customization capability
-Customization method
-Supplier
-Supplier price
-Shipping information
-External product ID
-External product URL
-Last verification timestamp
+A quote combines product cost, quantity, customisation, international logistics,
+local delivery, applicable fees and Brandora's margin. Quotes carry a status and
+an expiry date, because supplier pricing, availability and logistics change.
 
-This architecture allows multiple suppliers to eventually provide the same Brandora product.
+A customer sees what they pay. The margin is stored and shown only to an
+administrator.
 
-Product Matching
+## Languages
 
-When a customer requests:
+English, French and Spanish, with the architecture ready for more.
 
-"I need 30 premium cups."
+## Design system
 
-Brandora evaluates:
+Deep metallic purple, near-black, graphite, soft white, subtle silver.
 
-Minimum quantity
-Available quantity
-Customization
-Budget
-Shipping
-Supplier reliability
-Product quality
-Brand compatibility
+Minimal, premium, architectural, intelligent, trustworthy, precise. High
+contrast, strong typography, controlled motion. No generic AI gradients, no
+glow, no chatbot aesthetic.
 
-The system should prioritize the best overall sourcing option, not simply the cheapest product.
+## Long-term
 
-Human Verification
+```
+AliExpress → multiple marketplaces → direct manufacturers → African suppliers
+  → a verified Brandora supplier network → Brandora procurement infrastructure
+```
 
-AI should assist with sourcing but should not initially have unrestricted authority to place supplier orders.
+The moat is not the marketplace API. It is Brandora's accumulated intelligence
+about brands, products, suppliers, pricing, customisation, quality, shipping,
+demand and reordering.
 
-The workflow is:
+## Status
 
-Customer
-
-↓
-
-Brandora AI
-
-↓
-
-Product discovery
-
-↓
-
-Smart recommendation
-
-↓
-
-Quote
-
-↓
-
-Customer confirmation
-
-↓
-
-Brandora operations approval
-
-↓
-
-Supplier
-
-↓
-
-Production
-
-↓
-
-Quality verification
-
-↓
-
-Shipping
-
-↓
-
-Customer
-
-This human approval layer protects customers while the platform's sourcing infrastructure matures.
-
-Quote Engine
-
-Quotes combine:
-
-Product cost
-Quantity
-Customization
-International logistics
-Local delivery
-Applicable fees
-Brandora margin
-
-Quotes should have clear statuses:
-
-Estimated
-
-Verified
-
-Final
-
-Quotes should also have expiration dates because supplier pricing, availability, and logistics can change.
-
-Brandora Visualizer
-
-Customers should be able to see their approved identity applied to physical products.
-
-Supported concepts include:
-
-Cups
-Bottles
-Boxes
-Bags
-Labels
-Stickers
-Cards
-Menus
-Other branded materials
-
-The goal is not merely to place a logo on an image.
-
-The visualizer should communicate what the customer's complete physical brand could look like.
-
-Languages
-
-Initial interface:
-
-English
-French
-Spanish
-
-The architecture should remain localization-ready for future languages and regional expansion.
-
-Design System
-
-Brandora uses a premium technology aesthetic.
-
-Primary visual language
-Deep metallic purple
-Near-black
-Graphite
-Soft white
-Subtle silver
-Principles
-Minimal
-Premium
-Architectural
-Intelligent
-Trustworthy
-Precise
-High contrast
-Strong typography
-Controlled motion
-
-Avoid generic AI visual clichés.
-
-The product should feel like a serious global technology platform.
-
-Architecture
-
-Conceptually:
-
-Frontend
-   │
-   ├── Brand Studio
-   ├── Product Catalogue
-   ├── Visualizer
-   ├── Package Builder
-   ├── Quotes
-   ├── Checkout
-   └── Orders
-          │
-          ▼
-      Brandora API
-          │
-    ┌─────┼──────────────┐
-    ▼     ▼              ▼
-   AI   Product       Sourcing
-        Service        Engine
-          │               │
-          ▼               ▼
-       Database       External APIs
-                           │
-                           ▼
-                       Suppliers
-Core Data Models
-
-The platform should be designed around entities such as:
-
-User
-Business
-Brand
-BrandAsset
-BrandGuideline
-Conversation
-AIRecommendation
-Product
-ProductVariant
-Supplier
-SupplySource
-CustomizationOption
-Quote
-QuoteItem
-Order
-OrderItem
-Payment
-Shipment
-QualityCheck
-Notification
-AdminAction
-AliExpress Integration
-
-AliExpress is intended to serve as an initial sourcing/data source.
-
-The integration should remain isolated behind a Brandora sourcing abstraction so that additional suppliers can be introduced later without redesigning the customer-facing product catalogue.
-
-External API credentials must remain server-side and must never be exposed in the frontend.
-
-The customer should interact with Brandora products, not raw supplier infrastructure.
-
-Long-Term Vision
-
-Brandora can evolve from an initial marketplace/sourcing layer into a broader physical business infrastructure platform.
-
-Potential evolution:
-
-AliExpress
-
-↓
-
-Multiple marketplaces
-
-↓
-
-Direct manufacturers
-
-↓
-
-African suppliers
-
-↓
-
-Verified Brandora supplier network
-
-↓
-
-Brandora procurement infrastructure
-
-The long-term moat is not the marketplace API.
-
-It is Brandora's accumulated intelligence around:
-
-Brands
-Products
-Suppliers
-Pricing
-Customization
-Quality
-Shipping
-Customer demand
-Reordering
-Product Philosophy
-
-Brandora should answer one fundamental question:
-
-How do we help a business move from an idea to a real physical brand?
-
-Every feature should contribute to that journey.
-
-Idea → Brand → Product → Business → Growth
-
-Status
-
-MVP — Active Development
-
-The initial product focuses on brand creation, physical product visualization, intelligent sourcing, quotations, and managed fulfillment.
-
+**MVP — active development.** For an honest, feature-by-feature account of what
+is built, what is partial and what is not started, see
+[`docs/status.md`](./docs/status.md).

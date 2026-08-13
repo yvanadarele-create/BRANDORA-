@@ -1,0 +1,27 @@
+{
+  "name": "@brandora/tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.json && node --test dist/*.test.js"
+  },
+  "dependencies": {
+    "@brandora/ai": "workspace:*",
+    "@brandora/auth": "workspace:*",
+    "@brandora/brand-engine": "workspace:*",
+    "@brandora/catalog": "workspace:*",
+    "@brandora/config": "workspace:*",
+    "@brandora/database": "workspace:*",
+    "@brandora/i18n": "workspace:*",
+    "@brandora/quotes": "workspace:*",
+    "@brandora/server": "workspace:*",
+    "@brandora/shared": "workspace:*",
+    "@brandora/sourcing": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2"
+  }
+}

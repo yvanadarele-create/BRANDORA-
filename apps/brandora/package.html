@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My package — Brandora</title>
+<meta name="description" content="Combine products into a brand package, adjust quantities, and see the estimated total before Brandora prepares your quote.">
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__word">BRANDORA</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+    </nav>
+
+    <div class="header-tools">
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="section">
+  <div class="wrap">
+
+    <h1 data-i18n="package.title">Brand package</h1>
+
+    <div data-identity style="margin-bottom:2rem"></div>
+
+    <div class="grid grid--2" style="align-items:start">
+      <section>
+        <h2 style="font-size:1.15rem">Your products</h2>
+        <div class="grid" data-lines></div>
+        <p class="notice" data-empty hidden>
+          <span data-i18n="package.empty">Your package is empty. Add a product to begin.</span>
+          <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-size:1.15rem" data-i18n="package.total">Estimated total</h2>
+        <div class="card" data-totals></div>
+        <p class="notice" data-error hidden role="alert"></p>
+        <div class="hero__actions">
+          <button class="btn btn--primary" type="button" data-request-quote hidden data-i18n="package.quote">Get my quote</button>
+          <a class="btn btn--ghost" href="catalog.html" data-catalog-link data-i18n="package.add">Add product</a>
+        </div>
+      </section>
+    </div>
+
+    <section style="margin-top:3rem" data-recommended-wrap hidden>
+      <h2 style="font-size:1.15rem" data-i18n="package.recommended">Recommended for your brand</h2>
+      <p class="lede">Ranked for what you told us, not sorted by price. Every one of these
+        can be ordered at the quantity you need.</p>
+      <div class="grid grid--3" data-recommended></div>
+    </section>
+
+    <noscript>
+      <div class="notice">The package builder needs JavaScript. Please enable it, or
+        <a href="catalog.html">browse the catalogue</a>.</div>
+    </noscript>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__row">
+    <span>Brandora</span>
+    <a href="create.html" data-i18n="nav.create">Create my brand</a>
+    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/package.js"></script>
+</body>
+</html>

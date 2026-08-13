@@ -1,0 +1,360 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      turbo:
+        specifier: ^2.3.3
+        version: 2.10.9
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  apps/brandora:
+    dependencies:
+      '@brandora/server':
+        specifier: workspace:*
+        version: link:../../packages/brandora-server
+
+  packages/brandora-ai:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.68.0
+        version: 0.68.0
+      '@brandora/brand-engine':
+        specifier: workspace:*
+        version: link:../brandora-brand-engine
+      '@brandora/config':
+        specifier: workspace:*
+        version: link:../brandora-config
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-auth:
+    dependencies:
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-brand-engine:
+    dependencies:
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-catalog:
+    dependencies:
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-config:
+    dependencies:
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-database:
+    dependencies:
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-i18n:
+    dependencies:
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-quotes:
+    dependencies:
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-server:
+    dependencies:
+      '@brandora/ai':
+        specifier: workspace:*
+        version: link:../brandora-ai
+      '@brandora/auth':
+        specifier: workspace:*
+        version: link:../brandora-auth
+      '@brandora/brand-engine':
+        specifier: workspace:*
+        version: link:../brandora-brand-engine
+      '@brandora/catalog':
+        specifier: workspace:*
+        version: link:../brandora-catalog
+      '@brandora/config':
+        specifier: workspace:*
+        version: link:../brandora-config
+      '@brandora/database':
+        specifier: workspace:*
+        version: link:../brandora-database
+      '@brandora/i18n':
+        specifier: workspace:*
+        version: link:../brandora-i18n
+      '@brandora/quotes':
+        specifier: workspace:*
+        version: link:../brandora-quotes
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-shared:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/brandora-sourcing:
+    dependencies:
+      '@brandora/config':
+        specifier: workspace:*
+        version: link:../brandora-config
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../brandora-shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  tests:
+    dependencies:
+      '@brandora/ai':
+        specifier: workspace:*
+        version: link:../packages/brandora-ai
+      '@brandora/auth':
+        specifier: workspace:*
+        version: link:../packages/brandora-auth
+      '@brandora/brand-engine':
+        specifier: workspace:*
+        version: link:../packages/brandora-brand-engine
+      '@brandora/catalog':
+        specifier: workspace:*
+        version: link:../packages/brandora-catalog
+      '@brandora/config':
+        specifier: workspace:*
+        version: link:../packages/brandora-config
+      '@brandora/database':
+        specifier: workspace:*
+        version: link:../packages/brandora-database
+      '@brandora/i18n':
+        specifier: workspace:*
+        version: link:../packages/brandora-i18n
+      '@brandora/quotes':
+        specifier: workspace:*
+        version: link:../packages/brandora-quotes
+      '@brandora/server':
+        specifier: workspace:*
+        version: link:../packages/brandora-server
+      '@brandora/shared':
+        specifier: workspace:*
+        version: link:../packages/brandora-shared
+      '@brandora/sourcing':
+        specifier: workspace:*
+        version: link:../packages/brandora-sourcing
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+packages:
+
+  '@anthropic-ai/sdk@0.68.0':
+    resolution: {integrity: sha512-SMYAmbbiprG8k1EjEPMTwaTqssDT7Ae+jxcR5kWXiqTlbwMR2AthXtscEVWOHkRfyAV5+y3PFYTJRNa3OJWIEw==}
+    hasBin: true
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+  '@babel/runtime@7.29.7':
+    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
+    engines: {node: '>=6.9.0'}
+
+  '@turbo/darwin-64@2.10.9':
+    resolution: {integrity: sha512-Jh+pTGXLNz8+1tkUU13TI/f+ZOI+OvC4YbHi1H+57iSpLt5DR3xgptd+4sA07RdjdRR/RX/01uQQu2OkbzIefA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@turbo/darwin-arm64@2.10.9':
+    resolution: {integrity: sha512-aqtpPkiIC4IUas8Vv27oJ3aDfTuP1d5wofd01dZ7gfhHRrIKuFdqQb4imvNnVFahcOViF9Jh8Oi7feDoz8/ciA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@turbo/linux-64@2.10.9':
+    resolution: {integrity: sha512-XyAneUBsS5uNOUOjBSs81zyigMVwwhVUd3u7F2JFMKGQk6F7eNAiOEBASJ+aHLldjYsOEjhfW+5gWIqwziyFFw==}
+    cpu: [x64]
+    os: [android, linux]
+
+  '@turbo/linux-arm64@2.10.9':
+    resolution: {integrity: sha512-5jAcldLnkuWIjujGhCn2MGIeUwW8IVNOq9Sce4EEzzgLcxmhTasbV0RiW6ZkaRdOjmOCGzeNXPLkDJEOIucOLw==}
+    cpu: [arm64]
+    os: [android, linux]
+
+  '@turbo/windows-64@2.10.9':
+    resolution: {integrity: sha512-u1xGpGlefzuhBedbt/VR2nWdftfFVZwPeDg9e5uZl68sV1fL3HNYTNr5VyHkzgtPK2VTYg1x4OKZuGrh1Gvhtg==}
+    cpu: [x64]
+    os: [win32]
+
+  '@turbo/windows-arm64@2.10.9':
+    resolution: {integrity: sha512-W2Ub165Qv0iMFljbYKxxbZN+2dVSngnzEjQNEFXtnz5oJVx9XSypmNmUvMtuYMeZ3kdVC1zI7yd/rtuX+SDnbg==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@types/node@22.20.1':
+    resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
+
+  json-schema-to-ts@3.1.1:
+    resolution: {integrity: sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==}
+    engines: {node: '>=16'}
+
+  ts-algebra@2.0.0:
+    resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
+
+  turbo@2.10.9:
+    resolution: {integrity: sha512-Yl9+ukxH+UmPtKidpDkjn82tvPoEvFNb9UACd9vUomN1Ft0cwl3rx0P8yC1D93W9EOsWRMjllvIDG8y25sFOog==}
+    hasBin: true
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+snapshots:
+
+  '@anthropic-ai/sdk@0.68.0':
+    dependencies:
+      json-schema-to-ts: 3.1.1
+
+  '@babel/runtime@7.29.7': {}
+
+  '@turbo/darwin-64@2.10.9':
+    optional: true
+
+  '@turbo/darwin-arm64@2.10.9':
+    optional: true
+
+  '@turbo/linux-64@2.10.9':
+    optional: true
+
+  '@turbo/linux-arm64@2.10.9':
+    optional: true
+
+  '@turbo/windows-64@2.10.9':
+    optional: true
+
+  '@turbo/windows-arm64@2.10.9':
+    optional: true
+
+  '@types/node@22.20.1':
+    dependencies:
+      undici-types: 6.21.0
+
+  json-schema-to-ts@3.1.1:
+    dependencies:
+      '@babel/runtime': 7.29.7
+      ts-algebra: 2.0.0
+
+  ts-algebra@2.0.0: {}
+
+  turbo@2.10.9:
+    optionalDependencies:
+      '@turbo/darwin-64': 2.10.9
+      '@turbo/darwin-arm64': 2.10.9
+      '@turbo/linux-64': 2.10.9
+      '@turbo/linux-arm64': 2.10.9
+      '@turbo/windows-64': 2.10.9
+      '@turbo/windows-arm64': 2.10.9
+
+  typescript@5.9.3: {}
+
+  undici-types@6.21.0: {}
