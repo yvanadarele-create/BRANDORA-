@@ -1,12 +1,17 @@
 {
-  "name": "Brandora",
+  "name": "Brandora Union",
   "short_name": "Brandora",
-  "description": "Build your brand. Put it everywhere.",
+  "description": "Where brands take form.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#050507",
   "theme_color": "#050507",
   "icons": [
-    { "src": "assets/img/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "assets/img/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }

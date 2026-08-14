@@ -222,6 +222,16 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 .brand-lockup { display: flex; align-items: center; gap: var(--s3); color: var(--ink); text-decoration: none; }
 .brand-lockup img { width: 20px; height: 26px; }
 
+/*
+ * The stacked wordmark: BRANDORA with UNION beneath it.
+ *
+ * A column rather than two separate elements, so the mark stays vertically
+ * centred against the B whatever the two lines measure. `align-items: center`
+ * centres the boxes; the negative right margins below are what centre the
+ * *ink*, which is not the same thing when both lines are letterspaced.
+ */
+.brand-lockup__stack { display: flex; flex-direction: column; align-items: center; }
+
 /* The wordmark is set in a serif to match the letterform of the mark. Using the
    sans here would make the lockup read as two different brands stood together. */
 .brand-lockup__word {
@@ -229,6 +239,39 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
   font-weight: 400;
   letter-spacing: 0.26em;
   font-size: 0.88rem;
+  /*
+   * Letter-spacing is added *after* every letter, including the last, so the
+   * element is one tracking-width wider than the ink it contains. Without this
+   * the word sits half a tracking-width left of where it looks like it should,
+   * and UNION — tracked differently — would visibly disagree with it.
+   */
+  margin-right: -0.26em;
+}
+
+/*
+ * UNION: a designation, not a second wordmark.
+ *
+ * Set in the sans rather than the serif. At this size Georgia's serifs close up
+ * and the word reads as a smudge; a grotesque holds its shape down to 8px. It
+ * does not read as a second brand because nothing about it competes — it is
+ * roughly half the size, tracked much wider, and sits underneath. That is the
+ * shape of an institutional line (MAISON / PARIS), not of a lockup with two
+ * names in it.
+ *
+ * The colour is `--ink`, which is near-black on the ivory theme and off-white
+ * on the near-black one. Hierarchy here comes from size and tracking, which is
+ * what keeps it working when the theme flips.
+ */
+.brand-lockup__union {
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.52rem;
+  letter-spacing: 0.42em;
+  margin-right: -0.42em;
+  line-height: 1.5;
+  color: var(--ink);
+  /* Never wraps. A two-line UNION is a broken logo, not a small one. */
+  white-space: nowrap;
 }
 
 .site-nav { display: none; gap: var(--s5); margin-inline-start: auto; }
@@ -253,6 +296,16 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
   cursor: pointer; text-decoration: none;
   /* 44px minimum target — this is a phone-first product (§63). */
   min-height: 44px;
+  /*
+   * A button is as wide as its label.
+   *
+   * Without this, "Log in" in the crowded header broke across three lines
+   * inside its own pill — measured at 55px wide and 61px tall on a 1440px
+   * desktop. Predates the UNION lockup; found while photographing the header
+   * for it, and fixed here because a label wrapping inside a pill is a defect
+   * at any width.
+   */
+  white-space: nowrap;
   transition: transform 0.18s var(--ease), background-color 0.18s var(--ease), border-color 0.18s var(--ease);
 }
 .btn:active { transform: translateY(1px); }
@@ -581,6 +634,27 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 .site-footer a { color: var(--ink-muted); text-decoration: none; }
 .site-footer a:hover { color: var(--ink); }
 .site-footer__row { display: flex; flex-wrap: wrap; gap: var(--s5); align-items: center; }
+
+/*
+ * The company block.
+ *
+ * The footer used to carry the word "Brandora" and nothing else. This is where
+ * the reader is looking for who they are actually dealing with, so it is the
+ * one place on every page that names the company in full, says what it does in
+ * six words, and gives an address and a number that reach a person.
+ */
+.site-footer__identity { margin-bottom: var(--s5); }
+.site-footer__name {
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  margin: 0;
+}
+.site-footer__tagline { color: var(--ink-muted); font-size: 0.9rem; margin: 2px 0 0; }
+.site-footer__contact { margin: var(--s3) 0 0; font-size: 0.9rem; display: flex; flex-wrap: wrap; gap: var(--s2); }
+/* The separator is decoration; it must not sit alone on a line when the
+   address and the number wrap on a narrow phone. */
+.site-footer__contact span { color: var(--ink-faint); }
 
 /* ==========================================================================
    The connected product: account, brand book, package lines, dashboards.
@@ -1071,3 +1145,66 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   .spec { grid-template-columns: 1fr; gap: 0 0; }
   .spec dt { margin-top: var(--s2); }
 }
+
+/* --- The company line and the chain --------------------------------------- */
+
+/*
+ * The hero eyebrow, when it carries the company rather than a positioning line.
+ *
+ * Two parts on one line on a wide screen, stacked on a phone. The company name
+ * is set in the wordmark's serif so it reads as the name and not as a label;
+ * the tagline beside it stays in the interface sans, because it is a sentence.
+ */
+.eyebrow--brand { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s3); }
+.eyebrow__company {
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+.eyebrow__tagline { color: var(--ink-muted); letter-spacing: normal; text-transform: none; }
+
+/*
+ * The six links of the chain.
+ *
+ * A grid rather than a row of arrows: arrows imply a hand-off, and the whole
+ * claim of this section is that there is no hand-off. Auto-fit means it is six
+ * across on a desktop, three on a tablet and two on a phone without a single
+ * breakpoint deciding it.
+ */
+.chain {
+  list-style: none;
+  padding: 0;
+  margin: var(--s6) 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--s3);
+  counter-reset: none;
+}
+.chain__link {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--sheen);
+}
+.chain__n {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.8rem;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+}
+
+.chain__contact {
+  margin-top: var(--s6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+  align-items: baseline;
+  font-size: 0.95rem;
+  color: var(--ink-muted);
+}
+.chain__contact a { color: var(--ink); }

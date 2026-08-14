@@ -21,6 +21,29 @@ export const en = {
   "nav.signup": "Sign up",
   "nav.logout": "Log out",
 
+  /* The company.
+
+     "Brandora Union" is the company; "Brandora" stays the product, which is
+     why nav.assistant is still "Ask Brandora". Keeping both is the point —
+     one names who you are dealing with, the other names what you are using. */
+  "brand.company": "Brandora Union",
+  "brand.tagline": "Where brands take form.",
+  "brand.what": "Infrastructure for building physical brands.",
+
+  "chain.title": "One company, the whole chain",
+  "chain.lede":
+    "Most of this chain is where a small brand loses money — a supplier who cannot make the quantity, a run that arrives off-spec, a shipment nobody is tracking. Brandora Union runs all six links, so no one of them is somebody else's problem.",
+  "chain.brands": "Brands",
+  "chain.products": "Products",
+  "chain.manufacturers": "Manufacturers",
+  "chain.production": "Production",
+  "chain.quality": "Quality",
+  "chain.logistics": "Logistics",
+
+  "contact.title": "Talk to us",
+  "contact.email": "Email",
+  "contact.phone": "Phone",
+
   /* Landing */
   "hero.headline": "Build your brand. Put it everywhere.",
   "hero.subheadline":

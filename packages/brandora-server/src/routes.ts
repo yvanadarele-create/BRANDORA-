@@ -155,6 +155,20 @@ export interface ServerDeps {
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 14;
 
+/**
+ * How a message from Brandora Union signs off.
+ *
+ * Written once and shared by every notification. Two copies of a phone number
+ * is one edit away from two different phone numbers going out in the same week,
+ * and the address on an order confirmation is the one a customer actually
+ * replies to.
+ */
+const EMAIL_SIGNATURE = [
+  "",
+  "Brandora Union — where brands take form.",
+  "brandora.union@gmail.com · 0556140994",
+].join("\n");
+
 export interface RateLimits {
   loginsPerWindow: number;
   loginWindowMs: number;
@@ -1124,7 +1138,7 @@ export function createRouter(deps: ServerDeps): Router {
       payment.orderId,
       "awaiting-operations-approval",
       "system",
-      "a Brandora administrator reviews this before it reaches a supplier",
+      "a Brandora Union administrator reviews this before it reaches a supplier",
     );
 
     const target = await repos.orders.notificationTarget(payment.orderId);
@@ -1134,8 +1148,9 @@ export function createRouter(deps: ServerDeps): Router {
         body: [
           `We have your payment for order ${target.reference}.`,
           "",
-          "A member of the Brandora team reviews every paid order before it reaches a supplier.",
+          "A member of the Brandora Union team reviews every paid order before it reaches a supplier.",
           "You will hear from us when it moves to production.",
+          EMAIL_SIGNATURE,
         ].join("\n"),
       });
     }
@@ -1742,6 +1757,7 @@ export function createRouter(deps: ServerDeps): Router {
             updated.carrier ? `Carrier: ${updated.carrier}` : "",
             updated.trackingNumber ? `Tracking number: ${updated.trackingNumber}` : "",
             updated.estimatedDelivery ? `The carrier estimates delivery on ${updated.estimatedDelivery}.` : "",
+            EMAIL_SIGNATURE,
           ]
             .filter(Boolean)
             .join("\n"),

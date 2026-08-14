@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Brandora — Build your brand. Put it everywhere.</title>
-<meta name="description" content="Brandora turns an idea into a complete brand — strategy, identity, logo, packaging, sourcing and physical products, with a quote you can order from.">
+<title>Brandora Union — Where brands take form.</title>
+<meta name="description" content="Brandora Union — where brands take form. Infrastructure for building physical brands: identity, products, manufacturers, production, quality and logistics, with a quote you can order from.">
 <meta name="theme-color" content="#050507">
 
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
@@ -13,9 +13,9 @@
 <link rel="stylesheet" href="assets/css/brandora.css">
 
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Brandora">
-<meta property="og:title" content="Brandora — Build your brand. Put it everywhere.">
-<meta property="og:description" content="From idea to identity to physical brand.">
+<meta property="og:site_name" content="Brandora Union">
+<meta property="og:title" content="Brandora Union — Where brands take form.">
+<meta property="og:description" content="Infrastructure for building physical brands: identity, products, manufacturers, production, quality and logistics.">
 </head>
 <body>
 
@@ -23,9 +23,12 @@
 
 <header class="site-header">
   <div class="wrap site-header__inner">
-    <a class="brand-lockup" href="index.html">
+    <a class="brand-lockup" href="index.html" aria-label="Brandora Union — home">
       <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
-      <span class="brand-lockup__word">BRANDORA</span>
+      <span class="brand-lockup__stack">
+        <span class="brand-lockup__word">BRANDORA</span>
+        <span class="brand-lockup__union">UNION</span>
+      </span>
     </a>
 
     <nav class="site-nav" aria-label="Main">
@@ -82,7 +85,7 @@
       it back if playback stops or the file cannot be decoded.
     -->
     <div class="film__caption">
-      <img class="film__logo" data-film-logo src="assets/img/logo-full.svg" alt="Brandora" width="620" height="400">
+      <img class="film__logo" data-film-logo src="assets/img/logo-full.svg" alt="Brandora Union" width="620" height="400">
       <p data-i18n="hero.headline">Build your brand. Put it everywhere.</p>
     </div>
 
@@ -95,7 +98,15 @@
   <!-- Hero (§10) -->
   <section class="hero">
     <div class="wrap">
-      <p class="eyebrow" data-i18n="hero.positioning">From idea to identity to physical brand.</p>
+      <!--
+        The company line, then the product promise. The eyebrow is the tagline
+        because that is the first thing read and the last thing remembered; the
+        headline underneath is still about what the reader can do today.
+      -->
+      <p class="eyebrow eyebrow--brand">
+        <span class="eyebrow__company">Brandora&nbsp;Union</span>
+        <span class="eyebrow__tagline" data-i18n="brand.tagline">Where brands take form.</span>
+      </p>
       <h1 data-i18n="hero.headline">Build your brand. Put it everywhere.</h1>
       <p class="lede" data-i18n="hero.subheadline">Brandora helps you turn an idea into a complete brand — from strategy and identity to packaging, sourcing and physical products.</p>
       <div class="hero__actions">
@@ -202,6 +213,38 @@
     </div>
   </section>
 
+  <!--
+    The company section.
+
+    Brandora Union is not a packaging supplier, and a page that only ever talks
+    about cups and boxes will be read as one. This names the six links it
+    actually runs, in the order a product moves through them, and says where
+    the money is usually lost — which is the argument for one company holding
+    all six rather than a founder holding six suppliers.
+  -->
+  <section class="section" id="company">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="brand.what">Infrastructure for building physical brands.</p>
+      <h2 data-i18n="chain.title">One company, the whole chain</h2>
+      <p class="lede" data-i18n="chain.lede">Most of this chain is where a small brand loses money — a supplier who cannot make the quantity, a run that arrives off-spec, a shipment nobody is tracking. Brandora Union runs all six links, so no one of them is somebody else's problem.</p>
+
+      <ol class="chain" data-reveal>
+        <li class="chain__link"><span class="chain__n">01</span><span data-i18n="chain.brands">Brands</span></li>
+        <li class="chain__link"><span class="chain__n">02</span><span data-i18n="chain.products">Products</span></li>
+        <li class="chain__link"><span class="chain__n">03</span><span data-i18n="chain.manufacturers">Manufacturers</span></li>
+        <li class="chain__link"><span class="chain__n">04</span><span data-i18n="chain.production">Production</span></li>
+        <li class="chain__link"><span class="chain__n">05</span><span data-i18n="chain.quality">Quality</span></li>
+        <li class="chain__link"><span class="chain__n">06</span><span data-i18n="chain.logistics">Logistics</span></li>
+      </ol>
+
+      <p class="chain__contact">
+        <span data-i18n="contact.title">Talk to us</span>
+        <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+        <a href="tel:0556140994">0556140994</a>
+      </p>
+    </div>
+  </section>
+
   <!-- Closing CTA (§11) -->
   <section class="section">
     <div class="wrap" style="text-align:center">
@@ -216,8 +259,16 @@
 </main>
 
 <footer class="site-footer">
+  <div class="wrap site-footer__identity">
+    <p class="site-footer__name">Brandora&nbsp;Union</p>
+    <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
+    <p class="site-footer__contact">
+      <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+      <span aria-hidden="true">·</span>
+      <a href="tel:0556140994">0556140994</a>
+    </p>
+  </div>
   <div class="wrap site-footer__row">
-    <span>Brandora</span>
     <a href="create.html" data-i18n="nav.create">Create my brand</a>
     <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
     <a href="package.html" data-i18n="nav.package">My package</a>

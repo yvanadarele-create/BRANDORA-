@@ -23,6 +23,28 @@ export const fr: Catalogue = {
   "nav.signup": "S'inscrire",
   "nav.logout": "Se déconnecter",
 
+  /* L'entreprise.
+
+     « Brandora Union » est l'entreprise ; « Brandora » reste le produit — c'est
+     pourquoi nav.assistant dit toujours « Demander à Brandora ». */
+  "brand.company": "Brandora Union",
+  "brand.tagline": "Là où les marques prennent forme.",
+  "brand.what": "L'infrastructure pour créer des marques physiques.",
+
+  "chain.title": "Une seule entreprise, toute la chaîne",
+  "chain.lede":
+    "C'est sur cette chaîne qu'une petite marque perd de l'argent — un fournisseur qui ne peut pas faire la quantité, une production hors spécification, une expédition que personne ne suit. Brandora Union gère les six maillons, pour qu'aucun ne devienne le problème de quelqu'un d'autre.",
+  "chain.brands": "Marques",
+  "chain.products": "Produits",
+  "chain.manufacturers": "Fabricants",
+  "chain.production": "Production",
+  "chain.quality": "Qualité",
+  "chain.logistics": "Logistique",
+
+  "contact.title": "Nous contacter",
+  "contact.email": "E-mail",
+  "contact.phone": "Téléphone",
+
   "hero.headline": "Créez votre marque. Mettez-la partout.",
   "hero.subheadline":
     "Brandora transforme votre idée en marque complète — de la stratégie et l'identité jusqu'à l'emballage, le sourcing et les produits physiques.",
