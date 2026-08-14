@@ -22,15 +22,10 @@
  * direct, because the failure appears under load and never in testing.
  */
 
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import type { Pool, PoolClient } from "pg";
 
 import { type Row, type SqlDriver, toPositional } from "./driver.js";
-
-const here = dirname(fileURLToPath(import.meta.url));
+import { SCHEMA_SQL } from "./schema.generated.js";
 
 /**
  * The schema as individual statements.
@@ -41,8 +36,7 @@ const here = dirname(fileURLToPath(import.meta.url));
  * cut statements in half at a comma splice.
  */
 export function schemaStatements(): string[] {
-  const sql = readFileSync(resolve(here, "schema.sql"), "utf8");
-  return stripComments(sql)
+  return stripComments(SCHEMA_SQL)
     .split(";")
     .map((statement) => statement.trim())
     .filter((statement) => statement.length > 0)

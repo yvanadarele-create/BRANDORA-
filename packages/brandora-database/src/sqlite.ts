@@ -14,15 +14,19 @@
  */
 
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import type { Row, SqlDriver } from "./driver.js";
+import { SCHEMA_SQL } from "./schema.generated.js";
 
-const here = dirname(fileURLToPath(import.meta.url));
-
-export const readSchema = (): string => readFileSync(resolve(here, "schema.sql"), "utf8");
+/**
+ * The schema, as a string.
+ *
+ * Imported rather than read off disk. See scripts/copy-schema.mjs: a path
+ * computed at runtime is invisible to a serverless bundler's import tracing,
+ * and the schema going missing from the bundle is an ENOENT at the first cold
+ * start rather than a build failure.
+ */
+export const readSchema = (): string => SCHEMA_SQL;
 
 export class SqliteDriver implements SqlDriver {
   readonly dialect = "sqlite" as const;
