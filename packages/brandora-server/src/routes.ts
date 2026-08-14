@@ -27,6 +27,8 @@
 
 import {
   type BrandoraProduct,
+  type CurrencyCode,
+  type Money,
   NotFoundError,
   ValidationError,
   add,
@@ -52,7 +54,13 @@ import {
 import { generateBrandWithRetry, regenerateField } from "@brandora/ai";
 import { CATALOG, filterProducts } from "@brandora/catalog";
 import {
+  type QualityCheckRow,
   type Repositories,
+  type ShipmentInput,
+  type ShipmentRow,
+  type SupplierInput,
+  type SupplierOfferRow,
+  type SupplierRow,
   type UserRow,
   loadProjectBundle,
   toBrandProfile,
@@ -90,6 +98,13 @@ import {
 } from "./http.js";
 import { type PricingSettings, priceProject, recommendProducts } from "./pricing.js";
 import { MAX_QUESTION_LENGTH, ask } from "./assistant.js";
+import {
+  MAX_BRIEF_LENGTH,
+  type ProcurementReport,
+  sourceFromBrief,
+  toSupplierFacts,
+} from "./agent.js";
+import { type PriceConfidence, authorizeOrder, landedCost, riskSignals } from "./procurement.js";
 import {
   type PaymentProvider,
   assertAmountMatches,
@@ -1413,6 +1428,330 @@ export function createRouter(deps: ServerDeps): Router {
     return json(200, { order: orderView(await repos.orders.findAsAdmin(order.id) ?? order) });
   });
 
+  /* --- Procurement --------------------------------------------------------- */
+
+  /**
+   * The procurement agent.
+   *
+   * Administrator-only, and that is a security decision rather than a
+   * convenience one: §7 says a customer never sees a supplier name or a
+   * supplier cost, and this response is made almost entirely of both. There is
+   * no customer-facing variant of this route.
+   *
+   * The model is called once, to read the sentence. Everything after that is
+   * the database — so a report with no options means no supplier in Brandora's
+   * database offers the thing, and says exactly that instead of inventing one.
+   */
+  router.post("/api/admin/procurement/source", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const brief = requireString(ctx.body, "brief", MAX_BRIEF_LENGTH);
+
+    const report = await sourceFromBrief({
+      repos,
+      brief,
+      provider: deps.strategy,
+      catalogue: catalog,
+      currency: deps.pricing.currency,
+      ...(optionalInteger(ctx.body, "limit", 1, 5) !== undefined
+        ? { limit: optionalInteger(ctx.body, "limit", 1, 5)! }
+        : {}),
+    });
+
+    return json(200, { report: procurementView(report) });
+  });
+
+  /**
+   * Whether the agent may place a given order itself.
+   *
+   * The request names a supplier, a product and a quantity — never a figure.
+   * The amount is computed from the recorded offer by the same landed-cost
+   * function the shortlist uses, for the same reason no other route accepts a
+   * price: an authorisation decision made against a number somebody typed is
+   * not an authorisation decision.
+   *
+   * How old that recorded price is decides `priceConfidence`, and §10 sends an
+   * estimate to a human whatever the amount.
+   */
+  router.post("/api/admin/procurement/authorize", async (ctx) => {
+    await requireAdmin(ctx, session);
+
+    const supplierId = requireString(ctx.body, "supplierId", 60);
+    const productId = requireString(ctx.body, "productId", 80);
+    const quantity = requireInteger(ctx.body, "quantity", 1, 1_000_000);
+
+    const supplier = await repos.suppliers.findById(supplierId);
+    if (!supplier) throw new NotFoundError("supplier", supplierId);
+
+    const offers = await repos.supplierOffers.listForProduct(productId, quantity);
+    const offer = offers.find((candidate) => candidate.supplierId === supplierId);
+    if (!offer) {
+      throw new ValidationError(
+        "productId",
+        "this supplier has no recorded offer for that product at that quantity",
+      );
+    }
+
+    const cost = landedCost({
+      offer: {
+        supplierId: offer.supplierId,
+        productId: offer.productId,
+        fromQuantity: offer.fromQuantity,
+        unitCost: offer.unitCost,
+        customizationCost: offer.customizationCost,
+        setupCost: offer.setupCost,
+        minimumOrder: offer.minimumOrder,
+        availableQuantity: offer.availableQuantity,
+        ...(offer.productionDays !== undefined ? { productionDays: offer.productionDays } : {}),
+        ...(offer.shippingCost ? { shippingCost: offer.shippingCost } : {}),
+        customization: offer.customization,
+        lastCheckedAt: offer.lastCheckedAt,
+      },
+      quantity,
+    });
+
+    const signals = riskSignals({ supplier: toSupplierFacts(supplier) });
+    const limit = autoApprovalLimit(deps.env ?? process.env, deps.pricing.currency);
+
+    const decision = authorizeOrder({
+      total: cost.total,
+      limit,
+      // A supplier carrying any recorded signal is not "low risk" because the
+      // amount happens to be small.
+      risk: signals.length === 0 ? "low" : signals.length > 1 ? "high" : "medium",
+      priceConfidence: priceConfidenceOf(offer.lastCheckedAt, cost.unknowns, now()),
+      ...(ctx.body["sampleApproved"] === true ? { sampleApproved: true } : {}),
+      newSupplier: supplier.completedOrders === 0,
+    });
+
+    return json(200, {
+      decision,
+      cost: { perUnit: asMoney(cost.perUnit), total: asMoney(cost.total), unknowns: cost.unknowns },
+      limit: asMoney(limit),
+      risk: { signals },
+    });
+  });
+
+  /* --- Suppliers ----------------------------------------------------------- */
+
+  router.get("/api/admin/suppliers", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const status = ctx.query.get("status") ?? "";
+    const category = ctx.query.get("category") ?? "";
+    const suppliers = await repos.suppliers.list({
+      ...(status && isSupplierStatus(status) ? { status } : {}),
+      ...(category ? { category } : {}),
+      limit: 200,
+    });
+    return json(200, { suppliers: suppliers.map(supplierView) });
+  });
+
+  router.post("/api/admin/suppliers", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const supplier = await repos.suppliers.create(readSupplierInput(ctx.body, true));
+    return json(201, { supplier: supplierView(supplier) });
+  });
+
+  router.get("/api/admin/suppliers/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const supplier = await repos.suppliers.findById(id);
+    if (!supplier) throw new NotFoundError("supplier", id);
+    return json(200, {
+      supplier: supplierView(supplier),
+      offers: (await repos.supplierOffers.listForSupplier(id)).map(offerView),
+      risk: riskSignals({ supplier: toSupplierFacts(supplier) }),
+    });
+  });
+
+  router.patch("/api/admin/suppliers/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const updated = await repos.suppliers.update(id, readSupplierInput(ctx.body, false));
+    if (!updated) throw new NotFoundError("supplier", id);
+    return json(200, { supplier: supplierView(updated) });
+  });
+
+  /**
+   * Mark a supplier as checked.
+   *
+   * Recorded against the administrator who did it, because "verified" with no
+   * name behind it is a checkbox rather than a fact — and the authorisation
+   * rule reads this status to decide whether a sample is required first.
+   */
+  router.post("/api/admin/suppliers/:id/verify", async (ctx) => {
+    const admin = await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const supplier = await repos.suppliers.findById(id);
+    if (!supplier) throw new NotFoundError("supplier", id);
+
+    await repos.suppliers.markVerified(id);
+    const note = optionalString(ctx.body, "notes", 500);
+    await repos.suppliers.update(id, {
+      notes: note ? `${supplier.notes ? `${supplier.notes}\n` : ""}verified by ${admin.id}: ${note}` : supplier.notes,
+    });
+
+    return json(200, { supplier: supplierView((await repos.suppliers.findById(id))!) });
+  });
+
+  router.delete("/api/admin/suppliers/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.suppliers.findById(id))) throw new NotFoundError("supplier", id);
+    await repos.suppliers.remove(id);
+    return json(200, { deleted: id });
+  });
+
+  /**
+   * Record what a supplier quoted for a product, at a quantity break.
+   *
+   * Every cost is an integer in the deployment's currency and comes from this
+   * route, never from a customer request — the same rule as pricing. A price
+   * recorded here is what the shortlist compares; a price nobody recorded is
+   * an offer that does not exist.
+   */
+  router.post("/api/admin/suppliers/:id/offers", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const supplierId = ctx.params["id"] ?? "";
+    if (!(await repos.suppliers.findById(supplierId))) throw new NotFoundError("supplier", supplierId);
+
+    const productId = requireString(ctx.body, "productId", 80);
+    if (!byId.has(productId)) throw new ValidationError("productId", "is not a Brandora product");
+
+    const offer = await repos.supplierOffers.save({
+      supplierId,
+      productId,
+      unitCost: requireInteger(ctx.body, "unitCost", 1, 1_000_000_000),
+      currency: deps.pricing.currency,
+      ...optionalIntegers(ctx.body, {
+        fromQuantity: [1, 1_000_000],
+        customizationCost: [0, 1_000_000_000],
+        setupCost: [0, 1_000_000_000],
+        minimumOrder: [1, 1_000_000],
+        availableQuantity: [0, 100_000_000],
+        productionDays: [1, 365],
+        shippingCost: [0, 1_000_000_000],
+      }),
+      ...(readStringArray(ctx.body, "customization") ? { customization: readStringArray(ctx.body, "customization")! } : {}),
+      ...(optionalString(ctx.body, "externalProductId", 200)
+        ? { externalProductId: optionalString(ctx.body, "externalProductId", 200)! }
+        : {}),
+      ...(optionalString(ctx.body, "externalProductUrl", 500)
+        ? { externalProductUrl: optionalString(ctx.body, "externalProductUrl", 500)! }
+        : {}),
+    });
+
+    return json(201, { offer: offerView(offer) });
+  });
+
+  router.delete("/api/admin/offers/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.supplierOffers.findById(id))) throw new NotFoundError("offer", id);
+    await repos.supplierOffers.remove(id);
+    return json(200, { deleted: id });
+  });
+
+  /* --- Quality and shipping ------------------------------------------------- */
+
+  router.get("/api/admin/orders/:id/quality-checks", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.orders.findAsAdmin(id))) throw new NotFoundError("order", id);
+    return json(200, { checks: (await repos.qualityChecks.listForOrder(id)).map(qualityView) });
+  });
+
+  router.post("/api/admin/orders/:id/quality-checks", async (ctx) => {
+    const admin = await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.orders.findAsAdmin(id))) throw new NotFoundError("order", id);
+
+    const kind = requireString(ctx.body, "kind", 20);
+    if (kind !== "sample" && kind !== "production" && kind !== "pre-shipment") {
+      throw new ValidationError("kind", "expected one of sample, production, pre-shipment");
+    }
+
+    // Opened, not carried out. `inspectedAt` stays null until an outcome is
+    // recorded, so the two facts never collapse into one.
+    const check = await repos.qualityChecks.create({ orderId: id, kind, inspectedBy: admin.id });
+    await repos.orders.addEvent(id, `quality-check:${kind}:opened`, `admin:${admin.id}`);
+    return json(201, { check: qualityView(check) });
+  });
+
+  router.patch("/api/admin/quality-checks/:id", async (ctx) => {
+    const admin = await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const existing = await repos.qualityChecks.findById(id);
+    if (!existing) throw new NotFoundError("quality check", id);
+
+    const outcome = requireString(ctx.body, "outcome", 30);
+    if (!["pending", "passed", "failed", "passed-with-notes"].includes(outcome)) {
+      throw new ValidationError("outcome", "expected one of pending, passed, failed, passed-with-notes");
+    }
+
+    const updated = await repos.qualityChecks.recordOutcome(id, {
+      outcome: outcome as never,
+      ...(readStringArray(ctx.body, "defects") ? { defects: readStringArray(ctx.body, "defects")! } : {}),
+      ...(readStringArray(ctx.body, "evidence") ? { evidence: readStringArray(ctx.body, "evidence")! } : {}),
+      ...(optionalString(ctx.body, "notes", 2_000) ? { notes: optionalString(ctx.body, "notes", 2_000)! } : {}),
+    });
+
+    await repos.orders.addEvent(existing.orderId, `quality-check:${existing.kind}:${outcome}`, `admin:${admin.id}`);
+    return json(200, { check: qualityView(updated!) });
+  });
+
+  router.get("/api/admin/orders/:id/shipments", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.orders.findAsAdmin(id))) throw new NotFoundError("order", id);
+    return json(200, { shipments: (await repos.shipments.listForOrder(id)).map(shipmentView) });
+  });
+
+  router.post("/api/admin/orders/:id/shipments", async (ctx) => {
+    const admin = await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.orders.findAsAdmin(id))) throw new NotFoundError("order", id);
+
+    const shipment = await repos.shipments.create({ orderId: id, ...readShipmentInput(ctx.body) });
+    await repos.orders.addEvent(id, "shipment:created", `admin:${admin.id}`, shipment.trackingNumber ?? "");
+    return json(201, { shipment: shipmentView(shipment) });
+  });
+
+  router.patch("/api/admin/shipments/:id", async (ctx) => {
+    const admin = await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const existing = await repos.shipments.findById(id);
+    if (!existing) throw new NotFoundError("shipment", id);
+
+    const updated = await repos.shipments.update(id, readShipmentInput(ctx.body));
+    await repos.orders.addEvent(
+      existing.orderId,
+      `shipment:${updated?.status ?? existing.status}`,
+      `admin:${admin.id}`,
+      updated?.trackingNumber ?? "",
+    );
+
+    // The customer is told when it actually moves, and told the number the
+    // carrier gave — never a date nobody quoted.
+    if (updated && updated.status !== existing.status) {
+      const target = await repos.orders.notificationTarget(existing.orderId);
+      if (target) {
+        await notify(target.userId, existing.orderId, `shipment.${updated.status}`, {
+          subject: `Order ${target.reference} — ${updated.status.replace(/-/g, " ")}`,
+          body: [
+            `Your order ${target.reference} is now ${updated.status.replace(/-/g, " ")}.`,
+            updated.carrier ? `Carrier: ${updated.carrier}` : "",
+            updated.trackingNumber ? `Tracking number: ${updated.trackingNumber}` : "",
+            updated.estimatedDelivery ? `The carrier estimates delivery on ${updated.estimatedDelivery}.` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        });
+      }
+    }
+
+    return json(200, { shipment: shipmentView(updated!) });
+  });
+
   router.get("/api/admin/integrations", async (ctx) => {
     await requireAdmin(ctx, session);
     // Masks only. There is no variant of this route that returns a value.
@@ -1551,6 +1890,258 @@ function paymentView(payment: {
     createdAt: payment.createdAt,
   };
 }
+
+/* --- Procurement shapes ---------------------------------------------------- */
+
+const SUPPLIER_STATUSES = ["active", "paused", "blocked", "unverified"] as const;
+const isSupplierStatus = (value: string): value is (typeof SUPPLIER_STATUSES)[number] =>
+  (SUPPLIER_STATUSES as readonly string[]).includes(value);
+
+/**
+ * How much the agent may commit without a person.
+ *
+ * §10 names a threshold and this is where it lives — one environment variable,
+ * read in the deployment's own currency. Defaulted low rather than high: an
+ * unconfigured deployment should escalate too often, not spend too much.
+ */
+function autoApprovalLimit(source: Record<string, string | undefined>, currency: CurrencyCode): Money {
+  const raw = Number.parseInt((source["BRANDORA_AUTO_APPROVAL_LIMIT"] ?? "").trim(), 10);
+  return money(Number.isFinite(raw) && raw > 0 ? raw : 0, currency);
+}
+
+/** How long a recorded supplier price is treated as current. */
+const PRICE_FRESH_DAYS = 30;
+
+/**
+ * How much to trust a recorded price.
+ *
+ * `confirmed` only when a supplier's quote was re-checked inside the window
+ * *and* every component of the landed cost could actually be calculated. A
+ * total with an unknown in it is an estimate however recently it was quoted,
+ * and §10 sends an estimate to a person.
+ */
+function priceConfidenceOf(lastCheckedAt: string, unknowns: readonly string[], at: Date): PriceConfidence {
+  if (unknowns.length > 0) return "estimated";
+  const checked = Date.parse(lastCheckedAt);
+  if (!Number.isFinite(checked)) return "needs-confirmation";
+  const days = (at.getTime() - checked) / 86_400_000;
+  return days <= PRICE_FRESH_DAYS ? "confirmed" : "needs-confirmation";
+}
+
+function optionalInteger(
+  body: Record<string, unknown>,
+  field: string,
+  min: number,
+  max: number,
+): number | undefined {
+  const raw = body[field];
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < min || raw > max) {
+    throw new ValidationError(field, `expected a whole number between ${min} and ${max}`);
+  }
+  return raw;
+}
+
+/** Several optional integers at once, each with its own bounds. */
+function optionalIntegers<K extends string>(
+  body: Record<string, unknown>,
+  fields: Record<K, [number, number]>,
+): Partial<Record<K, number>> {
+  const out: Partial<Record<K, number>> = {};
+  for (const [field, bounds] of Object.entries(fields) as [K, [number, number]][]) {
+    const value = optionalInteger(body, field, bounds[0], bounds[1]);
+    if (value !== undefined) out[field] = value;
+  }
+  return out;
+}
+
+function readStringArray(body: Record<string, unknown>, field: string): string[] | undefined {
+  const raw = body[field];
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw)) throw new ValidationError(field, "expected a list of strings");
+  return raw
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim().slice(0, 200))
+    .filter((entry) => entry !== "")
+    .slice(0, 40);
+}
+
+/**
+ * A supplier, read off an admin request.
+ *
+ * `required` distinguishes a create from a patch: on a patch an absent field is
+ * left alone, so a form that posts only the status cannot blank a supplier's
+ * contact details.
+ */
+function readSupplierInput(body: Record<string, unknown>, required: true): SupplierInput;
+function readSupplierInput(body: Record<string, unknown>, required: false): Partial<SupplierInput>;
+function readSupplierInput(body: Record<string, unknown>, required: boolean): Partial<SupplierInput> {
+  const status = optionalString(body, "status", 20);
+  if (status !== undefined && !isSupplierStatus(status)) {
+    throw new ValidationError("status", `expected one of ${SUPPLIER_STATUSES.join(", ")}`);
+  }
+
+  const text = (field: string, max: number) => optionalString(body, field, max);
+  const input: Record<string, unknown> = {};
+  const set = (key: string, value: unknown) => {
+    if (value !== undefined) input[key] = value;
+  };
+
+  if (required) {
+    input["name"] = requireString(body, "name", 200);
+    input["platform"] = requireString(body, "platform", 60);
+  } else {
+    set("name", text("name", 200));
+    set("platform", text("platform", 60));
+  }
+
+  set("externalId", text("externalId", 200));
+  set("externalUrl", text("externalUrl", 500));
+  set("country", text("country", 2));
+  set("city", text("city", 120));
+  set("contactName", text("contactName", 200));
+  set("contactEmail", text("contactEmail", 320));
+  set("contactPhone", text("contactPhone", 40));
+  set("categories", readStringArray(body, "categories"));
+  set("certifications", readStringArray(body, "certifications"));
+  set("customization", readStringArray(body, "customization"));
+  set("minimumOrder", optionalInteger(body, "minimumOrder", 1, 1_000_000));
+  set("leadTimeDays", optionalInteger(body, "leadTimeDays", 1, 365));
+  set("status", status);
+  set("riskFlag", text("riskFlag", 200));
+  set("notes", text("notes", 2_000));
+
+  return input as Partial<SupplierInput>;
+}
+
+function readShipmentInput(body: Record<string, unknown>): Omit<ShipmentInput, "orderId"> {
+  const status = optionalString(body, "status", 30);
+  const allowed = ["preparing", "shipped", "in-transit", "customs", "out-for-delivery", "delivered", "exception"];
+  if (status !== undefined && !allowed.includes(status)) {
+    throw new ValidationError("status", `expected one of ${allowed.join(", ")}`);
+  }
+
+  const input: Record<string, unknown> = {};
+  const set = (key: string, value: unknown) => {
+    if (value !== undefined) input[key] = value;
+  };
+
+  set("carrier", optionalString(body, "carrier", 120));
+  set("trackingNumber", optionalString(body, "trackingNumber", 120));
+  set("trackingUrl", optionalString(body, "trackingUrl", 500));
+  set("status", status);
+  // §38: only ever a date a carrier gave. There is no branch of this function
+  // that computes one from a lead time.
+  set("estimatedDelivery", optionalString(body, "estimatedDelivery", 40));
+  set("actualDelivery", optionalString(body, "actualDelivery", 40));
+  set("exceptionNote", optionalString(body, "exceptionNote", 500));
+
+  return input as Omit<ShipmentInput, "orderId">;
+}
+
+/** A supplier as an administrator reads it. Counts, never a rating. */
+const supplierView = (supplier: SupplierRow) => ({
+  id: supplier.id,
+  name: supplier.name,
+  platform: supplier.platform,
+  externalUrl: supplier.externalUrl ?? null,
+  country: supplier.country ?? null,
+  city: supplier.city ?? null,
+  contact: {
+    name: supplier.contactName ?? null,
+    email: supplier.contactEmail ?? null,
+    phone: supplier.contactPhone ?? null,
+  },
+  categories: supplier.categories,
+  certifications: supplier.certifications,
+  customization: supplier.customization,
+  minimumOrder: supplier.minimumOrder,
+  leadTimeDays: supplier.leadTimeDays ?? null,
+  status: supplier.status,
+  riskFlag: supplier.riskFlag ?? null,
+  // What happened, so a score can be recomputed rather than trusted.
+  record: {
+    completedOrders: supplier.completedOrders,
+    lateOrders: supplier.lateOrders,
+    defectReports: supplier.defectReports,
+    disputes: supplier.disputes,
+  },
+  verifiedAt: supplier.verifiedAt ?? null,
+  notes: supplier.notes ?? null,
+  createdAt: supplier.createdAt,
+});
+
+const offerView = (offer: SupplierOfferRow) => ({
+  id: offer.id,
+  supplierId: offer.supplierId,
+  productId: offer.productId,
+  fromQuantity: offer.fromQuantity,
+  unitCost: asMoney(offer.unitCost),
+  customizationCost: asMoney(offer.customizationCost),
+  setupCost: asMoney(offer.setupCost),
+  shippingCost: offer.shippingCost ? asMoney(offer.shippingCost) : null,
+  minimumOrder: offer.minimumOrder,
+  availableQuantity: offer.availableQuantity,
+  productionDays: offer.productionDays ?? null,
+  customization: offer.customization,
+  externalProductUrl: offer.externalProductUrl ?? null,
+  // How old the price is. A shortlist built on a year-old quote is a guess.
+  lastCheckedAt: offer.lastCheckedAt,
+});
+
+const qualityView = (check: QualityCheckRow) => ({
+  id: check.id,
+  orderId: check.orderId,
+  kind: check.kind,
+  outcome: check.outcome,
+  inspectedBy: check.inspectedBy,
+  defects: check.defects,
+  evidence: check.evidence,
+  notes: check.notes ?? null,
+  // Null until somebody actually looked.
+  inspectedAt: check.inspectedAt ?? null,
+  createdAt: check.createdAt,
+});
+
+const shipmentView = (shipment: ShipmentRow) => ({
+  id: shipment.id,
+  orderId: shipment.orderId,
+  carrier: shipment.carrier ?? null,
+  trackingNumber: shipment.trackingNumber ?? null,
+  trackingUrl: shipment.trackingUrl ?? null,
+  status: shipment.status,
+  // Null means not quoted. It never means soon.
+  estimatedDelivery: shipment.estimatedDelivery ?? null,
+  actualDelivery: shipment.actualDelivery ?? null,
+  exceptionNote: shipment.exceptionNote ?? null,
+  createdAt: shipment.createdAt,
+});
+
+/**
+ * The procurement report, on the wire.
+ *
+ * Money is formatted here and nowhere else, by the same helper every other
+ * amount goes through — the browser must never divide by 100 to make a franc.
+ */
+const procurementView = (report: ProcurementReport) => ({
+  understood: {
+    ...report.understood,
+    targetUnitPrice: report.understood.targetUnitPrice ? asMoney(report.understood.targetUnitPrice) : null,
+    maxBudget: report.understood.maxBudget ? asMoney(report.understood.maxBudget) : null,
+  },
+  missing: report.missing,
+  considered: report.considered,
+  options: report.options.map((option) => ({
+    ...option,
+    unitCost: asMoney(option.unitCost),
+    landedPerUnit: asMoney(option.landedPerUnit),
+    landedTotal: asMoney(option.landedTotal),
+  })),
+  recommendation: report.recommendation,
+  costOfRecommendation: report.costOfRecommendation,
+  nextStep: report.nextStep,
+  notes: report.notes,
+});
 
 /**
  * A queued notification, for the admin queue view.
