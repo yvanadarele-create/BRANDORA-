@@ -81,6 +81,11 @@ export const es: Catalogue = {
   "footer.contact": "Contacto",
   "footer.place": "Abiyán, Costa de Marfil",
 
+  "network.stat.makers": "Fabricantes",
+  "network.stat.countries": "Países",
+  "words.eyebrow": "En sus palabras",
+  "words.title": "Lo que dicen las personas con las que trabajamos",
+
   "hero.headline": "Crea tu marca. Nosotros la hacemos real.",
   "hero.subheadline":
     "Identidad de marca, productos, empaque y fabricación — conectados en una sola plataforma.",

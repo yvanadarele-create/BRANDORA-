@@ -87,6 +87,11 @@ export const en = {
   "footer.contact": "Contact",
   "footer.place": "Abidjan, Côte d'Ivoire",
 
+  "network.stat.makers": "Manufacturers",
+  "network.stat.countries": "Countries",
+  "words.eyebrow": "In their words",
+  "words.title": "What the people we work with say",
+
   "hero.headline": "Build your brand. We help make it real.",
   "hero.subheadline":
     "Brand identity, products, packaging and manufacturing — connected in one platform.",

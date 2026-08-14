@@ -239,6 +239,129 @@ async function projectWithBrand(client: Client): Promise<string> {
 
 /* --- Tests ----------------------------------------------------------------- */
 
+describe("testimonials", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(() => h.close());
+
+  it("shows nothing until a real quote is approved", async () => {
+    const anyone = new Client(h.base);
+    assert.deepEqual((await anyone.get("/api/testimonials")).json["testimonials"], []);
+
+    // Created by an administrator, and still not public.
+    const created = await h.app.repos.testimonials.create({
+      quote: "They found a supplier who could actually do 200.",
+      authorName: "A Real Person",
+      consentAt: new Date().toISOString(),
+    });
+    assert.equal(created.approved, false);
+    assert.deepEqual((await anyone.get("/api/testimonials")).json["testimonials"], []);
+
+    await h.app.repos.testimonials.setApproved(created.id, true);
+    const shown = (await anyone.get("/api/testimonials")).json["testimonials"];
+    assert.equal(shown.length, 1);
+    assert.equal(shown[0].authorName, "A Real Person");
+  });
+
+  it("never puts operational fields on the public response", async () => {
+    const t = await h.app.repos.testimonials.create({
+      quote: "q", authorName: "n", consentAt: new Date().toISOString(),
+    });
+    await h.app.repos.testimonials.setApproved(t.id, true);
+
+    const [entry] = (await new Client(h.base).get("/api/testimonials")).json["testimonials"];
+    // The consent date and the row id are operational facts. A public
+    // response has no use for either.
+    for (const field of ["id", "consentAt", "approved", "position", "locale", "createdAt"]) {
+      assert.equal(field in entry, false, `${field} reached the public response`);
+    }
+  });
+
+  it("refuses to publish a quote with no recorded consent", async () => {
+    await signUp(h, "t-admin@example.com");
+    await makeAdmin(h, "t-admin@example.com");
+    const admin = new Client(h.base);
+    await admin.post("/api/auth/login", { email: "t-admin@example.com", password: PASSWORD });
+
+    const created = await admin.post("/api/admin/testimonials", {
+      quote: "Said in a WhatsApp message.", authorName: "Someone",
+    });
+    assert.equal(created.status, 201);
+    assert.equal(created.json["testimonial"].consentAt, null);
+
+    // A quote is somebody's words with their name on it. Publishing without a
+    // record that they agreed is the thing this check exists to prevent.
+    const publish = await admin.patch(`/api/admin/testimonials/${created.json["testimonial"].id}`, { approved: true });
+    assert.equal(publish.status, 400, JSON.stringify(publish.json));
+
+    // Earlier cases in this file approved their own quotes against the same
+    // database, so the assertion is that *this* one did not reach the public
+    // list — not that the list is empty.
+    const shown = (await new Client(h.base).get("/api/testimonials")).json["testimonials"];
+    assert.equal(
+      shown.some((entry: { quote: string }) => entry.quote === "Said in a WhatsApp message."),
+      false,
+      "a quote with no recorded consent was published",
+    );
+  });
+
+  it("keeps management behind an administrator", async () => {
+    const customer = await signUp(h, "t-customer@example.com");
+    assert.equal((await customer.get("/api/admin/testimonials")).status, 403);
+    assert.equal((await customer.post("/api/admin/testimonials", { quote: "q", authorName: "n" })).status, 403);
+  });
+});
+
+describe("the manufacturer network", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(() => h.close());
+
+  it("plots only suppliers with real recorded coordinates", async () => {
+    const withCoords = await h.app.repos.suppliers.create({
+      name: "Abidjan Print Works", platform: "direct", country: "CI", city: "Abidjan",
+      latitude: 5.35, longitude: -4.02,
+    });
+    await h.app.repos.suppliers.create({ name: "Nowhere Co", platform: "direct", country: "CN" });
+
+    const network = (await new Client(h.base).get("/api/network")).json;
+    assert.equal(network.total, 2);
+    // The one without coordinates is counted but not plotted — it is not put
+    // at a country centroid, because a centroid is a guess dressed as a place.
+    assert.equal(network.plotted, 1);
+    assert.equal(network.points.length, 1);
+    assert.equal(network.points[0].city, "Abidjan");
+    assert.equal(network.points[0].lat, 5.35);
+    void withCoords;
+  });
+
+  it("never puts a supplier name or a cost on a public route", async () => {
+    const supplier = await h.app.repos.suppliers.create({
+      name: "Secret Supplier Ltd", platform: "alibaba", country: "CN",
+      latitude: 23.13, longitude: 113.26,
+    });
+    await h.app.repos.supplierOffers.save({
+      supplierId: supplier.id, productId: "prd_cup_kraft_250",
+      unitCost: 145, currency: "XOF", lastCheckedAt: new Date().toISOString(),
+    });
+
+    const body = JSON.stringify((await new Client(h.base).get("/api/network")).json);
+    // §7: a customer never sees a supplier name or a supplier cost.
+    assert.equal(body.includes("Secret Supplier"), false);
+    assert.equal(body.includes("145"), false);
+  });
+
+  it("drops a blocked supplier from the map entirely", async () => {
+    const blocked = await h.app.repos.suppliers.create({
+      name: "Blocked Co", platform: "direct", country: "CN", latitude: 30, longitude: 120,
+    });
+    await h.app.repos.suppliers.setStatus(blocked.id, "blocked", "chargeback");
+
+    const network = (await new Client(h.base).get("/api/network")).json;
+    assert.equal(network.points.some((p: { lat: number }) => p.lat === 30), false);
+  });
+});
+
 describe("staying close to what we're building", () => {
   let h: Harness;
   before(async () => { h = await start(); });

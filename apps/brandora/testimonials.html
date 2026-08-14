@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Create my brand — Brandora Union</title>
-<meta name="description" content="Answer a few questions and Brandora builds your brand — positioning, personality, colour palette, typography and a logo direction.">
+<title>Testimonials — Brandora Union</title>
+<meta name="description" content="Brandora Union testimonials: real quotes, published only with recorded consent.">
 <meta name="theme-color" content="#050507">
+<meta name="robots" content="noindex">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="site.webmanifest">
 <link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -56,31 +57,73 @@
 
 <main id="main">
   <section class="section">
-    <div class="wrap wrap--narrow">
+    <div class="wrap">
+      <p class="eyebrow">Operations</p>
+      <h1>Testimonials</h1>
+      <p class="lede">
+        Real quotes from real customers. Nothing here is generated, and nothing
+        reaches the site until you publish it.
+      </p>
 
-      <p class="eyebrow" data-i18n="builder.step.interview">Interview</p>
-      <h1 data-i18n="builder.title">Let's build your brand.</h1>
-      <p class="lede">You do not need a name, a logo, or any idea what &ldquo;positioning&rdquo; means.
-        Answer what you can, and tap <em>I don't know — help me</em> on anything that stumps you.</p>
+      <!--
+        The rule, on the page rather than only in the code. Whoever is entering
+        these is the person who has to know it.
+      -->
+      <p class="notice notice--quiet">
+        A quote is somebody's words with their name attached. Record when they
+        agreed to be quoted publicly — without that date, publishing is refused.
+      </p>
 
-      <div class="progress" data-progress role="img" aria-label="Progress"></div>
+      <p class="notice" data-error hidden role="alert"></p>
+      <p class="notice" data-admin-only hidden>
+        Testimonials are an operations tool. <a href="login.html">Log in</a> as
+        an administrator to manage them.
+      </p>
 
-      <!-- The interview renders here. -->
-      <section data-question aria-live="polite"></section>
+      <p class="notice" data-empty hidden>
+        No testimonial recorded yet. Until one is published the homepage shows
+        no testimonial section at all, which is the correct state for a company
+        that has not yet delivered its first order.
+      </p>
 
-      <!-- The review and the Build button render here. -->
-      <section data-result tabindex="-1" aria-live="polite" hidden></section>
+      <div class="options" data-testimonials></div>
 
-      <noscript>
-        <div class="notice">
-          The brand builder needs JavaScript to run the interview. You can still
-          <a href="catalog.html">browse the catalogue</a> without it.
-        </div>
-      </noscript>
+      <section class="panel" data-add-panel hidden>
+        <h2 class="panel__title">Record a quote</h2>
+        <form data-add-form>
+          <div class="field">
+            <label for="t-quote">What they said</label>
+            <textarea class="input" id="t-quote" name="quote" rows="4" required maxlength="800"></textarea>
+            <p class="field__why">Their words, not a paraphrase.</p>
+          </div>
+          <div class="field">
+            <label for="t-name">Their name</label>
+            <input class="input" id="t-name" name="authorName" required maxlength="160">
+          </div>
+          <div class="field">
+            <label for="t-role">Their role</label>
+            <input class="input" id="t-role" name="authorRole" maxlength="160" placeholder="Founder">
+          </div>
+          <div class="field">
+            <label for="t-company">Their company</label>
+            <input class="input" id="t-company" name="company" maxlength="160">
+          </div>
+          <div class="field">
+            <label for="t-country">Country</label>
+            <input class="input" id="t-country" name="country" maxlength="2" placeholder="CI">
+          </div>
+          <div class="field">
+            <label for="t-consent">Date they agreed to be quoted publicly</label>
+            <input class="input" id="t-consent" name="consentAt" type="date">
+            <p class="field__why">Required before it can be published. Leave blank if you have not asked yet.</p>
+          </div>
+          <button class="btn btn--primary" type="submit" data-add-submit>Record quote</button>
+        </form>
+      </section>
 
+      <noscript><div class="notice">This screen needs JavaScript.</div></noscript>
     </div>
   </section>
-
 </main>
 
 <footer class="site-footer">
@@ -94,15 +137,14 @@
     </p>
   </div>
   <div class="wrap site-footer__row">
-    <a href="create.html" data-i18n="nav.create">Create my brand</a>
-    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
-    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+    <a href="suppliers.html" data-when-admin hidden>Suppliers</a>
     <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
   </div>
 </footer>
 
 <script src="assets/js/app.js" defer></script>
 <script type="module" src="assets/js/booking.js"></script>
-<script type="module" src="assets/js/builder.js"></script>
+<script type="module" src="assets/js/testimonials.js"></script>
 </body>
 </html>

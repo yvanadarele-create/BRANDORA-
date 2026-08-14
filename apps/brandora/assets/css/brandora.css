@@ -1338,10 +1338,15 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 
 .founder { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: var(--s7, 3rem); align-items: start; }
 .founder__portrait { position: sticky; top: 6rem; }
+.founder__portrait picture { display: block; }
 .founder__portrait img {
   width: 100%; height: auto; display: block;
   border-radius: var(--radius); border: 1px solid var(--border);
-  aspect-ratio: 4 / 5; object-fit: cover;
+  /* The photograph's own ratio. Forcing 4:5 here would crop it, and what a
+     crop takes off a portrait is the top of the head or the bottom of the
+     shoulders — neither improves it. */
+  aspect-ratio: 1023 / 1537;
+  object-fit: cover;
 }
 .founder__name { margin: var(--s2) 0 0; }
 .founder__role { color: var(--ink-muted); font-size: 0.92rem; margin: var(--s2) 0 var(--s5); }
@@ -1442,3 +1447,71 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 [data-stagger].is-visible > *:nth-child(4) { transition-delay: 195ms; }
 [data-stagger].is-visible > *:nth-child(n + 5) { transition-delay: 260ms; }
 .no-js [data-stagger] > * { opacity: 1; transform: none; }
+
+/* --- The globe ------------------------------------------------------------ */
+
+.globe-panel {
+  margin-top: var(--s6);
+  display: grid; grid-template-columns: 0.9fr 1.1fr; gap: var(--s6);
+  align-items: center;
+}
+.globe-panel__stage { display: grid; gap: var(--s3); justify-items: center; }
+.globe {
+  width: 100%; max-width: 24rem; display: block;
+  /* The glow behind the sphere. Painted by the element rather than the canvas
+     so it survives the canvas being cleared sixty times a second. */
+  filter: drop-shadow(0 0 40px color-mix(in srgb, var(--accent) 22%, transparent));
+}
+.globe__status {
+  margin: 0; text-align: center; font-size: 0.85rem; color: var(--ink-faint);
+  max-width: 30ch;
+}
+
+.globe-stats { display: flex; gap: var(--s6); margin: 0 0 var(--s5); }
+.globe-stats div { display: grid; gap: 2px; }
+.globe-stats dt {
+  font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint);
+}
+.globe-stats dd {
+  margin: 0; font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem); color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.network__pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5); }
+
+/* --- Testimonials --------------------------------------------------------- */
+
+.words {
+  margin-top: var(--s6);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: var(--s4);
+}
+.word {
+  margin: 0; padding: var(--s5);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--sheen);
+  display: grid; gap: var(--s4);
+}
+.word__quote { margin: 0; }
+.word__quote p {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem; line-height: 1.6; color: var(--ink);
+}
+/* The quote mark is decoration and belongs in CSS, not in the stored text —
+   a quotation mark typed into the database would be doubled by any interface
+   that adds its own. */
+.word__quote p::before { content: '“'; color: var(--accent); margin-right: 2px; }
+.word__quote p::after { content: '”'; color: var(--accent); margin-left: 2px; }
+.word__by { display: grid; gap: 2px; font-size: 0.85rem; }
+.word__name { color: var(--ink); }
+.word__role, .word__where { color: var(--ink-faint); }
+
+@media (max-width: 60rem) {
+  .globe-panel { grid-template-columns: 1fr; }
+  .globe { max-width: 18rem; }
+}
+@media (max-width: 40rem) {
+  .network__pair { grid-template-columns: 1fr; }
+  .globe-stats { gap: var(--s5); }
+}

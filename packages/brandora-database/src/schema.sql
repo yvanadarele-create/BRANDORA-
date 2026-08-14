@@ -179,6 +179,13 @@ CREATE TABLE IF NOT EXISTS suppliers (
   external_url       TEXT,
   country            TEXT,
   city               TEXT,
+  -- Where the supplier actually is, for the network map. Held on the supplier
+  -- row rather than derived from a table of country centroids: a centroid is a
+  -- guess dressed as a coordinate, and a map that plots guesses is a map that
+  -- claims a factory in the middle of a desert. No coordinates means not
+  -- plotted, which is the honest state.
+  latitude           REAL,
+  longitude          REAL,
   contact_name       TEXT,
   contact_email      TEXT,
   contact_phone      TEXT,
@@ -405,3 +412,30 @@ CREATE TABLE IF NOT EXISTS subscribers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_subscribers_created ON subscribers(created_at);
+
+-- Testimonials.
+--
+-- Entered by an administrator from something a real customer actually said,
+-- and shown on the site only once `approved` is set. There is no path that
+-- writes a row from anywhere else, and no seed data — an empty table means the
+-- section does not render, which is the correct state for a company that has
+-- not yet delivered its first order.
+--
+-- `consent_at` records when the person agreed to be quoted publicly. A quote
+-- without it is somebody's private message on a marketing page.
+CREATE TABLE IF NOT EXISTS testimonials (
+  id           TEXT PRIMARY KEY,
+  quote        TEXT NOT NULL,
+  author_name  TEXT NOT NULL,
+  author_role  TEXT,
+  company      TEXT,
+  country      TEXT,
+  locale       TEXT NOT NULL DEFAULT 'en',
+  approved     INTEGER NOT NULL DEFAULT 0,
+  consent_at   TEXT,
+  position     INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_testimonials_approved ON testimonials(approved, position);

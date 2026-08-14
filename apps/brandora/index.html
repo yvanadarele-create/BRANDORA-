@@ -39,6 +39,7 @@
       <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
       <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
       <a href="procurement.html" data-when-admin hidden>Sourcing</a>
+      <a href="testimonials.html" data-when-admin hidden>Testimonials</a>
     </nav>
 
     <div class="header-tools">
@@ -187,21 +188,38 @@
       <h2 data-i18n="network.title">Between the brand and the factory</h2>
       <p class="lede" data-i18n="network.lede">A founder in Abidjan and a manufacturer who can make what they need are usually two people who will never meet. Brandora Union is the connection — and the quality check, the paperwork and the shipment that have to come with it.</p>
 
-      <div class="network" data-reveal>
-        <div class="network__side">
-          <p class="network__label" data-i18n="network.brands">Brands</p>
-          <p class="network__note" data-i18n="network.brands.note">An idea, an identity, and a quantity small enough to test.</p>
+      <div class="globe-panel" data-reveal>
+        <div class="globe-panel__stage">
+          <!--
+            Drawn on a 2D canvas with the projection done by hand — about 4KB
+            against the ~600KB a WebGL globe library costs. On a metered mobile
+            connection that is the difference between this section loading and
+            not loading.
+
+            aria-hidden because it is a decorative rendering of figures stated
+            in words beside it; a screen reader gets the numbers, not a
+            description of a spinning ball.
+          -->
+          <canvas class="globe" data-globe width="480" height="480" aria-hidden="true"></canvas>
+          <p class="globe__status" data-globe-status role="status"></p>
         </div>
-        <div class="network__bridge" aria-hidden="true">
-          <span class="network__node"></span>
-          <span class="network__line"></span>
-          <span class="network__hub">B</span>
-          <span class="network__line"></span>
-          <span class="network__node"></span>
-        </div>
-        <div class="network__side network__side--end">
-          <p class="network__label" data-i18n="network.makers">Manufacturers</p>
-          <p class="network__note" data-i18n="network.makers.note">Capacity, tooling and a price that only holds at volume.</p>
+
+        <div class="globe-panel__copy">
+          <dl class="globe-stats" data-globe-stats hidden>
+            <div><dt data-i18n="network.stat.makers">Manufacturers</dt><dd data-globe-total>—</dd></div>
+            <div><dt data-i18n="network.stat.countries">Countries</dt><dd data-globe-countries>—</dd></div>
+          </dl>
+
+          <div class="network__pair">
+            <div class="network__side">
+              <p class="network__label" data-i18n="network.brands">Brands</p>
+              <p class="network__note" data-i18n="network.brands.note">An idea, an identity, and a quantity small enough to test.</p>
+            </div>
+            <div class="network__side">
+              <p class="network__label" data-i18n="network.makers">Manufacturers</p>
+              <p class="network__note" data-i18n="network.makers.note">Capacity, tooling and a price that only holds at volume.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -217,8 +235,27 @@
   <section class="section" id="founder">
     <div class="wrap founder" data-reveal>
       <div class="founder__portrait">
-        <img src="assets/img/founder.svg" alt="Affriee Darele Yvana, founder of Brandora Union"
-             width="640" height="800" loading="lazy">
+        <!--
+          The photograph, at two widths and in two formats.
+
+          The source is a 2MB PNG; this is 51KB of WebP at the size the layout
+          actually renders. On a metered West African mobile connection that
+          difference is the section loading or not loading, and it is the whole
+          reason the sizes attribute is written out rather than left to the
+          browser's 100vw default.
+
+          The original is kept at brand/founder-source.png.
+        -->
+        <picture>
+          <source type="image/webp"
+                  srcset="assets/img/founder-760.webp 760w, assets/img/founder-1100.webp 1100w"
+                  sizes="(max-width: 60rem) 22rem, 30vw">
+          <img src="assets/img/founder-760.jpg"
+               srcset="assets/img/founder-760.jpg 760w, assets/img/founder-1100.jpg 1100w"
+               sizes="(max-width: 60rem) 22rem, 30vw"
+               alt="Affriee Darele Yvana, founder of Brandora Union"
+               width="1023" height="1537" loading="lazy" decoding="async">
+        </picture>
       </div>
 
       <div class="founder__copy">
@@ -270,6 +307,22 @@
         <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
         <a href="tel:0556140994">0556140994</a>
       </p>
+    </div>
+  </section>
+
+  <!--
+    Testimonials.
+
+    The whole section is hidden until /api/testimonials returns an approved
+    row. A company that has not yet delivered its first order has no
+    testimonials, and an empty section is more honest than a full one nobody
+    said.
+  -->
+  <section class="section" id="words" data-testimonials-section hidden>
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="words.eyebrow">In their words</p>
+      <h2 data-i18n="words.title">What the people we work with say</h2>
+      <div class="words" data-testimonials data-stagger></div>
     </div>
   </section>
 

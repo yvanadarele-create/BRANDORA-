@@ -181,6 +181,8 @@ export interface SupplierRow {
   externalUrl?: string;
   country?: string;
   city?: string;
+  latitude?: number;
+  longitude?: number;
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
@@ -227,6 +229,11 @@ const toSupplier = (row: Record<string, unknown>): SupplierRow => ({
   externalUrl: optionalText(row["external_url"]),
   country: optionalText(row["country"]),
   city: optionalText(row["city"]),
+  // Read as a number when present and left undefined when not. A coordinate
+  // that came back null must not become 0 — 0,0 is a real place in the Gulf of
+  // Guinea, and a map would plot a factory there.
+  ...(typeof row["latitude"] === "number" ? { latitude: row["latitude"] } : {}),
+  ...(typeof row["longitude"] === "number" ? { longitude: row["longitude"] } : {}),
   contactName: optionalText(row["contact_name"]),
   contactEmail: optionalText(row["contact_email"]),
   contactPhone: optionalText(row["contact_phone"]),
@@ -505,6 +512,22 @@ const toOrder = (row: Record<string, unknown>): OrderRow => {
   };
 };
 
+const toTestimonial = (row: Record<string, unknown>): TestimonialRow => ({
+  id: text(row["id"]),
+  quote: text(row["quote"]),
+  authorName: text(row["author_name"]),
+  ...(optionalText(row["author_role"]) ? { authorRole: optionalText(row["author_role"])! } : {}),
+  ...(optionalText(row["company"]) ? { company: optionalText(row["company"])! } : {}),
+  ...(optionalText(row["country"]) ? { country: optionalText(row["country"])! } : {}),
+  locale: text(row["locale"]),
+  // SQLite stores 0/1, Postgres may hand back a boolean. Both mean the same
+  // thing and neither may reach the caller as the other.
+  approved: row["approved"] === true || row["approved"] === 1 || row["approved"] === "1",
+  ...(optionalText(row["consent_at"]) ? { consentAt: optionalText(row["consent_at"])! } : {}),
+  position: int(row["position"]),
+  createdAt: text(row["created_at"]),
+});
+
 /* --- The repositories ----------------------------------------------------- */
 
 export interface Repositories {
@@ -726,6 +749,23 @@ export interface Repositories {
     markFailed(id: string, error: string, maxAttempts?: number): Promise<void>;
   };
 
+  testimonials: {
+    create(input: TestimonialInput): Promise<TestimonialRow>;
+    findById(id: string): Promise<TestimonialRow | null>;
+    /**
+     * What the public site may show.
+     *
+     * Approved only, and there is no variant of this that returns an
+     * unapproved row — a quote reaches a visitor because somebody decided it
+     * should, never because it exists.
+     */
+    listApproved(limit?: number): Promise<TestimonialRow[]>;
+    listAsAdmin(limit?: number): Promise<TestimonialRow[]>;
+    /** Approving requires a recorded consent date; the route enforces it. */
+    setApproved(id: string, approved: boolean): Promise<void>;
+    remove(id: string): Promise<void>;
+  };
+
   subscribers: {
     /**
      * Record an address, or do nothing if it is already recorded.
@@ -748,6 +788,8 @@ export interface SupplierInput {
   externalUrl?: string;
   country?: string;
   city?: string;
+  latitude?: number;
+  longitude?: number;
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
@@ -821,6 +863,32 @@ export interface SubscriberRow {
   locale: string;
   source: string;
   createdAt: string;
+}
+
+export interface TestimonialRow {
+  id: string;
+  quote: string;
+  authorName: string;
+  authorRole?: string;
+  company?: string;
+  country?: string;
+  locale: string;
+  approved: boolean;
+  consentAt?: string;
+  position: number;
+  createdAt: string;
+}
+
+export interface TestimonialInput {
+  quote: string;
+  authorName: string;
+  authorRole?: string;
+  company?: string;
+  country?: string;
+  locale?: string;
+  /** When the person agreed to be quoted publicly. Required to approve. */
+  consentAt?: string;
+  position?: number;
 }
 
 export interface NotificationInput {
@@ -1415,14 +1483,15 @@ export function createRepositories(db: SqlDriver): Repositories {
         const now = nowIso();
         const id = newId("supplier");
         await run(`INSERT INTO suppliers
-             (id,name,platform,external_id,external_url,country,city,
+             (id,name,platform,external_id,external_url,country,city,latitude,longitude,
               contact_name,contact_email,contact_phone,
               categories,certifications,customization,
               minimum_order,lead_time_days,status,risk_flag,notes,created_at,updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
           id, input.name.trim(), input.platform,
           input.externalId ?? null, input.externalUrl ?? null,
           input.country ?? null, input.city ?? null,
+          input.latitude ?? null, input.longitude ?? null,
           input.contactName ?? null, input.contactEmail ?? null, input.contactPhone ?? null,
           toJson(input.categories ?? []), toJson(input.certifications ?? []),
           toJson(input.customization ?? []),
@@ -1454,6 +1523,8 @@ export function createRepositories(db: SqlDriver): Repositories {
         set("externalUrl", "external_url");
         set("country", "country");
         set("city", "city");
+        set("latitude", "latitude");
+        set("longitude", "longitude");
         set("contactName", "contact_name");
         set("contactEmail", "contact_email");
         set("contactPhone", "contact_phone");
@@ -1810,6 +1881,58 @@ export function createRepositories(db: SqlDriver): Repositories {
              WHERE id = ?`,
           error.slice(0, 500), maxAttempts, now, id,
         );
+      },
+    },
+
+    /* --- Testimonials ----------------------------------------------------- */
+
+    testimonials: {
+      async create(input) {
+        const now = nowIso();
+        const id = newId("testimonial");
+        await run(`INSERT INTO testimonials
+             (id,quote,author_name,author_role,company,country,locale,approved,consent_at,position,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+          id, input.quote.trim(), input.authorName.trim(),
+          input.authorRole ?? null, input.company ?? null, input.country ?? null,
+          input.locale ?? "en",
+          // Never approved on creation. Something typed into an admin form is
+          // a draft until a person says otherwise, and the site shows approved
+          // rows only.
+          0,
+          input.consentAt ?? null, input.position ?? 0, now, now,
+        );
+        const row = await get(`SELECT * FROM testimonials WHERE id = ?`, id);
+        if (!row) throw new Error("testimonial vanished immediately after insert");
+        return toTestimonial(row);
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM testimonials WHERE id = ?`, id);
+        return row ? toTestimonial(row) : null;
+      },
+
+      async listApproved(limit = 12) {
+        return (await all(
+          `SELECT * FROM testimonials WHERE approved = 1 ORDER BY position ASC, created_at ASC LIMIT ?`,
+          limit,
+        )).map(toTestimonial);
+      },
+
+      async listAsAdmin(limit = 200) {
+        return (await all(
+          `SELECT * FROM testimonials ORDER BY approved DESC, position ASC, created_at DESC LIMIT ?`,
+          limit,
+        )).map(toTestimonial);
+      },
+
+      async setApproved(id, approved) {
+        await run(`UPDATE testimonials SET approved = ?, updated_at = ? WHERE id = ?`,
+          approved ? 1 : 0, nowIso(), id);
+      },
+
+      async remove(id) {
+        await run(`DELETE FROM testimonials WHERE id = ?`, id);
       },
     },
 

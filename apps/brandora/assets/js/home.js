@@ -19,6 +19,7 @@
  */
 
 import { ApiError, api, clear, el } from './api.js';
+import { mountGlobe } from './globe.js';
 
 /* --- What can be sourced ---------------------------------------------------- */
 
@@ -183,3 +184,102 @@ function mountYear() {
 mountYear();
 mountSubscribe();
 void mountCatalogue();
+
+
+/* --- The manufacturer network ------------------------------------------------ */
+
+/**
+ * The globe, and the two numbers beside it.
+ *
+ * Both come from /api/network, which returns only suppliers with recorded
+ * coordinates. The count and the dots are derived from the same response, so
+ * the number under the globe and the dots on it can never disagree.
+ *
+ * With nothing recorded, the sphere still turns and the caption says the
+ * network is being built. It is the one honest thing to show — a globe covered
+ * in invented dots would be the single most misleading element on this page.
+ */
+async function mountNetwork() {
+  const canvas = document.querySelector('[data-globe]');
+  if (!canvas) return;
+
+  const status = document.querySelector('[data-globe-status]');
+  const stats = document.querySelector('[data-globe-stats]');
+  const totalNode = document.querySelector('[data-globe-total]');
+  const countriesNode = document.querySelector('[data-globe-countries]');
+
+  const globe = mountGlobe(canvas);
+  if (!globe) return;
+
+  try {
+    const network = await api.get('/api/network');
+    globe.setPoints(network.points ?? []);
+
+    if ((network.total ?? 0) > 0) {
+      stats.hidden = false;
+      totalNode.textContent = String(network.total);
+      countriesNode.textContent = String(network.countries ?? 0);
+      status.textContent =
+        network.plotted < network.total
+          ? `${network.plotted} of ${network.total} placed on the map.`
+          : '';
+    } else {
+      // Said plainly, and it is not an error state.
+      status.textContent = 'The manufacturer network is being built. Verified partners appear here as they join.';
+    }
+  } catch (err) {
+    // The globe stays; only the numbers go. A rendering that depends on a
+    // fetch should not disappear because the fetch did.
+    status.textContent =
+      err instanceof ApiError && err.status >= 500
+        ? 'The network could not be loaded just now.'
+        : 'The manufacturer network is being built.';
+  }
+}
+
+/* --- Testimonials ------------------------------------------------------------ */
+
+/**
+ * Quotes from real people, or nothing at all.
+ *
+ * The section starts hidden and is only revealed when the API returns at least
+ * one approved row. There is no placeholder, no sample quote and no "coming
+ * soon" card, because the honest version of having no testimonials is showing
+ * no testimonials.
+ */
+async function mountTestimonials() {
+  const section = document.querySelector('[data-testimonials-section]');
+  const list = document.querySelector('[data-testimonials]');
+  if (!section || !list) return;
+
+  let testimonials = [];
+  try {
+    testimonials = (await api.get('/api/testimonials')).testimonials ?? [];
+  } catch {
+    return; // Stays hidden. A failed fetch is not a reason to show anything.
+  }
+  if (testimonials.length === 0) return;
+
+  clear(list);
+  for (const entry of testimonials) {
+    const attribution = [entry.authorRole, entry.company].filter(Boolean).join(', ');
+    list.appendChild(
+      el('figure', { class: 'word' }, [
+        el('blockquote', { class: 'word__quote' }, [el('p', { text: entry.quote })]),
+        el('figcaption', { class: 'word__by' }, [
+          el('span', { class: 'word__name', text: entry.authorName }),
+          attribution ? el('span', { class: 'word__role', text: attribution }) : null,
+          entry.country ? el('span', { class: 'word__where', text: entry.country }) : null,
+        ]),
+      ]),
+    );
+  }
+
+  section.hidden = false;
+  // The reveal observer ran before this section existed on screen, so the
+  // stagger is triggered here rather than left permanently at opacity 0.
+  requestAnimationFrame(() => list.classList.add('is-visible'));
+}
+
+void mountNetwork();
+void mountTestimonials();

@@ -87,6 +87,11 @@ export const fr: Catalogue = {
   "footer.contact": "Contact",
   "footer.place": "Abidjan, Côte d'Ivoire",
 
+  "network.stat.makers": "Fabricants",
+  "network.stat.countries": "Pays",
+  "words.eyebrow": "Leurs mots",
+  "words.title": "Ce que disent les personnes avec qui nous travaillons",
+
   "hero.headline": "Créez votre marque. Nous la rendons réelle.",
   "hero.subheadline":
     "Identité de marque, produits, emballage et fabrication — réunis sur une seule plateforme.",

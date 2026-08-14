@@ -61,6 +61,7 @@ import {
   type SupplierInput,
   type SupplierOfferRow,
   type SupplierRow,
+  type TestimonialRow,
   type UserRow,
   loadProjectBundle,
   toBrandProfile,
@@ -419,6 +420,58 @@ export function createRouter(deps: ServerDeps): Router {
     // The same answer either way. `added` goes to the log, not to the wire.
     if (!added) deps.logger.error(`subscribe: ${email.slice(0, 3)}… was already recorded`);
     return json(201, { subscribed: true });
+  });
+
+  /**
+   * The testimonials the site may show.
+   *
+   * Approved rows only. There is no query parameter that widens this, because
+   * a quote reaches a visitor because somebody decided it should — not because
+   * it exists in a table.
+   *
+   * An empty list is a correct answer and the front end renders nothing for
+   * it. A company that has not yet delivered its first order has no
+   * testimonials, and inventing one is fraud with extra steps.
+   */
+  router.get("/api/testimonials", async () =>
+    json(200, { testimonials: (await repos.testimonials.listApproved(12)).map(testimonialView) }),
+  );
+
+  /**
+   * Where Brandora Union's manufacturers actually are.
+   *
+   * Feeds the globe. Only suppliers that are not blocked and that have real
+   * recorded coordinates — a supplier with no latitude is not plotted at a
+   * country centroid, because a centroid is a guess dressed as a coordinate
+   * and a map that plots guesses claims a factory in the middle of a desert.
+   *
+   * Deliberately coarse: a city, a country and a count. It carries no supplier
+   * name, no contact and no price, because §7 says a customer never sees those
+   * and this is a public route.
+   */
+  router.get("/api/network", async () => {
+    const suppliers = await repos.suppliers.list({ limit: 500 });
+    const plottable = suppliers.filter(
+      (supplier) =>
+        supplier.status !== "blocked" &&
+        typeof supplier.latitude === "number" &&
+        typeof supplier.longitude === "number",
+    );
+
+    return json(200, {
+      // Counted from the same list, so the number under the globe and the dots
+      // on it can never disagree.
+      total: suppliers.filter((supplier) => supplier.status !== "blocked").length,
+      plotted: plottable.length,
+      countries: [...new Set(plottable.map((s) => s.country).filter(Boolean))].length,
+      points: plottable.map((supplier) => ({
+        lat: supplier.latitude,
+        lon: supplier.longitude,
+        country: supplier.country ?? null,
+        city: supplier.city ?? null,
+        verified: supplier.verifiedAt !== undefined,
+      })),
+    });
   });
 
   /* --- Authentication ----------------------------------------------------- */
@@ -1812,6 +1865,61 @@ export function createRouter(deps: ServerDeps): Router {
     return json(200, { shipment: shipmentView(updated!) });
   });
 
+  router.get("/api/admin/testimonials", async (ctx) => {
+    await requireAdmin(ctx, session);
+    return json(200, { testimonials: (await repos.testimonials.listAsAdmin()).map(adminTestimonialView) });
+  });
+
+  router.post("/api/admin/testimonials", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const created = await repos.testimonials.create({
+      quote: requireString(ctx.body, "quote", 800),
+      authorName: requireString(ctx.body, "authorName", 160),
+      ...(optionalString(ctx.body, "authorRole", 160) ? { authorRole: optionalString(ctx.body, "authorRole", 160)! } : {}),
+      ...(optionalString(ctx.body, "company", 160) ? { company: optionalString(ctx.body, "company", 160)! } : {}),
+      ...(optionalString(ctx.body, "country", 2) ? { country: optionalString(ctx.body, "country", 2)!.toUpperCase() } : {}),
+      ...(optionalString(ctx.body, "consentAt", 40) ? { consentAt: optionalString(ctx.body, "consentAt", 40)! } : {}),
+      ...(optionalInteger(ctx.body, "position", 0, 999) !== undefined
+        ? { position: optionalInteger(ctx.body, "position", 0, 999)! }
+        : {}),
+    });
+    return json(201, { testimonial: adminTestimonialView(created) });
+  });
+
+  /**
+   * Publish or unpublish a quote.
+   *
+   * Publishing requires a recorded consent date. A quote is somebody's words
+   * with their name attached, and putting it on a marketing page without a
+   * record that they agreed is the kind of thing that is only noticed when it
+   * becomes a problem.
+   */
+  router.patch("/api/admin/testimonials/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const existing = await repos.testimonials.findById(id);
+    if (!existing) throw new NotFoundError("testimonial", id);
+
+    const approved = ctx.body["approved"] === true;
+    if (approved && !existing.consentAt) {
+      throw new ValidationError(
+        "approved",
+        "cannot publish a quote with no recorded consent date — record when the person agreed to be quoted",
+      );
+    }
+
+    await repos.testimonials.setApproved(id, approved);
+    return json(200, { testimonial: adminTestimonialView((await repos.testimonials.findById(id))!) });
+  });
+
+  router.delete("/api/admin/testimonials/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.testimonials.findById(id))) throw new NotFoundError("testimonial", id);
+    await repos.testimonials.remove(id);
+    return json(200, { deleted: id });
+  });
+
   router.get("/api/admin/subscribers", async (ctx) => {
     await requireAdmin(ctx, session);
     return json(200, {
@@ -1959,6 +2067,31 @@ function paymentView(payment: {
   };
 }
 
+/**
+ * A testimonial as a visitor reads it.
+ *
+ * No id, no consent date, no approval flag — those are operational facts about
+ * the row, and a public response has no use for them.
+ */
+const testimonialView = (t: TestimonialRow) => ({
+  quote: t.quote,
+  authorName: t.authorName,
+  authorRole: t.authorRole ?? null,
+  company: t.company ?? null,
+  country: t.country ?? null,
+});
+
+/** The same row for the administrator who has to manage it. */
+const adminTestimonialView = (t: TestimonialRow) => ({
+  ...testimonialView(t),
+  id: t.id,
+  locale: t.locale,
+  approved: t.approved,
+  consentAt: t.consentAt ?? null,
+  position: t.position,
+  createdAt: t.createdAt,
+});
+
 /* --- Procurement shapes ---------------------------------------------------- */
 
 const SUPPLIER_STATUSES = ["active", "paused", "blocked", "unverified"] as const;
@@ -1994,6 +2127,21 @@ function priceConfidenceOf(lastCheckedAt: string, unknowns: readonly string[], a
   if (!Number.isFinite(checked)) return "needs-confirmation";
   const days = (at.getTime() - checked) / 86_400_000;
   return days <= PRICE_FRESH_DAYS ? "confirmed" : "needs-confirmation";
+}
+
+/** A decimal within bounds, or nothing. Used for coordinates. */
+function optionalNumber(
+  body: Record<string, unknown>,
+  field: string,
+  min: number,
+  max: number,
+): number | undefined {
+  const raw = body[field];
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw < min || raw > max) {
+    throw new ValidationError(field, `expected a number between ${min} and ${max}`);
+  }
+  return raw;
 }
 
 function optionalInteger(
@@ -2067,6 +2215,10 @@ function readSupplierInput(body: Record<string, unknown>, required: boolean): Pa
   set("externalUrl", text("externalUrl", 500));
   set("country", text("country", 2));
   set("city", text("city", 120));
+  // Coordinates, so the network map can plot this supplier. Bounded to real
+  // latitudes and longitudes; anything else is not a place.
+  set("latitude", optionalNumber(body, "latitude", -90, 90));
+  set("longitude", optionalNumber(body, "longitude", -180, 180));
   set("contactName", text("contactName", 200));
   set("contactEmail", text("contactEmail", 320));
   set("contactPhone", text("contactPhone", 40));
@@ -2115,6 +2267,8 @@ const supplierView = (supplier: SupplierRow) => ({
   externalUrl: supplier.externalUrl ?? null,
   country: supplier.country ?? null,
   city: supplier.city ?? null,
+  latitude: supplier.latitude ?? null,
+  longitude: supplier.longitude ?? null,
   contact: {
     name: supplier.contactName ?? null,
     email: supplier.contactEmail ?? null,
