@@ -95,13 +95,53 @@ function answerList() {
 /**
  * Persist to the project, quietly.
  *
- * Called after every answer once there is somewhere to put it. A failure here
- * is not worth interrupting someone mid-interview over — the draft is still in
- * the page, and the save that matters is the one before generation, which is
+ * Called after every answer. Where there is no project yet and the visitor is
+ * signed in, one is created here rather than at the end of the interview.
+ *
+ * That ordering is the whole fix. The project used to be created just before
+ * generation, so `state.projectId` was null for the entire interview and this
+ * function returned on its first line every time — every answer lived in
+ * `sessionStorage` and nowhere else. It survived a reload of the same tab,
+ * which is exactly why it looked as though it worked, and was gone the moment
+ * the tab closed, the session ended or the person opened the site on their
+ * phone. "Answer six questions, come back tomorrow, start again" is not a
+ * product.
+ *
+ * A failure here still does not interrupt anyone: the draft holds the answer,
+ * the next answer retries the whole set, and the save before generation is
  * awaited and does surface its errors.
  */
+let creatingProject = null;
+
 async function syncAnswers() {
-  if (!state.projectId) return;
+  if (!state.projectId) {
+    // Nothing to attach a project to yet. A signed-out visitor's answers stay
+    // in the draft until they create an account, which is what the signup
+    // redirect at the end of the interview is for.
+    if (!state.user) return;
+
+    // Guarded so two answers in quick succession cannot create two projects.
+    if (!creatingProject) {
+      const working = String(state.answers.business || 'Untitled brand').split(/[.,]/)[0];
+      creatingProject = api
+        .createProject(working.trim().slice(0, 60) || 'Untitled brand')
+        .then((created) => {
+          state.projectId = created.project.id;
+          rememberProject(state.projectId);
+          return state.projectId;
+        })
+        .finally(() => {
+          creatingProject = null;
+        });
+    }
+
+    try {
+      await creatingProject;
+    } catch (err) {
+      return; // The draft still holds it; the next answer tries again.
+    }
+  }
+
   try {
     await api.saveInterview(state.projectId, answerList());
   } catch (err) {
@@ -329,6 +369,9 @@ async function generate() {
       return;
     }
 
+    // Normally created on the first answer by syncAnswers. Still handled here
+    // for the visitor who answered every question signed out, created an
+    // account, and came back to a page whose draft has answers but no project.
     if (!state.projectId) {
       const working = String(state.answers.business || 'Untitled brand').split(/[.,]/)[0];
       const created = await api.createProject(working.trim().slice(0, 60) || 'Untitled brand');

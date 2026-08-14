@@ -379,3 +379,41 @@ export function describeConfig(source: Env = env()): Record<string, string> {
     publicBaseUrl: publicBaseUrl(source),
   };
 }
+
+
+/* --- What a deployment is missing ---------------------------------------- */
+
+export interface ConfigurationGaps {
+  /** Absent variables without which the server refuses to start. */
+  required: string[];
+  /** Absent variables that leave the server running but crippled. */
+  recommended: string[];
+}
+
+/**
+ * Which variables a deployment has not set.
+ *
+ * Names only — never values, and there is deliberately no variant of this that
+ * returns one. A name is not a secret, and knowing *which* variable is missing
+ * is the difference between a five-minute fix and a five-day one; that is why
+ * the serverless entry point is allowed to put these in a 503 body.
+ *
+ * It lives here rather than in the entry point because the entry point sits
+ * inside the static root, where a build check forbids naming credentials — a
+ * rule worth keeping, since a file in that directory is one misconfiguration
+ * away from being served to a browser.
+ */
+export function configurationGaps(source: Env = env()): ConfigurationGaps {
+  const absent = (key: string): boolean => {
+    const value = source[key];
+    return typeof value !== "string" || value.trim() === "";
+  };
+
+  return {
+    required: ["BRANDORA_AUTH_SECRET"].filter(absent),
+    // Without a database URL the server starts on SQLite and forgets between
+    // invocations; without a model key it refuses to generate rather than
+    // fabricating a brand. Both are running-but-wrong, not dead.
+    recommended: ["BRANDORA_DATABASE_URL", "ANTHROPIC_API_KEY"].filter(absent),
+  };
+}

@@ -17,7 +17,7 @@ const PROJECT_KEY = 'brandora.project';
 
 export class ApiError extends Error {
   constructor(status, key, message) {
-    super(message || 'Something went wrong.');
+    super(message || '');
     this.name = 'ApiError';
     this.status = status;
     this.key = key;
@@ -25,6 +25,24 @@ export class ApiError extends Error {
 
   get isUnauthenticated() {
     return this.status === 401;
+  }
+
+  /**
+   * What to show a person, in their language.
+   *
+   * Resolved from the error *key* through the same dictionary the rest of the
+   * interface uses, falling back to the server's sentence and only then to a
+   * generic one. Keying it means an error is translated like everything else
+   * rather than arriving in English on a French page — which is what happened
+   * before, because the server's CUSTOMER_MESSAGES table is English-only and
+   * the client printed it verbatim.
+   */
+  get readable() {
+    const translated = window.brandoraTranslate ? window.brandoraTranslate(`error.${this.key}`) : null;
+    if (translated) return translated;
+    if (this.message) return this.message;
+    const fallback = window.brandoraTranslate ? window.brandoraTranslate('error.unknown') : null;
+    return fallback || 'Something went wrong. Please try again.';
   }
 }
 
@@ -54,7 +72,22 @@ async function request(method, path, body) {
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, payload.error || 'unknown', payload.message);
+    // Two shapes reach here and both have to be understood.
+    //
+    // A route error is `{ error: "auth.required", message: "..." }`. A boot
+    // failure from api/index.js is `{ success: false, error: { code, message } }`
+    // — the shape §17 asks for. Reading only the first is why a 503 from an
+    // unconfigured server showed "Something went wrong" instead of saying the
+    // service was not configured: `payload.error` was an object, so the key was
+    // an object and `payload.message` was undefined.
+    const envelope = payload.error;
+    const structured = envelope !== null && typeof envelope === 'object';
+
+    throw new ApiError(
+      response.status,
+      structured ? envelope.code || 'unknown' : envelope || 'unknown',
+      structured ? envelope.message : payload.message,
+    );
   }
   return payload;
 }
@@ -237,7 +270,11 @@ export function clear(node) {
  */
 export function showError(node, err) {
   if (!node) return;
-  node.textContent = err instanceof ApiError ? err.message : 'Something went wrong. Please try again.';
+  node.textContent =
+    err instanceof ApiError
+      ? err.readable
+      : (window.brandoraTranslate && window.brandoraTranslate('error.unknown')) ||
+        'Something went wrong. Please try again.';
   node.hidden = false;
 }
 

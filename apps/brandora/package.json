@@ -11,6 +11,7 @@
   "type": "module",
   "dependencies": {
     "@brandora/server": "workspace:*",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "@brandora/config": "workspace:*"
   }
 }

@@ -26,6 +26,7 @@
  */
 
 import {
+  BrandoraError,
   type BrandoraProduct,
   type CurrencyCode,
   type Money,
@@ -531,14 +532,14 @@ export function createRouter(deps: ServerDeps): Router {
       // Burn the same work a real verification costs, so the response time does
       // not tell an attacker which addresses have accounts.
       wasteVerificationTime();
-      throw new ValidationError("credentials", `no account for ${email}`);
+      throw new BrandoraError("auth.invalid", `no account for ${email}`, 401);
     }
 
     const ok = verifyPassword(password, {
       hash: credentials.passwordHash,
       salt: credentials.passwordSalt,
     });
-    if (!ok) throw new ValidationError("credentials", `bad password for ${user.id}`);
+    if (!ok) throw new BrandoraError("auth.invalid", `bad password for ${user.id}`, 401);
 
     loginLimiter.reset(ctx.ip);
     return json(200, { user: publicUser(user) }, { cookies: await setSessionCookie(user.id) });

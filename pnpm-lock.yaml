@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@brandora/config':
+        specifier: workspace:*
+        version: link:packages/brandora-config
       '@brandora/server':
         specifier: workspace:*
         version: link:packages/brandora-server
@@ -27,6 +30,9 @@ importers:
 
   apps/brandora:
     dependencies:
+      '@brandora/config':
+        specifier: workspace:*
+        version: link:../../packages/brandora-config
       '@brandora/server':
         specifier: workspace:*
         version: link:../../packages/brandora-server

@@ -20,6 +20,10 @@ export const CUSTOMER_MESSAGES = {
   "quote.expired": "This quote has expired. We can prepare a fresh one for you.",
   "order.not-found": "We couldn't find that order.",
   "auth.required": "Please sign in to continue.",
+  // Deliberately identical for "no such account" and "wrong password": a
+  // message that distinguishes them tells an attacker which addresses have
+  // accounts. The route already burns matching time for the same reason.
+  "auth.invalid": "That email address or password is not right.",
   "auth.weak-password": "Please choose a longer password — at least 10 characters.",
   "auth.forbidden": "You don't have access to this.",
   "input.invalid": "Something in that form didn't look right. Please check and try again.",

@@ -239,6 +239,59 @@ async function projectWithBrand(client: Client): Promise<string> {
 
 /* --- Tests ----------------------------------------------------------------- */
 
+describe("a deployment that is not fully configured", () => {
+  it("names the missing variables without ever reading one", async () => {
+    const { configurationGaps } = await import("@brandora/config");
+
+    const bare = configurationGaps({});
+    assert.deepEqual(bare.required, ["BRANDORA_AUTH_SECRET"]);
+    assert.deepEqual(bare.recommended, ["BRANDORA_DATABASE_URL", "ANTHROPIC_API_KEY"]);
+
+    const configured = configurationGaps({
+      BRANDORA_AUTH_SECRET: "s", BRANDORA_DATABASE_URL: "postgres://x", ANTHROPIC_API_KEY: "k",
+    });
+    assert.deepEqual(configured.required, []);
+    assert.deepEqual(configured.recommended, []);
+
+    // Whitespace is not configuration.
+    assert.deepEqual(configurationGaps({ BRANDORA_AUTH_SECRET: "   " }).required, ["BRANDORA_AUTH_SECRET"]);
+
+    // Names only. A value must never come back from this, because the whole
+    // point of it is to be safe to put in a 503 body.
+    const serialised = JSON.stringify(configurationGaps({ BRANDORA_AUTH_SECRET: "super-secret-value" }));
+    assert.equal(serialised.includes("super-secret-value"), false);
+  });
+});
+
+describe("a failed sign-in", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(() => h.close());
+
+  it("says the credentials are wrong, not that a field looks odd", async () => {
+    await signUp(h, "real-account@example.com");
+
+    const client = new Client(h.base);
+    const wrongPassword = await client.post("/api/auth/login", {
+      email: "real-account@example.com", password: "not-the-password",
+    });
+    const noAccount = await client.post("/api/auth/login", {
+      email: "nobody-here@example.com", password: "not-the-password",
+    });
+
+    // The key drives the translation, so this is what decides whether a French
+    // visitor reads "votre mot de passe est incorrect" or a generic sentence
+    // about a form field. It used to be input.invalid.
+    assert.equal(wrongPassword.json["error"], "auth.invalid");
+    assert.equal(wrongPassword.status, 401);
+
+    // And the two failures are indistinguishable, so the form cannot be used
+    // to find out which addresses have accounts.
+    assert.equal(noAccount.status, wrongPassword.status);
+    assert.deepEqual(noAccount.json, wrongPassword.json);
+  });
+});
+
 describe("testimonials", () => {
   let h: Harness;
   before(async () => { h = await start(); });
