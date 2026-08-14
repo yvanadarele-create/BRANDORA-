@@ -45,11 +45,53 @@ export const en = {
   "contact.phone": "Phone",
 
   /* Landing */
-  "hero.headline": "Build your brand. Put it everywhere.",
+  "sourcing.eyebrow": "What you can source",
+  "sourcing.title": "Packaging, print and product",
+  "sourcing.lede": "Everything below is in the catalogue today, priced and orderable in small quantities.",
+  "sourcing.browse": "Browse the full catalogue",
+
+  "ask.eyebrow": "Ask Brandora",
+  "ask.title": "Not sure what to source?",
+  "ask.lede":
+    "Describe what you need in your own words. Brandora reads the request, searches the real catalogue and tells you what can actually be ordered at your quantity.",
+  "ask.grounding":
+    "It answers from the catalogue and your stored brand — never from guesswork. If nothing fits, it says so instead of suggesting something that does not exist.",
+  "ask.cta": "Ask Brandora",
+  "ask.example.q": "I need 2,000 luxury cosmetic boxes, matte black, with my logo, delivered to Abidjan.",
+  "ask.example.a":
+    "Reads the quantity, the material, the finish, the branding and the destination — then shortlists only what is recorded as orderable at 2,000, and says what is missing rather than filling it in.",
+
+  "network.eyebrow": "The union",
+  "network.title": "Between the brand and the factory",
+  "network.lede":
+    "A founder in Abidjan and a manufacturer who can make what they need are usually two people who will never meet. Brandora Union is the connection — and the quality check, the paperwork and the shipment that have to come with it.",
+  "network.brands": "Brands",
+  "network.brands.note": "An idea, an identity, and a quantity small enough to test.",
+  "network.makers": "Manufacturers",
+  "network.makers.note": "Capacity, tooling and a price that only holds at volume.",
+
+  "founder.eyebrow": "The founder",
+  "founder.role": "Founder, Brandora Union — Abidjan, Côte d'Ivoire",
+
+  "join.title": "Stay close to what we're building.",
+  "join.lede": "Updates on new manufacturers, products, sourcing opportunities and Brandora Union launches.",
+  "join.label": "Your email",
+  "join.placeholder": "you@example.com",
+  "join.cta": "Join the network",
+
+  "footer.platform": "Platform",
+  "footer.company": "Company",
+  "footer.sourcing": "Sourcing",
+  "footer.network": "Manufacturers",
+  "footer.about": "About",
+  "footer.contact": "Contact",
+  "footer.place": "Abidjan, Côte d'Ivoire",
+
+  "hero.headline": "Build your brand. We help make it real.",
   "hero.subheadline":
-    "Brandora helps you turn an idea into a complete brand — from strategy and identity to packaging, sourcing and physical products.",
-  "hero.cta.primary": "Create My Brand",
-  "hero.cta.secondary": "Explore Brandora",
+    "Brand identity, products, packaging and manufacturing — connected in one platform.",
+  "hero.cta.primary": "Start building",
+  "hero.cta.secondary": "Explore sourcing",
   "hero.cta.ai": "Ask Brandora",
   "hero.positioning": "From idea to identity to physical brand.",
 

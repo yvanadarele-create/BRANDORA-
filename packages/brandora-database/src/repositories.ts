@@ -725,6 +725,20 @@ export interface Repositories {
      */
     markFailed(id: string, error: string, maxAttempts?: number): Promise<void>;
   };
+
+  subscribers: {
+    /**
+     * Record an address, or do nothing if it is already recorded.
+     *
+     * `added` is returned rather than thrown, because the caller must answer
+     * the same thing either way: a form that says "you are already on the list"
+     * tells whoever typed the address whether someone else subscribed with it.
+     */
+    add(input: { email: string; locale?: string; source?: string }): Promise<{ added: boolean }>;
+    count(): Promise<number>;
+    listAsAdmin(limit?: number): Promise<SubscriberRow[]>;
+    remove(email: string): Promise<void>;
+  };
 }
 
 export interface SupplierInput {
@@ -799,6 +813,14 @@ export interface ShipmentInput {
   estimatedDelivery?: string;
   actualDelivery?: string;
   exceptionNote?: string;
+}
+
+export interface SubscriberRow {
+  id: string;
+  email: string;
+  locale: string;
+  source: string;
+  createdAt: string;
 }
 
 export interface NotificationInput {
@@ -1788,6 +1810,53 @@ export function createRepositories(db: SqlDriver): Repositories {
              WHERE id = ?`,
           error.slice(0, 500), maxAttempts, now, id,
         );
+      },
+    },
+
+    /* --- Subscribers ------------------------------------------------------ */
+
+    subscribers: {
+      async add(input) {
+        const email = input.email.trim().toLowerCase();
+        const id = newId("subscriber");
+
+        // ON CONFLICT DO NOTHING rather than a SELECT then an INSERT: two people
+        // submitting the same address at the same moment would both see no row
+        // and both insert, and one of them would get a UNIQUE violation as a
+        // 500 on a newsletter form.
+        await run(`INSERT INTO subscribers (id,email,locale,source,created_at)
+           VALUES (?,?,?,?,?)
+           ON CONFLICT(email) DO NOTHING`,
+          id, email, input.locale ?? "en", input.source ?? "homepage", nowIso(),
+        );
+
+        // Whether *this* call was the one that added it, decided by reading the
+        // id back rather than by looking before the insert — a check-then-insert
+        // has a gap between the two and this does not. The id is used rather
+        // than the timestamp because two submissions in the same millisecond
+        // share a timestamp, and the first version of this reported both as
+        // new. Used for the log; never for what the visitor is told.
+        const row = await get(`SELECT id FROM subscribers WHERE email = ?`, email);
+        return { added: row !== null && text(row["id"]) === id };
+      },
+
+      async count() {
+        const row = await get(`SELECT COUNT(*) AS n FROM subscribers`);
+        return int(row?.["n"]);
+      },
+
+      async listAsAdmin(limit = 500) {
+        return (await all(`SELECT * FROM subscribers ORDER BY created_at DESC LIMIT ?`, limit)).map((row) => ({
+          id: text(row["id"]),
+          email: text(row["email"]),
+          locale: text(row["locale"]),
+          source: text(row["source"]),
+          createdAt: text(row["created_at"]),
+        }));
+      },
+
+      async remove(email) {
+        await run(`DELETE FROM subscribers WHERE email = ?`, email.trim().toLowerCase());
       },
     },
   };

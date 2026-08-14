@@ -176,6 +176,8 @@ export interface RateLimits {
   signupWindowMs: number;
   generationsPerWindow: number;
   generationWindowMs: number;
+  subscribesPerWindow: number;
+  subscribeWindowMs: number;
 }
 
 /**
@@ -199,6 +201,11 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
   signupWindowMs: 60 * 60 * 1000,
   generationsPerWindow: 12,
   generationWindowMs: 60 * 60 * 1000,
+  // A public form with no account behind it, so this is the one an address can
+  // be pointed at cheaply. Still loose enough that an office behind one NAT
+  // address can all sign up in an afternoon.
+  subscribesPerWindow: 30,
+  subscribeWindowMs: 60 * 60 * 1000,
 };
 
 /* --- Presentation helpers -------------------------------------------------- */
@@ -269,6 +276,7 @@ export function createRouter(deps: ServerDeps): Router {
   const loginLimiter = new RateLimiter(limits.loginsPerWindow, limits.loginWindowMs);
   const signupLimiter = new RateLimiter(limits.signupsPerWindow, limits.signupWindowMs);
   const generateLimiter = new RateLimiter(limits.generationsPerWindow, limits.generationWindowMs);
+  const subscribeLimiter = new RateLimiter(limits.subscribesPerWindow, limits.subscribeWindowMs);
 
   const byId = new Map(catalog.map((p) => [p.id, p]));
 
@@ -376,6 +384,42 @@ export function createRouter(deps: ServerDeps): Router {
       })),
     }),
   );
+
+  /**
+   * Keep me posted.
+   *
+   * Public, because asking to hear what a company is building should not
+   * require an account.
+   *
+   * Two things it deliberately does not do. It does not say whether the address
+   * was already on the list — a form that answers "you are already subscribed"
+   * lets anyone check whether a given address subscribed, which is somebody
+   * else's business. And it does not send anything: there is no welcome email
+   * because there is no list to welcome anyone to yet, and a confirmation for a
+   * newsletter that does not exist is the kind of small lie this codebase does
+   * not tell.
+   */
+  router.post("/api/subscribe", async (ctx) => {
+    if (subscribeLimiter.exceeded(ctx.ip)) throw new RateLimitedError("subscribe: too many from this address");
+
+    const email = requireString(ctx.body, "email", 254).trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      throw new ValidationError("email", "does not look like an email address");
+    }
+
+    const locale = optionalString(ctx.body, "locale", 5);
+    const source = optionalString(ctx.body, "source", 40);
+
+    const { added } = await repos.subscribers.add({
+      email,
+      ...(locale && ["en", "fr", "es"].includes(locale) ? { locale } : {}),
+      ...(source ? { source } : {}),
+    });
+
+    // The same answer either way. `added` goes to the log, not to the wire.
+    if (!added) deps.logger.error(`subscribe: ${email.slice(0, 3)}… was already recorded`);
+    return json(201, { subscribed: true });
+  });
 
   /* --- Authentication ----------------------------------------------------- */
 
@@ -1766,6 +1810,14 @@ export function createRouter(deps: ServerDeps): Router {
     }
 
     return json(200, { shipment: shipmentView(updated!) });
+  });
+
+  router.get("/api/admin/subscribers", async (ctx) => {
+    await requireAdmin(ctx, session);
+    return json(200, {
+      count: await repos.subscribers.count(),
+      subscribers: await repos.subscribers.listAsAdmin(500),
+    });
   });
 
   router.get("/api/admin/integrations", async (ctx) => {

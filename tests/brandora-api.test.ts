@@ -239,6 +239,67 @@ async function projectWithBrand(client: Client): Promise<string> {
 
 /* --- Tests ----------------------------------------------------------------- */
 
+describe("staying close to what we're building", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(() => h.close());
+
+  it("records an address without an account", async () => {
+    const response = await new Client(h.base).post("/api/subscribe", {
+      email: "reader@example.com", locale: "fr", source: "homepage",
+    });
+
+    assert.equal(response.status, 201, JSON.stringify(response.json));
+    assert.equal(response.json["subscribed"], true);
+
+    const rows = await h.app.repos.subscribers.listAsAdmin();
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0]?.email, "reader@example.com");
+    assert.equal(rows[0]?.locale, "fr");
+  });
+
+  it("answers a repeat submission identically", async () => {
+    const client = new Client(h.base);
+    const first = await client.post("/api/subscribe", { email: "twice@example.com" });
+    const second = await client.post("/api/subscribe", { email: "twice@example.com" });
+
+    // Byte-identical. A form that replies "you are already subscribed" lets
+    // anyone check whether a given address is on the list, which is somebody
+    // else's business.
+    assert.equal(first.status, second.status);
+    assert.deepEqual(first.json, second.json);
+    assert.equal(await h.app.repos.subscribers.count(), 2);
+  });
+
+  it("refuses something that is not an address", async () => {
+    const client = new Client(h.base);
+    for (const email of ["", "nope", "a@b", "no spaces@example.com"]) {
+      const response = await client.post("/api/subscribe", { email });
+      assert.equal(response.status, 400, `${email} was accepted`);
+    }
+  });
+
+  it("ignores a locale it does not have", async () => {
+    await new Client(h.base).post("/api/subscribe", { email: "locale@example.com", locale: "zz" });
+    const row = (await h.app.repos.subscribers.listAsAdmin()).find((r) => r.email === "locale@example.com");
+    assert.equal(row?.locale, "en");
+  });
+
+  it("keeps the list behind an administrator", async () => {
+    const customer = await signUp(h, "not-admin-subs@example.com");
+    assert.equal((await customer.get("/api/admin/subscribers")).status, 403);
+    assert.equal((await new Client(h.base).get("/api/admin/subscribers")).status, 401);
+
+    await makeAdmin(h, "not-admin-subs@example.com");
+    const admin = await new Client(h.base);
+    await admin.post("/api/auth/login", { email: "not-admin-subs@example.com", password: PASSWORD });
+    const list = await admin.get("/api/admin/subscribers");
+    assert.equal(list.status, 200);
+    assert.equal(typeof list.json["count"], "number");
+  });
+});
+
+
 describe("brandora api", () => {
   let h: Harness;
 

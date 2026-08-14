@@ -87,6 +87,7 @@ interface Backend {
 }
 
 const TABLES = [
+  "subscribers",
   "order_events",
   "notifications",
   "shipments",
@@ -573,6 +574,27 @@ for (const backend of BACKENDS) {
       assert.equal(sent?.attempts, 1);
       assert.ok(sent?.sentAt);
       assert.deepEqual(await repos.notifications.pending(), []);
+    });
+
+    it("records an address once, however many times it is submitted", async () => {
+      await backend.reset(db);
+
+      const first = await repos.subscribers.add({ email: "Founder@Example.COM", source: "homepage" });
+      const second = await repos.subscribers.add({ email: "founder@example.com", source: "homepage" });
+
+      assert.equal(first.added, true);
+      // The second call did not add it — and said so, which is what the log
+      // needs. The visitor is told the same thing either way; that is the
+      // route's job, not the repository's.
+      assert.equal(second.added, false);
+      assert.equal(await repos.subscribers.count(), 1);
+
+      const [row] = await repos.subscribers.listAsAdmin();
+      // Lowercased on write, so the same person cannot be on the list twice
+      // with different capitalisation.
+      assert.equal(row?.email, "founder@example.com");
+      assert.equal(row?.source, "homepage");
+      assert.equal(row?.locale, "en");
     });
 
     it("retries a failed notification, then abandons it", async () => {

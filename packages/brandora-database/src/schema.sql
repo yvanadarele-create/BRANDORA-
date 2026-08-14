@@ -386,3 +386,22 @@ CREATE TABLE IF NOT EXISTS order_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id);
+
+-- People who asked to hear what Brandora Union is building.
+--
+-- An address and when it was given, and nothing else. There is no name column
+-- because the form does not ask for one, and no marketing-consent flag because
+-- giving the address on a form that says what it is for *is* the consent —
+-- a second flag would only ever record the same fact twice.
+--
+-- `source` is which page it came from, so a form that stops converting can be
+-- found without instrumenting anything.
+CREATE TABLE IF NOT EXISTS subscribers (
+  id         TEXT PRIMARY KEY,
+  email      TEXT NOT NULL UNIQUE,
+  locale     TEXT NOT NULL DEFAULT 'en',
+  source     TEXT NOT NULL DEFAULT 'homepage',
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscribers_created ON subscribers(created_at);

@@ -86,7 +86,7 @@
     -->
     <div class="film__caption">
       <img class="film__logo" data-film-logo src="assets/img/logo-full.svg" alt="Brandora Union" width="620" height="400">
-      <p data-i18n="hero.headline">Build your brand. Put it everywhere.</p>
+      <p data-i18n="brand.tagline">Where brands take form.</p>
     </div>
 
     <button class="control film__toggle" type="button" data-film-toggle hidden>
@@ -107,107 +107,135 @@
         <span class="eyebrow__company">Brandora&nbsp;Union</span>
         <span class="eyebrow__tagline" data-i18n="brand.tagline">Where brands take form.</span>
       </p>
-      <h1 data-i18n="hero.headline">Build your brand. Put it everywhere.</h1>
-      <p class="lede" data-i18n="hero.subheadline">Brandora helps you turn an idea into a complete brand — from strategy and identity to packaging, sourcing and physical products.</p>
+      <h1 class="hero__headline" data-i18n="hero.headline">Build your brand. We help make it real.</h1>
+      <p class="lede" data-i18n="hero.subheadline">Brand identity, products, packaging and manufacturing — connected in one platform.</p>
       <div class="hero__actions">
-        <a class="btn btn--primary" href="create.html" data-i18n="hero.cta.primary">Create My Brand</a>
-        <a class="btn btn--ghost" href="#how" data-i18n="hero.cta.secondary">Explore Brandora</a>
-        <a class="btn btn--quiet" href="create.html#assistant"><span data-i18n="hero.cta.ai">Ask Brandora</span> <span aria-hidden="true">✦</span></a>
+        <a class="btn btn--primary" href="create.html" data-i18n="hero.cta.primary">Start building</a>
+        <a class="btn btn--ghost" href="#sourcing" data-i18n="hero.cta.secondary">Explore sourcing</a>
       </div>
     </div>
   </section>
 
-  <!-- How it works (§11) -->
-  <section class="section" id="how">
+  <!--
+    What can actually be sourced.
+
+    Rendered from data/catalog.json, which is emitted from the same catalogue
+    the quote engine prices against — so this list cannot drift from what the
+    product can really order, and it cannot name a category nobody stocks.
+    app.js fills it; the markup below is the empty state, which is what a
+    visitor sees if the data fails to load rather than a blank hole.
+  -->
+  <section class="section" id="sourcing">
     <div class="wrap">
-      <h2 data-i18n="how.title">How it works</h2>
-      <ol class="steps" data-reveal>
-        <li class="step"><div class="step__n">01</div><h3 data-i18n="how.01">Tell us your idea</h3></li>
-        <li class="step"><div class="step__n">02</div><h3 data-i18n="how.02">Build your identity</h3></li>
-        <li class="step"><div class="step__n">03</div><h3 data-i18n="how.03">Choose your products</h3></li>
-        <li class="step"><div class="step__n">04</div><h3 data-i18n="how.04">Visualize your brand</h3></li>
-        <li class="step"><div class="step__n">05</div><h3 data-i18n="how.05">Get your quote</h3></li>
-        <li class="step"><div class="step__n">06</div><h3 data-i18n="how.06">Order</h3></li>
-      </ol>
-    </div>
-  </section>
+      <p class="eyebrow" data-i18n="sourcing.eyebrow">What you can source</p>
+      <h2 data-i18n="sourcing.title">Packaging, print and product</h2>
+      <p class="lede" data-i18n="sourcing.lede">Everything below is in the catalogue today, priced and orderable in small quantities.</p>
 
-  <!-- Brand creation + physical branding (§11) -->
-  <section class="section section--tight">
-    <div class="wrap grid grid--2" data-reveal>
-      <div class="card">
-        <p class="eyebrow">01</p>
-        <h2 data-i18n="section.brand.title">Brand creation</h2>
-        <p data-i18n="section.brand.body">Idea becomes identity. Identity becomes a logo you own.</p>
-        <ul class="flow">
-          <li>Idea</li>
-          <li class="flow__arrow" aria-hidden="true">→</li>
-          <li>Brand identity</li>
-          <li class="flow__arrow" aria-hidden="true">→</li>
-          <li>Logo</li>
-        </ul>
+      <div class="catalogue-grid" data-catalogue-grid data-reveal data-stagger>
+        <p class="notice notice--quiet" data-catalogue-empty>Loading the catalogue…</p>
       </div>
 
-      <div class="card">
-        <p class="eyebrow">02</p>
-        <h2 data-i18n="section.physical.title">Physical branding</h2>
-        <p data-i18n="section.physical.body">Your logo on cups, boxes, bags, stickers and cards.</p>
-        <ul class="flow">
-          <li>Logo</li>
-          <li class="flow__arrow" aria-hidden="true">→</li>
-          <li>Cup</li>
-          <li>Box</li>
-          <li>Bag</li>
-          <li>Sticker</li>
-          <li>Card</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- AI sourcing (§11) -->
-  <section class="section section--tight">
-    <div class="wrap card" data-reveal>
-      <p class="eyebrow">03</p>
-      <h2 data-i18n="section.sourcing.title">AI sourcing</h2>
-      <p data-i18n="section.sourcing.body">Tell Brandora what you need. It searches suppliers, compares the options and returns a quote.</p>
-      <ul class="flow">
-        <li>Your request</li>
-        <li class="flow__arrow" aria-hidden="true">→</li>
-        <li>Supplier search</li>
-        <li class="flow__arrow" aria-hidden="true">→</li>
-        <li>Best options</li>
-        <li class="flow__arrow" aria-hidden="true">→</li>
-        <li>Quote</li>
-      </ul>
-      <p class="notice notice--accent" style="margin-top:1.5rem">
-        &ldquo;Find 30 premium black cups for my bakery. They should be customisable
-        with my logo and deliverable to Abidjan.&rdquo;
+      <p class="section__more">
+        <a class="link-arrow" href="catalog.html" data-i18n="sourcing.browse">Browse the full catalogue</a>
       </p>
     </div>
   </section>
 
-  <!-- Small quantities and local reality (§11, §63, §64) -->
-  <section class="section">
-    <div class="wrap" data-reveal>
-      <h2 data-i18n="section.africa.title">Built for how small businesses actually start</h2>
-      <p class="lede" data-i18n="section.africa.body">Small quantities, flexible sourcing, local delivery, mobile-first, and payment options that work where you are.</p>
-      <div class="grid grid--4" style="margin-top:2rem">
-        <div class="card card--flat">
-          <h3>Start at 10 units</h3>
-          <p class="product__meta">Not ten thousand. Test an idea before you commit to it.</p>
+  <!--
+    Ask Brandora.
+
+    Given a section of its own because it is a core part of the product rather
+    than a widget in a corner. The example is a real sentence the assistant can
+    answer, and the note underneath says plainly what it is grounded in — the
+    honest version of "AI-powered", and the reason a wrong figure in its prose
+    cannot become a wrong price on screen.
+  -->
+  <section class="section" id="ask">
+    <div class="wrap ask-panel" data-reveal>
+      <div class="ask-panel__copy">
+        <p class="eyebrow" data-i18n="ask.eyebrow">Ask Brandora</p>
+        <h2 data-i18n="ask.title">Not sure what to source?</h2>
+        <p class="lede" data-i18n="ask.lede">Describe what you need in your own words. Brandora reads the request, searches the real catalogue and tells you what can actually be ordered at your quantity.</p>
+        <p class="ask-panel__grounding" data-i18n="ask.grounding">It answers from the catalogue and your stored brand — never from guesswork. If nothing fits, it says so instead of suggesting something that does not exist.</p>
+        <p class="hero__actions">
+          <a class="btn btn--primary" href="assistant.html" data-i18n="ask.cta">Ask Brandora</a>
+        </p>
+      </div>
+
+      <!-- A worked example, not a live widget: the real one is one click away
+           and needs an account, and a fake chat that answers nothing is exactly
+           what "never look more intelligent than the product" forbids. -->
+      <div class="ask-demo" aria-label="Example conversation">
+        <p class="ask-demo__turn ask-demo__turn--you">
+          <span class="ask-demo__who">You</span>
+          <span data-i18n="ask.example.q">I need 2,000 luxury cosmetic boxes, matte black, with my logo, delivered to Abidjan.</span>
+        </p>
+        <p class="ask-demo__turn ask-demo__turn--brandora">
+          <span class="ask-demo__who">Brandora</span>
+          <span data-i18n="ask.example.a">Reads the quantity, the material, the finish, the branding and the destination — then shortlists only what is recorded as orderable at 2,000, and says what is missing rather than filling it in.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!--
+    The network. This is what the word UNION is doing in the name.
+  -->
+  <section class="section" id="network">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="network.eyebrow">The union</p>
+      <h2 data-i18n="network.title">Between the brand and the factory</h2>
+      <p class="lede" data-i18n="network.lede">A founder in Abidjan and a manufacturer who can make what they need are usually two people who will never meet. Brandora Union is the connection — and the quality check, the paperwork and the shipment that have to come with it.</p>
+
+      <div class="network" data-reveal>
+        <div class="network__side">
+          <p class="network__label" data-i18n="network.brands">Brands</p>
+          <p class="network__note" data-i18n="network.brands.note">An idea, an identity, and a quantity small enough to test.</p>
         </div>
-        <div class="card card--flat">
-          <h3>Built for a phone</h3>
-          <p class="product__meta">Every screen works on the device your business already runs on.</p>
+        <div class="network__bridge" aria-hidden="true">
+          <span class="network__node"></span>
+          <span class="network__line"></span>
+          <span class="network__hub">B</span>
+          <span class="network__line"></span>
+          <span class="network__node"></span>
         </div>
-        <div class="card card--flat">
-          <h3>Three languages</h3>
-          <p class="product__meta">English, French and Spanish — interface, quotes and assistant.</p>
+        <div class="network__side network__side--end">
+          <p class="network__label" data-i18n="network.makers">Manufacturers</p>
+          <p class="network__note" data-i18n="network.makers.note">Capacity, tooling and a price that only holds at volume.</p>
         </div>
-        <div class="card card--flat">
-          <h3>Priced in your currency</h3>
-          <p class="product__meta">FCFA today, and the architecture takes others without a rewrite.</p>
+      </div>
+    </div>
+  </section>
+
+  <!--
+    The founder.
+
+    A real person, in her own words. The portrait is a placeholder monogram
+    until the photograph is dropped in at assets/img/founder.jpg — see the
+    comment inside founder.svg.
+  -->
+  <section class="section" id="founder">
+    <div class="wrap founder" data-reveal>
+      <div class="founder__portrait">
+        <img src="assets/img/founder.svg" alt="Affriee Darele Yvana, founder of Brandora Union"
+             width="640" height="800" loading="lazy">
+      </div>
+
+      <div class="founder__copy">
+        <p class="eyebrow" data-i18n="founder.eyebrow">The founder</p>
+        <h2 class="founder__name">Affriee Darele Yvana</h2>
+        <p class="founder__role" data-i18n="founder.role">Founder, Brandora Union — Abidjan, Côte d'Ivoire</p>
+
+        <div class="founder__story">
+          <p>I built Brandora Union because I noticed a gap I couldn't ignore.</p>
+          <p>Across Africa, there are incredible entrepreneurs building ambitious brands and creating genuinely great products. But too often, the physical presentation of those products doesn't reflect the quality of what's inside.</p>
+          <p>I realized that packaging is not just packaging. It is often the first conversation a customer has with a brand. Before they taste, wear, use, or experience a product, they see it. The shape, the materials, the details, the colors — all of it creates an immediate feeling about what's inside.</p>
+          <p class="founder__pull">A beautiful, thoughtful package can make a product feel intentional, trustworthy, and worth discovering.</p>
+          <p>Yet for many African brands, accessing high-quality, customized packaging and reliable manufacturing partners can still be difficult, expensive, or unnecessarily complicated.</p>
+          <p>I wanted to change that.</p>
+          <p>I created Brandora Union to make it easier for African entrepreneurs to build brands that look and feel as exceptional as the products they create — by connecting them with the right products, packaging, manufacturers, and eventually the entire infrastructure needed to bring their ideas into the physical world.</p>
+          <p>Africa has the ideas. Africa has the talent. I believe our brands should have the infrastructure to match.</p>
+          <p class="founder__pull">And Côte d'Ivoire is where I'm starting.</p>
         </div>
       </div>
     </div>
@@ -245,39 +273,87 @@
     </div>
   </section>
 
-  <!-- Closing CTA (§11) -->
-  <section class="section">
-    <div class="wrap" style="text-align:center">
-      <h2 style="font-size:clamp(1.8rem,5vw,2.8rem)" data-i18n="cta.final">Your idea deserves a brand.</h2>
-      <p class="hero__actions" style="justify-content:center">
-        <a class="btn btn--primary" href="create.html" data-i18n="hero.cta.primary">Create My Brand</a>
-        <button class="btn btn--ghost" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
-      </p>
+  <!--
+    Email capture.
+
+    Posts to /api/subscribe, which writes a row to the `subscribers` table.
+    There is no welcome email, because there is no list to welcome anyone to
+    yet — and a confirmation for a newsletter that does not exist is exactly
+    the kind of small lie this codebase does not tell.
+
+    The reply is the same whether the address was new or already recorded: a
+    form that says "you are already subscribed" lets anyone check whether a
+    given address is on the list.
+  -->
+  <section class="section" id="join">
+    <div class="wrap join" data-reveal>
+      <div class="join__copy">
+        <h2 data-i18n="join.title">Stay close to what we're building.</h2>
+        <p class="lede" data-i18n="join.lede">Updates on new manufacturers, products, sourcing opportunities and Brandora Union launches.</p>
+      </div>
+
+      <form class="join__form" data-subscribe-form novalidate>
+        <label class="visually-hidden" for="subscribe-email" data-i18n="join.label">Your email</label>
+        <input class="input" id="subscribe-email" name="email" type="email"
+               autocomplete="email" required maxlength="254"
+               placeholder="you@example.com" data-i18n-attr="placeholder:join.placeholder">
+        <button class="btn btn--primary" type="submit" data-subscribe-submit data-i18n="join.cta">Join the network</button>
+        <p class="join__status" data-subscribe-status role="status" hidden></p>
+      </form>
     </div>
   </section>
 
 </main>
 
-<footer class="site-footer">
-  <div class="wrap site-footer__identity">
-    <p class="site-footer__name">Brandora&nbsp;Union</p>
-    <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
-    <p class="site-footer__contact">
-      <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
-      <span aria-hidden="true">·</span>
-      <a href="tel:0556140994">0556140994</a>
-    </p>
+<footer class="site-footer site-footer--full">
+  <div class="wrap site-footer__grid">
+    <div class="site-footer__identity">
+      <a class="brand-lockup brand-lockup--footer" href="index.html" aria-label="Brandora Union — home">
+        <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+        <span class="brand-lockup__stack">
+          <span class="brand-lockup__word">BRANDORA</span>
+          <span class="brand-lockup__union">UNION</span>
+        </span>
+      </a>
+      <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
+      <p class="site-footer__contact">
+        <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+        <span aria-hidden="true">·</span>
+        <a href="tel:0556140994">0556140994</a>
+      </p>
+      <p class="site-footer__place" data-i18n="footer.place">Abidjan, Côte d'Ivoire</p>
+    </div>
+
+    <nav class="site-footer__nav" aria-label="Platform">
+      <h2 class="site-footer__heading" data-i18n="footer.platform">Platform</h2>
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="assistant.html" data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+    </nav>
+
+    <nav class="site-footer__nav" aria-label="Company">
+      <h2 class="site-footer__heading" data-i18n="footer.company">Company</h2>
+      <a href="#sourcing" data-i18n="footer.sourcing">Sourcing</a>
+      <a href="#network" data-i18n="footer.network">Manufacturers</a>
+      <a href="#founder" data-i18n="footer.about">About</a>
+      <a href="mailto:brandora.union@gmail.com" data-i18n="footer.contact">Contact</a>
+    </nav>
   </div>
-  <div class="wrap site-footer__row">
-    <a href="create.html" data-i18n="nav.create">Create my brand</a>
-    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
-    <a href="package.html" data-i18n="nav.package">My package</a>
-    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+
+  <div class="wrap site-footer__base">
+    <p class="site-footer__legal">© <span data-year>2026</span> Brandora Union</p>
+    <!--
+      No social links until there are accounts to link to, and no privacy or
+      terms link until those pages exist. A footer link that goes nowhere is
+      worse than an absent one.
+    -->
   </div>
 </footer>
 
 <script src="assets/js/app.js" defer></script>
 <script type="module" src="assets/js/booking.js"></script>
 <script type="module" src="assets/js/landing.js"></script>
+<script type="module" src="assets/js/home.js"></script>
 </body>
 </html>
