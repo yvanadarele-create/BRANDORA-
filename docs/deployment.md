@@ -1,36 +1,100 @@
 # Deploying Brandora
 
-## Read this first: production is behind `main`
+## Read this first: why the build failed in one second
 
-`brandora-rho.vercel.app` is serving deployment `9d956af`, which Vercel's own
-panel marks **Stale** — its word for "a newer commit exists that has not been
-deployed". `9d956af` is the commit from before the application existed: a
-README and a logo. That is why the domain 404s.
+The deployment at `258d9f8` was **ERROR** after **1 second**. That duration is
+the diagnosis: one second is not enough to clone, install and compile anything.
+Vercel was rejecting `vercel.json` before it ran a single command.
 
-Everything since is on `main` and builds. Getting production onto it is one of
-two clicks, and it has to be done from the Vercel dashboard by someone signed
-in to `harmony-team1` — this session's Vercel token is scoped to a different
-project (`harmony-verify`) and cannot see `brandora` at all, so it cannot press
-either button.
+Two bugs, fixed in `a3931d4`.
 
-**The one-click fix.** Vercel → `harmony-team1/brandora` → Deployments → the
-`main` row → ⋯ → **Redeploy**. Leave "use existing build cache" unticked.
+### 1. An invalid `functions.runtime` — this is what failed
 
-**If `main` is not listed at all**, the git connection is what is broken, not
-the build: Settings → Git → connect `yvanadarele-create/BRANDORA-`, production
-branch `main`. Every push after that deploys on its own.
+Both `vercel.json` files carried:
 
-**Settings to check while you are there.** Root Directory can be either `/` or
-`apps/brandora` — the repository carries a `vercel.json` and an `api/index.js`
-at both, so it builds from either. Do not set a Framework Preset; "Other" is
-correct.
+```json
+"functions": { "api/index.js": { "runtime": "nodejs22.x" } }
+```
 
-**Then add the environment variables** in Settings → Environment Variables. The
-full list is at the bottom of this file. Without `BRANDORA_AUTH_SECRET` the
-server refuses to boot, deliberately; without `BRANDORA_DATABASE_URL` it falls
-back to SQLite, which does not survive a serverless invocation.
+`functions[].runtime` selects a **custom** runtime and takes a `name@version`,
+like `vercel-php@0.5.2`. `nodejs22.x` is a *Build Output API* value — it belongs
+in a `.vc-config.json`, not in `vercel.json`. Vercel's config validation
+rejects it up front, which is the one-second error.
 
-**Verifying it worked**, in this order:
+The Node version is read from `engines.node`, which is now `22.x` — the form
+Vercel documents — rather than the range `>=22`.
+
+### 2. The schema was read off disk at runtime
+
+Both drivers loaded the schema with
+`readFileSync(resolve(here, "schema.sql"))`. That works anywhere a process can
+see its own directory, and fails on Vercel: a serverless bundle is assembled by
+statically tracing `import`/`require` from the entrypoint, and a path computed
+at runtime from `import.meta.url` is invisible to that analysis. `schema.sql`
+would not have been in the bundle.
+
+The build would have gone green and the **first cold start** would have thrown
+`ENOENT` from inside `migrate()` — a second failure, on a different error,
+waiting behind the first.
+
+`scripts/copy-schema.mjs` now compiles `schema.sql` into `schema.generated.ts`.
+The schema travels as code and is reached by an ordinary import. `schema.sql`
+is still the source of truth and still the file you edit.
+
+### Also fixed
+
+`apps/brandora/vercel.json` ran `pnpm run build:brandora`, a script that exists
+in no `package.json` in this repository. It only applies when the project's
+Root Directory is `apps/brandora`, so it was not the current failure — it was
+the next one. Now `pnpm run build`.
+
+### What was verified, and how
+
+Not "it compiles". A clean tree, `pnpm install --frozen-lockfile`, the
+configured build, then `dist/schema.sql` deleted to simulate what the bundler
+would actually ship, then `api/index.js` invoked through a Node server the way
+Vercel invokes it, against an empty PostgreSQL 16 database:
+
+- 18 tables migrated from the generated schema
+- `/api/health` and `/api/settings`
+- signup, session cookie, login
+- anonymous → 401 on a protected route; customer → 403 on an admin route
+- a stranger gets **404, not 403**, on another account's order and project
+- package → quote (parts sum to total, margin absent) → order at the same
+  total → order tracking
+- the process killed and restarted: the account logs back in and the order is
+  still there — the only real proof the database is Postgres and not SQLite
+- supplier created, offer recorded, `authorize` computing the total from the
+  stored offer and refusing to auto-approve a new supplier
+- a quality check opens with `inspectedAt` null; a shipment is created with no
+  invented delivery date
+- the webhook: 401 with no signature, 401 with a wrong one, 200 with a valid
+  one — which also proves **the raw body survives the Vercel handler path**, so
+  signature verification works in the deployed shape. A signed
+  `charge.success` still does not mark an order paid.
+
+474 tests pass against SQLite and PostgreSQL 16.
+
+### Settings to check in the dashboard
+
+- **Root Directory**: leave it empty (the repository root). That is the
+  supported setting for this pnpm workspace — the build needs
+  `pnpm-workspace.yaml` and every package under `packages/`. There is a
+  `vercel.json` and an `api/index.js` under `apps/brandora` as well, so a
+  project rooted there also builds, but it depends on *"Include source files
+  outside of the Root Directory"* being enabled. Root is simpler.
+- **Framework Preset**: Other. Do not let it auto-detect.
+- **Node.js Version**: comes from `engines.node`; nothing to set.
+
+### If it still errors
+
+The one value left in `vercel.json` that depends on your plan is
+`functions["api/index.js"].maxDuration: 60`. On a plan capped lower, Vercel
+fails config validation in about a second with a message naming `maxDuration`.
+If you see that, lower it to `10` — brand generation is the only route that
+needs the headroom.
+
+### Verifying it worked
 
 ```
 curl https://brandora-rho.vercel.app/api/health     # {"status":"ok", …}
@@ -38,16 +102,12 @@ curl https://brandora-rho.vercel.app/api/settings   # {"currency":"XOF", …}
 curl -I https://brandora-rho.vercel.app/            # 200, text/html
 ```
 
-`/api/health` answering is the real signal: it means the serverless function
-booted, which means the secret and the database are both readable. A 200 on `/`
-alone only proves the static files shipped.
+`/api/health` answering is the real signal: it means the function booted, which
+means the secret and the database are both readable. A 200 on `/` alone only
+proves the static files shipped.
 
-This has been checked as far as it can be checked from here: `main` was cloned
-fresh into a clean directory, Vercel's exact `installCommand` and `buildCommand`
-were run against it, and `api/index.js` was then invoked the way Vercel invokes
-it. `/api/health` and `/api/settings` both answered. What has *not* been done is
-a real deployment — `*.vercel.app` is unreachable from this environment, so
-**production is NOT VERIFIED LIVE.**
+`*.vercel.app` is unreachable from the environment this was built in, so the
+production deployment itself is **NOT VERIFIED LIVE**.
 
 ---
 
