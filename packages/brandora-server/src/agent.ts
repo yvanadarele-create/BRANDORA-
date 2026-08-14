@@ -368,8 +368,30 @@ export interface ProcurementReport {
   notes: string[];
 }
 
-const percentGap = (a: Money, b: Money): number =>
-  b.amount === 0 ? 0 : Math.round(((a.amount - b.amount) / b.amount) * 100);
+/**
+ * How much more the first costs than the second, as a percentage of the first.
+ *
+ * Stated this way round on purpose. "130 is 88% below 245" is false — 130 is
+ * 47% below 245, and 245 is 88% above 130 — and getting that backwards in a
+ * sentence a buyer uses to overrule the ranking is worse than not printing it.
+ */
+const percentAbove = (dearer: Money, cheaper: Money): number =>
+  dearer.amount === 0 ? 0 : Math.round(((dearer.amount - cheaper.amount) / dearer.amount) * 100);
+
+/** "a, b and c" — not "a and b and c". */
+function sentenceList(items: readonly string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/**
+ * The name of an unknown, without its explanation.
+ *
+ * `landedCost` returns "freight — the supplier has not quoted it", which is
+ * right on the option card and unreadable nested inside another em-dashed
+ * clause. Here only the noun is wanted.
+ */
+const unknownName = (unknown: string): string => (unknown.split("—")[0] ?? unknown).trim();
 
 /**
  * Turn a shortlist into the report a person reads.
@@ -468,24 +490,41 @@ export function buildReport(
     .join(" ");
 
   const isCheapest = top.supplier.id === cheapest.supplier.id && top.offer.productId === cheapest.offer.productId;
-  const gap = percentGap(top.cost.perUnit, cheapest.cost.perUnit);
+  const gap = percentAbove(top.cost.perUnit, cheapest.cost.perUnit);
 
   const costOfRecommendation = isCheapest
     ? null
     : [
         `${cheapest.supplier.name} is cheaper at ${formatMoney(cheapest.cost.perUnit)} per unit`,
-        gap > 0 ? `— ${gap}% below the recommendation.` : "—",
-        `It ranks lower on ${lowerOn(top, cheapest).join(" and ")}.`,
+        gap > 0 ? `— the recommendation costs ${gap}% more.` : ".",
+        `It ranks lower on ${sentenceList(lowerOn(top, cheapest))}.`,
+        // Comparing a complete total against one with a hole in it is not a
+        // comparison. But only an *asymmetric* hole distorts the gap: duty and
+        // tax are missing from every option when the destination's rates are
+        // not configured, and saying "the gap may be nothing" there is noise
+        // that trains an operator to skip the line that matters. Both problems
+        // were found by putting a supplier with no recorded freight next to two
+        // who had it.
+        onlyIn(cheapest.cost.unknowns, top.cost.unknowns).length > 0
+          ? `That figure is incomplete — ${sentenceList(
+              onlyIn(cheapest.cost.unknowns, top.cost.unknowns).map(unknownName),
+            )} is not recorded for it, but is for the recommendation — so the real gap is smaller than it looks, and may be nothing.`
+          : "",
         "The best supplier is not the cheapest supplier: a run that arrives late or off-spec costs more than the difference.",
-      ].join(" ");
+      ]
+        .filter(Boolean)
+        .join(" ");
 
   const notes: string[] = [];
   const stale = options.filter((option) => option.unknowns.length > 0);
   if (stale.length > 0) {
+    // Short names here. Each option's own card carries the full explanation,
+    // and repeating "the destination's rate is not configured" three times in
+    // one sentence buries the count, which is the part that is new.
     notes.push(
-      `${stale.length} of ${options.length} options have costs that could not be calculated (${[
-        ...new Set(stale.flatMap((option) => option.unknowns)),
-      ].join(", ")}). Those totals are incomplete, not final.`,
+      `${stale.length} of ${options.length} options have costs that could not be calculated (${sentenceList([
+        ...new Set(stale.flatMap((option) => option.unknowns.map(unknownName))),
+      ])}). Those totals are incomplete, not final.`,
     );
   }
   if (options.some((option) => option.risk.signals.length > 0)) {
@@ -505,6 +544,10 @@ export function buildReport(
     notes,
   };
 }
+
+/** Unknowns the first has and the second does not. */
+const onlyIn = (a: readonly string[], b: readonly string[]): string[] =>
+  a.filter((entry) => !b.includes(entry));
 
 /** The dimensions on which the recommendation beat the cheaper option. */
 function lowerOn(top: ShortlistEntry, cheaper: ShortlistEntry): string[] {

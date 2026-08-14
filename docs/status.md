@@ -9,8 +9,11 @@ Evidence is a file you can open or a test you can run. `pnpm test` runs
 everything; `BRANDORA_TEST_DATABASE_URL=… pnpm test` also runs the Postgres
 half.
 
-**404 tests pass.** The full customer journey has been driven in Chromium at
-1440×900 and 390×844, against Postgres, on the real server.
+**474 tests pass** — 445 on SQLite plus 29 more when `BRANDORA_TEST_DATABASE_URL`
+is set, so the same assertions run against PostgreSQL 16. The customer journey
+and the sourcing screen have both been driven in Chromium at 1440×900 and
+390×844, on the real server, with zero console errors and zero horizontal
+overflow.
 
 ---
 
@@ -48,6 +51,14 @@ half.
 | **Persistence on serverless** | `postgres.ts`, `brandora-postgres.test.ts` | Postgres in production, SQLite in tests, the same assertions run against both. A customer's brand and paid order survive a process restart |
 | **Error handling** | `errors.ts`, `handle()` | One conversion point. A customer gets a sentence they can act on; the supplier's code goes to the admin log. No stack trace, no internal path, no blank screen |
 | **Ask Brandora** | `assistant.ts`, `assistant.html`, 17 tests | Answers from the stored Brand Profile and the real catalogue. The model writes the sentences; **the catalogue writes the numbers** — product cards are rendered from our data, so a wrong figure in its prose cannot become a wrong price on screen. An id it invents is dropped and logged |
+| **Paystack webhook** | `/api/webhooks/paystack`, `brandora-webhook.test.ts`, 14 tests | The signature is checked against the raw bytes in constant time, and a missing signature and a wrong one give byte-identical replies. Then the payload is used only for its reference: whether the charge succeeded, and for how much, comes from calling Paystack back. A perfectly signed body claiming success against a provider that disagrees leaves the order unpaid — there is a test named after that. Idempotent, and everything past the signature answers 200 so a retry loop cannot form. With no secret set the endpoint is a 404 |
+| **Notifications** | `notifications.ts`, `notifications` table | Sent over Resend, env-based. The record is written first and unconditionally; the attempt is written back. A row is `sent` only because a provider accepted it — `UnconfiguredTransport` refuses rather than quietly succeeding, so an unconnected deployment shows a queue rather than a lie. Retries, then abandons. A failed send never fails the request that caused it |
+| **Suppliers** | `/api/admin/suppliers/*`, `suppliers.html` | Contacts, categories, capabilities, and four recorded counts — completed, late, defects, disputes. Counts, never a rating: a stored score cannot be recomputed when the weighting changes or defended when a supplier disputes it. A new supplier is `unverified`, and verifying one is a separate recorded act that cannot un-block a blocked supplier |
+| **Supplier offers** | `supplier_offers`, `/api/admin/suppliers/:id/offers` | One row per price break. A break at 500 is not a price at 30, and an offer whose own minimum the quantity does not meet is not returned at all |
+| **Procurement agent** | `agent.ts`, `procurement.ts`, `procurement.html`, 24 tests | Brief in, shortlist out. The model is called once, with a prompt that opens "You are a parser", to turn a sentence into fields — it never sees a supplier and never produces a number that reaches the page. Candidates come from the database, so no suppliers means the report says so. **The best supplier is not the cheapest supplier**: price is 25 of 100, the weights are published, and when the recommendation is not the cheapest row the report says by how much and on what it won. A cheaper figure that is missing a cost the recommendation has is flagged as not a real saving |
+| **Order authorisation (§10)** | `authorizeOrder`, `/api/admin/procurement/authorize` | Takes a supplier, a product and a quantity — never an amount. The total is computed from the recorded offer by the same function the shortlist uses. High risk, an unconfirmed price, or a new supplier with no approved sample all go to a person whatever the figure. `BRANDORA_AUTO_APPROVAL_LIMIT` defaults to zero: an unconfigured deployment escalates too often rather than spending too much |
+| **Quality checks** | `quality_checks`, `/api/admin/orders/:id/quality-checks` | Sample, production and pre-shipment, with defects and evidence. A check opens with `inspected_at` null — an opened check is not a carried-out check, and only one of those survives a dispute |
+| **Shipments** | `shipments`, `/api/admin/orders/:id/shipments` | Carrier, tracking number and status. `estimated_delivery` is only ever set from a carrier: null means not quoted, never soon |
 | **Homepage film** | `index.html`, `app.js` | Full-bleed above the hero. Not downloaded at all on Data Saver, 2G or reduced-motion — 8.5MB matters on metered mobile data. Falls back to the poster and restores the lockup if the codec is unavailable |
 
 ## Partial
@@ -56,7 +67,7 @@ half.
 | --- | --- | --- |
 | **AliExpress integration** | The adapter, normalisation, scoring, freight, landed cost, caching and the credential handling are built and tested against recorded payloads | **No live call has been made.** The signing scheme is written from the platform's published algorithm but has not been verified against AliExpress's own documentation — the developer portal is unreachable from the environment this was built in. Check `signRequest` against a known-good signature from the console first |
 | **Analytics** | Every event worth counting is already a row: signups, projects, generations, quotes, orders, payments, order events | No aggregation, no dashboard beyond the admin counts, no funnel view |
-| **Notifications** | The order history records every event, and the customer sees it on the order page | Nothing is *sent*. No email, no WhatsApp, no push |
+| **Notification channels** | Email works end to end over Resend | SMS, WhatsApp and in-app are columns the schema allows and nothing delivers. `deliverOne` fails those rows explicitly rather than reporting a silent success |
 | **Product visualiser** | The brand book applies the approved palette and letterforms to six product silhouettes, drawn in CSS | Not photographic mock-ups. A photograph of a cup nobody has printed is a picture of a promise; these are honestly the brand applied to shapes |
 
 ## Not implemented
@@ -65,12 +76,10 @@ half.
 | --- | --- |
 | **Logo image generation** | The logo *brief* is generated and written to be handed to a designer or an image model. The brand book shows the monogram in the brand's own typeface and colours and says that is what it is. Nothing calls an image model |
 | **Brand-kit download as a zip** | The guidelines document is generated and downloadable as Markdown. The manifest lists what a full kit would contain; no archive is produced |
-| **Paystack webhook route** | `paystackSignatureValid` is implemented and tested; nothing mounts it as an endpoint. Payment is confirmed by the customer's return to the order page, which verifies server-side — a webhook would make that robust against a customer who closes the tab |
-| **Supplier management (admin)** | The `suppliers` concept exists in the domain types and the sourcing engine. There are no admin screens or routes for it |
-| **Product management (admin)** | Products come from the seeded catalogue. There is no route to edit metadata, disable a product or trigger re-verification |
-| **Quality checks as records** | `quality-check` is a fulfilment state an administrator moves an order through. There is no `QualityCheck` entity with findings attached |
-| **Shipments as records** | Tracking number and carrier are columns on the order. There is no `Shipment` entity, and no carrier integration |
-| **Conversations / AIRecommendation entities** | Listed in the brief's data model. Not needed until the assistant exists |
+| **Product management (admin)** | Products come from the seeded catalogue. Supplier *offers* against a product can now be recorded and deleted, but there is no route to edit a product's own metadata, disable it or trigger re-verification |
+| **Logo image generation** | See above — the brief is generated, no image model is called |
+| **Carrier integration** | Shipments are records now, and tracking is stored and shown. Nothing polls a carrier: a status changes because a person changed it |
+| **Conversations / AIRecommendation entities** | Listed in the brief's data model. The assistant and the agent both work without them |
 
 ---
 
@@ -78,7 +87,28 @@ half.
 
 In the order I would do it:
 
-1. **Notifications.** The events exist; they need a channel. Email first.
-2. **Verify the AliExpress signature** against the console, then make one live call behind a flag.
-3. **The Paystack webhook**, so a closed tab cannot lose a payment.
-4. **Supplier and product admin**, once there is more than one supplier to manage.
+1. **Deploy it.** The application is on `main` and builds; production is still
+   serving an older commit. See `docs/deployment.md`.
+2. **Add the environment variables** below, in Vercel, and nowhere else.
+3. **Verify the AliExpress signature** against the console, then make one live
+   call behind a flag.
+4. **Record real suppliers.** The agent is built and tested; with an empty
+   `suppliers` table it correctly reports that it has nothing to shortlist,
+   which is honest and not yet useful.
+5. **Product admin**, so a product can be disabled without a deploy.
+
+## Environment variables
+
+Every one is read from the environment and none appears in source, tests,
+fixtures or the front end. Set them in Vercel.
+
+| Variable | What breaks without it |
+| --- | --- |
+| `BRANDORA_DATABASE_URL` | Postgres. Without it the server falls back to SQLite, which does not persist on serverless |
+| `BRANDORA_AUTH_SECRET` | The server refuses to boot. Deliberate |
+| `ANTHROPIC_API_KEY` | Brand generation and the sourcing agent's parsing step |
+| `PAYSTACK_SECRET_KEY` | Checkout, and webhook verification |
+| `PAYSTACK_WEBHOOK_SECRET` | Optional. Only if you rotate it separately from the secret key |
+| `RESEND_API_KEY` + `BRANDORA_EMAIL_FROM` | Email delivery. Both, or neither — a key with no From address is a 422 on every send |
+| `BRANDORA_AUTO_APPROVAL_LIMIT` | Nothing breaks; every order goes to a person, which is the safe default |
+| `BRANDORA_CALENDLY_URL` | The booking controls hide themselves |

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suppliers — Brandora</title>
+<meta name="description" content="Brandora supplier records: contacts, capabilities and recorded prices.">
+<meta name="theme-color" content="#050507">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__word">BRANDORA</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="assistant.html" data-when-signed-in hidden data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="procurement.html" data-when-admin hidden>Sourcing</a>
+    </nav>
+
+    <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Operations</p>
+      <h1>Suppliers</h1>
+      <p class="lede">
+        Who Brandora can actually buy from, what they have quoted, and what has
+        happened on their orders.
+      </p>
+
+      <!--
+        The sentence that keeps this screen honest. Every column below is a
+        count of something that happened, not a rating somebody typed — so a
+        supplier's standing can be recomputed when the weighting changes, and
+        defended when the supplier disputes it.
+      -->
+      <p class="notice notice--quiet">
+        Reliability here is a record, not a rating: completed, late, defects and
+        disputes are counted from real orders. Sourcing reads these numbers.
+      </p>
+
+      <p class="notice" data-error hidden role="alert"></p>
+      <p class="notice" data-admin-only hidden>
+        Supplier records are an operations tool. <a href="login.html">Log in</a>
+        as an administrator to see them.
+      </p>
+
+      <div class="chips" data-filters hidden>
+        <button class="chip" type="button" data-status="" aria-pressed="true">All</button>
+        <button class="chip" type="button" data-status="active" aria-pressed="false">Active</button>
+        <button class="chip" type="button" data-status="unverified" aria-pressed="false">Unverified</button>
+        <button class="chip" type="button" data-status="paused" aria-pressed="false">Paused</button>
+        <button class="chip" type="button" data-status="blocked" aria-pressed="false">Blocked</button>
+      </div>
+
+      <p class="notice" data-empty hidden>
+        No supplier recorded yet. Until one is, sourcing has nothing to shortlist
+        and will say so rather than suggest a supplier that does not exist.
+      </p>
+
+      <div class="options" data-suppliers></div>
+
+      <section class="panel" data-add-panel hidden>
+        <h2 class="panel__title">Record a supplier</h2>
+        <form data-add-form>
+          <div class="field">
+            <label for="supplier-name">Name</label>
+            <input class="input" id="supplier-name" name="name" required maxlength="200">
+          </div>
+          <div class="field">
+            <label for="supplier-platform">Platform or source</label>
+            <input class="input" id="supplier-platform" name="platform" required maxlength="60"
+                   placeholder="alibaba, aliexpress, direct, local">
+          </div>
+          <div class="field">
+            <label for="supplier-country">Country</label>
+            <input class="input" id="supplier-country" name="country" maxlength="2" placeholder="CN">
+            <p class="field__why">Two letters, so shipping can look it up.</p>
+          </div>
+          <div class="field">
+            <label for="supplier-categories">Categories</label>
+            <input class="input" id="supplier-categories" name="categories" maxlength="300"
+                   placeholder="packaging, tableware">
+            <p class="field__why">Comma separated.</p>
+          </div>
+          <div class="field">
+            <label for="supplier-email">Contact email</label>
+            <input class="input" id="supplier-email" name="contactEmail" type="email" maxlength="320">
+          </div>
+          <div class="field">
+            <label for="supplier-lead">Lead time in days</label>
+            <input class="input" id="supplier-lead" name="leadTimeDays" type="number" min="1" max="365">
+            <p class="field__why">Only if they quoted one. Left blank it stays unknown, never zero.</p>
+          </div>
+          <!--
+            No status control. A supplier nobody has checked is `unverified`,
+            and marking one active is a separate, recorded act — see Verify on
+            the card. A dropdown here would let it be set to active by habit.
+          -->
+          <button class="btn btn--primary" type="submit" data-add-submit>Record supplier</button>
+        </form>
+      </section>
+
+      <noscript>
+        <div class="notice">Supplier records need JavaScript.</div>
+      </noscript>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__row">
+    <span>Brandora</span>
+    <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+    <a href="suppliers.html" data-when-admin hidden>Suppliers</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
+<script type="module" src="assets/js/suppliers.js"></script>
+</body>
+</html>

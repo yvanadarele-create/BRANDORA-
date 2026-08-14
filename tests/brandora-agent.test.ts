@@ -320,6 +320,33 @@ describe("ranking", () => {
     assert.match(report.costOfRecommendation, /Cheapest Ltd is cheaper/);
     assert.match(report.costOfRecommendation, /best supplier is not the cheapest supplier/);
 
+    // The percentage is stated as what the recommendation costs *extra*, not
+    // as how far the cheap option sits below it. Those are different numbers,
+    // and printing the wrong one in the sentence a buyer uses to overrule the
+    // ranking is worse than printing none.
+    const gap = /costs (\d+)% more/.exec(report.costOfRecommendation);
+    assert.ok(gap, `no gap in: ${report.costOfRecommendation}`);
+    const top = report.options[0]!;
+    const cheap = report.options.find((option) => option.cheapest)!;
+    assert.equal(
+      Number(gap[1]),
+      Math.round(((top.landedPerUnit.amount - cheap.landedPerUnit.amount) / top.landedPerUnit.amount) * 100),
+    );
+
+    // The reason list reads as a sentence, not "a and b and c".
+    const reasons = /It ranks lower on ([^.]+)\./.exec(report.costOfRecommendation);
+    assert.ok(reasons, report.costOfRecommendation);
+    assert.equal(/ and .* and /.test(reasons[1]!), false, reasons[1]);
+
+    // Both options are missing duty and tax here, because the destination's
+    // rates are not configured. That is not an asymmetry and must not be
+    // reported as one — a caveat on every comparison is a caveat nobody reads.
+    assert.equal(
+      /That figure is incomplete/.test(report.costOfRecommendation),
+      false,
+      report.costOfRecommendation,
+    );
+
     // And the cheaper row is still in the list, flagged, so nobody has to take
     // the recommendation on faith.
     const cheapest = report.options.find((option) => option.cheapest);
@@ -384,6 +411,38 @@ describe("ranking", () => {
     assert.ok(option);
     assert.ok(option.unknowns.length > 0, "a missing freight cost was silently treated as zero");
     assert.ok(report.notes.some((note) => /incomplete, not final/.test(note)));
+    await close();
+  });
+
+  it("does not compare a complete total against one with a hole in it", async () => {
+    const { repos, close } = await withSuppliers();
+
+    const solid = await repos.suppliers.create({ name: "Steady Works", platform: "alibaba" });
+    for (let i = 0; i < 20; i += 1) await repos.suppliers.recordOutcome(solid.id, { completed: true });
+    await repos.suppliers.markVerified(solid.id);
+    await repos.supplierOffers.save({
+      supplierId: solid.id, productId: "prd_cup_kraft_250", unitCost: 145, currency: "XOF",
+      minimumOrder: 100, availableQuantity: 100_000, productionDays: 12,
+      shippingCost: 100_000, lastCheckedAt: fresh(),
+    });
+
+    // Cheaper on paper, only because nobody recorded its freight.
+    const unpriced = await repos.suppliers.create({ name: "No Freight Co", platform: "direct" });
+    await repos.supplierOffers.save({
+      supplierId: unpriced.id, productId: "prd_cup_kraft_250", unitCost: 130, currency: "XOF",
+      minimumOrder: 100, availableQuantity: 100_000, productionDays: 20, lastCheckedAt: fresh(),
+    });
+
+    const candidates = await gatherCandidates(repos, request, CATALOGUE);
+    const report = buildReport(request, shortlist(request, candidates), candidates.length);
+
+    const cheapest = report.options.find((option) => option.cheapest)!;
+    assert.equal(cheapest.supplierName, "No Freight Co");
+    assert.ok(report.costOfRecommendation);
+    // The saving is presented as what it is: a gap against a number that is
+    // missing a cost, so it may not be a saving at all.
+    assert.match(report.costOfRecommendation, /That figure is incomplete/);
+    assert.match(report.costOfRecommendation, /may be nothing/);
     await close();
   });
 

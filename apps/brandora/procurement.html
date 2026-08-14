@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sourcing — Brandora</title>
+<meta name="description" content="Brandora's procurement agent: shortlist suppliers from recorded offers.">
+<meta name="theme-color" content="#050507">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__word">BRANDORA</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="assistant.html" data-when-signed-in hidden data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="procurement.html" data-when-admin hidden>Sourcing</a>
+    </nav>
+
+    <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Operations</p>
+      <h1>Sourcing</h1>
+      <p class="lede">
+        Describe what a customer needs. The agent reads the sentence, then
+        shortlists from suppliers and prices Brandora has actually recorded.
+      </p>
+
+      <!--
+        Stated on the page, not just in the code. An operator who does not know
+        where the numbers come from cannot tell a gap in the data from a gap in
+        the market, and will fill one of them in by hand.
+      -->
+      <p class="notice notice--quiet" data-provenance>
+        Every figure below comes from a recorded supplier offer. Nothing on this
+        page is generated. If no supplier is listed, none is recorded — not none
+        exists.
+      </p>
+
+      <p class="notice" data-error hidden role="alert"></p>
+      <p class="notice" data-admin-only hidden>
+        Sourcing is an operations tool. <a href="login.html">Log in</a> as an
+        administrator to use it.
+      </p>
+
+      <form class="ask" data-source-form>
+        <label class="visually-hidden" for="brief">What is needed</label>
+        <textarea class="input" id="brief" name="brief" rows="3"
+                  placeholder="e.g. 1000 kraft paper cups, 250ml, logo printed, delivered to Abidjan, under 400 FCFA each"
+                  required></textarea>
+        <button class="btn btn--primary" type="submit" data-submit>Source</button>
+      </form>
+
+      <div data-report hidden>
+        <!-- What the agent understood, before anything is evaluated. -->
+        <section class="panel" data-understood-panel>
+          <h2 class="panel__title">Understood</h2>
+          <dl class="spec" data-understood></dl>
+          <p class="notice" data-missing hidden role="status"></p>
+        </section>
+
+        <section class="panel" data-options-panel hidden>
+          <h2 class="panel__title">
+            Shortlist <span class="panel__count" data-considered></span>
+          </h2>
+          <div class="options" data-options></div>
+        </section>
+
+        <section class="panel" data-recommendation-panel hidden>
+          <h2 class="panel__title">Recommendation</h2>
+          <p data-recommendation></p>
+          <!--
+            The sentence the whole ranking exists for. Shown as a warning
+            rather than a footnote because this is the moment somebody
+            overrules the recommendation on price alone.
+          -->
+          <p class="notice notice--warn" data-cost-of-recommendation hidden></p>
+          <ul class="notes" data-notes hidden></ul>
+          <p class="next-step" data-next-step></p>
+        </section>
+
+        <section class="panel" data-empty-panel hidden>
+          <h2 class="panel__title">Nothing to shortlist</h2>
+          <p data-empty-reason></p>
+          <p class="product__meta">
+            Record a supplier and a price under
+            <a href="suppliers.html">Suppliers</a>, then source again.
+          </p>
+        </section>
+      </div>
+
+      <noscript>
+        <div class="notice">Sourcing needs JavaScript.</div>
+      </noscript>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__row">
+    <span>Brandora</span>
+    <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+    <a href="suppliers.html" data-when-admin hidden>Suppliers</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
+<script type="module" src="assets/js/procurement.js"></script>
+</body>
+</html>
