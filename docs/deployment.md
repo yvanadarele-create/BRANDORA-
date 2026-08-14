@@ -1,5 +1,56 @@
 # Deploying Brandora
 
+## Read this first: production is behind `main`
+
+`brandora-rho.vercel.app` is serving deployment `9d956af`, which Vercel's own
+panel marks **Stale** — its word for "a newer commit exists that has not been
+deployed". `9d956af` is the commit from before the application existed: a
+README and a logo. That is why the domain 404s.
+
+Everything since is on `main` and builds. Getting production onto it is one of
+two clicks, and it has to be done from the Vercel dashboard by someone signed
+in to `harmony-team1` — this session's Vercel token is scoped to a different
+project (`harmony-verify`) and cannot see `brandora` at all, so it cannot press
+either button.
+
+**The one-click fix.** Vercel → `harmony-team1/brandora` → Deployments → the
+`main` row → ⋯ → **Redeploy**. Leave "use existing build cache" unticked.
+
+**If `main` is not listed at all**, the git connection is what is broken, not
+the build: Settings → Git → connect `yvanadarele-create/BRANDORA-`, production
+branch `main`. Every push after that deploys on its own.
+
+**Settings to check while you are there.** Root Directory can be either `/` or
+`apps/brandora` — the repository carries a `vercel.json` and an `api/index.js`
+at both, so it builds from either. Do not set a Framework Preset; "Other" is
+correct.
+
+**Then add the environment variables** in Settings → Environment Variables. The
+full list is at the bottom of this file. Without `BRANDORA_AUTH_SECRET` the
+server refuses to boot, deliberately; without `BRANDORA_DATABASE_URL` it falls
+back to SQLite, which does not survive a serverless invocation.
+
+**Verifying it worked**, in this order:
+
+```
+curl https://brandora-rho.vercel.app/api/health     # {"status":"ok", …}
+curl https://brandora-rho.vercel.app/api/settings   # {"currency":"XOF", …}
+curl -I https://brandora-rho.vercel.app/            # 200, text/html
+```
+
+`/api/health` answering is the real signal: it means the serverless function
+booted, which means the secret and the database are both readable. A 200 on `/`
+alone only proves the static files shipped.
+
+This has been checked as far as it can be checked from here: `main` was cloned
+fresh into a clean directory, Vercel's exact `installCommand` and `buildCommand`
+were run against it, and `api/index.js` was then invoked the way Vercel invokes
+it. `/api/health` and `/api/settings` both answered. What has *not* been done is
+a real deployment — `*.vercel.app` is unreachable from this environment, so
+**production is NOT VERIFIED LIVE.**
+
+---
+
 ## Why the production domain returned 404
 
 This repository contained a README and a logo. No `package.json`, no
