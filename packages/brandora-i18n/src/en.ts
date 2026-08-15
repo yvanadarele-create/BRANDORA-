@@ -296,6 +296,11 @@ export const en = {
   "error.freight.unavailable": "Delivery estimate unavailable",
   "error.brand.generation-failed":
     "We couldn't finish your brand just now. Your answers are saved — try again.",
+  "error.brand.interview-incomplete":
+    "Answer the remaining questions first, then we can build your brand.",
+  "error.brand.not-generated": "Build your brand first — this works from what it says.",
+  "error.package.empty": "Add at least one product before asking for a quote.",
+  "error.payment.not-started": "No payment has been started for this order yet.",
   "error.quote.expired": "This quote has expired. We can prepare a fresh one for you.",
   "error.order.not-found": "We couldn't find that order.",
   "error.auth.required": "Please sign in to continue.",

@@ -284,6 +284,12 @@ export const fr: Catalogue = {
   "error.freight.unavailable": "Estimation de livraison indisponible",
   "error.brand.generation-failed":
     "Nous n'avons pas pu terminer votre marque. Vos réponses sont enregistrées — réessayez.",
+  "error.brand.interview-incomplete":
+    "Répondez d'abord aux questions restantes, puis nous construirons votre marque.",
+  "error.brand.not-generated":
+    "Créez d'abord votre marque — cette page s'appuie sur ce qu'elle dit.",
+  "error.package.empty": "Ajoutez au moins un produit avant de demander un devis.",
+  "error.payment.not-started": "Aucun paiement n'a encore été lancé pour cette commande.",
   "error.quote.expired": "Ce devis a expiré. Nous pouvons en préparer un nouveau.",
   "error.order.not-found": "Nous n'avons pas trouvé cette commande.",
   "error.auth.required": "Connectez-vous pour continuer.",

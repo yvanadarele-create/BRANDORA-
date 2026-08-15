@@ -170,8 +170,29 @@ random outage rather than a configuration mistake.
 | Supabase | `aws-0-region.pooler.supabase.com:6543` |
 | Vercel Postgres | the injected `POSTGRES_URL` is already pooled |
 
-The schema is applied automatically on the first connection. There is no
-migration step to run.
+**On the database name.** Postgres folds unquoted identifiers to lower case, so
+`CREATE DATABASE BRANDORA_db;` actually creates `brandora_db`, while
+`CREATE DATABASE "BRANDORA_db";` creates `BRANDORA_db`. Both are valid, and they
+are two different databases. Whichever you have, the name in
+`BRANDORA_DATABASE_URL` must match it exactly — the failure is
+`database "…" does not exist`, which is legible once you know to look for it and
+baffling when you do not.
+
+The schema is applied automatically on the first connection, so there is no
+migration step you are *required* to run. When you want to do it deliberately —
+before a first deploy, or to confirm the URL points at the database you think it
+does — there is a command:
+
+```bash
+BRANDORA_DATABASE_URL='postgresql://…' pnpm run migrate
+```
+
+It prints every table with its row count, and it cannot destroy anything: every
+statement is `CREATE … IF NOT EXISTS`, the schema contains no `DROP` or
+`TRUNCATE`, and the script does not create databases — a script that quietly
+conjures a second database when you have mistyped the name of the first is how
+you end up with an empty one in production and your accounts somewhere nobody is
+looking. `pnpm run migrate --dry-run` prints the statements without connecting.
 
 ### 2. Create the project
 

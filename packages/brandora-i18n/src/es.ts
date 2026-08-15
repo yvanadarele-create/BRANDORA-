@@ -277,6 +277,11 @@ export const es: Catalogue = {
   "error.freight.unavailable": "Estimación de entrega no disponible",
   "error.brand.generation-failed":
     "No hemos podido terminar tu marca. Tus respuestas están guardadas — inténtalo de nuevo.",
+  "error.brand.interview-incomplete":
+    "Responde primero a las preguntas que faltan y después construimos tu marca.",
+  "error.brand.not-generated": "Crea primero tu marca — esto parte de lo que dice.",
+  "error.package.empty": "Añade al menos un producto antes de pedir un presupuesto.",
+  "error.payment.not-started": "Todavía no se ha iniciado ningún pago para este pedido.",
   "error.quote.expired": "Este presupuesto ha caducado. Podemos preparar uno nuevo.",
   "error.order.not-found": "No hemos encontrado ese pedido.",
   "error.auth.required": "Inicia sesión para continuar.",

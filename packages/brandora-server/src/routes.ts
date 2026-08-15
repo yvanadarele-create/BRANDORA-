@@ -652,7 +652,9 @@ export function createRouter(deps: ServerDeps): Router {
     }
 
     const stored = await repos.interviews.findForProject(project.id);
-    if (!stored) throw new ValidationError("interview", "finish the interview first");
+    if (!stored) {
+      throw new BrandoraError("brand.interview-incomplete", "no interview saved for this project", 409);
+    }
 
     const answers = readAnswers(stored.responses);
     const existingName = optionalString(ctx.body, "existingName", 120);
@@ -717,7 +719,9 @@ export function createRouter(deps: ServerDeps): Router {
 
     const stored = await repos.strategies.findForProject(project.id);
     const interview = await repos.interviews.findForProject(project.id);
-    if (!stored || !interview) throw new ValidationError("strategy", "generate a brand first");
+    if (!stored || !interview) {
+      throw new BrandoraError("brand.not-generated", "no strategy to regenerate a field from", 409);
+    }
 
     const brief = buildBrief(readAnswers(interview.responses), user.locale);
     const updated = await regenerateField(
@@ -848,7 +852,9 @@ export function createRouter(deps: ServerDeps): Router {
     const user = await requireUser(ctx, session);
     const project = await ownedProject(ctx, user);
     const strategy = await repos.strategies.findForProject(project.id);
-    if (!strategy) throw new ValidationError("strategy", "generate a brand first");
+    if (!strategy) {
+      throw new BrandoraError("brand.not-generated", "no strategy to recommend against", 409);
+    }
 
     const quantityRaw = Number(ctx.query.get("quantity") ?? 25);
     const quantity = Number.isFinite(quantityRaw) && quantityRaw > 0 ? Math.floor(quantityRaw) : 25;
@@ -893,7 +899,7 @@ export function createRouter(deps: ServerDeps): Router {
     const bundle = await loadProjectBundle(repos, project.id, user.id);
     const strategy = bundle?.strategy;
     if (!strategy) {
-      throw new ValidationError("brand", "build your brand first — the assistant answers from it");
+      throw new BrandoraError("brand.not-generated", "the assistant answers from the strategy", 409);
     }
 
     const question = requireString(ctx.body, "question", MAX_QUESTION_LENGTH);
@@ -1047,7 +1053,9 @@ export function createRouter(deps: ServerDeps): Router {
     const project = await ownedProject(ctx, user);
 
     const items = await repos.packages.listForProject(project.id);
-    if (items.length === 0) throw new ValidationError("package", "add a product first");
+    if (items.length === 0) {
+      throw new BrandoraError("package.empty", "no package items to price", 409);
+    }
 
     const priced = priceProject(
       items.map((item) => ({
@@ -1271,7 +1279,9 @@ export function createRouter(deps: ServerDeps): Router {
 
     const attempts = await repos.payments.listForOrder(order.id);
     const pending = attempts.find((p) => p.status === "initialised") ?? attempts[0];
-    if (!pending) throw new ValidationError("payment", "no payment has been started for this order");
+    if (!pending) {
+      throw new BrandoraError("payment.not-started", `no payment attempt for order ${order.id}`, 409);
+    }
 
     if (pending.status === "paid") {
       return json(200, { order: orderView(order), payment: paymentView(pending) });

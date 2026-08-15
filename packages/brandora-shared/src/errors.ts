@@ -17,6 +17,16 @@ export const CUSTOMER_MESSAGES = {
   "sourcing.no-results": "We couldn't find a match for that yet. Try a different quantity or style.",
   "freight.unavailable": "Delivery estimate unavailable",
   "brand.generation-failed": "We couldn't finish your brand just now. Your answers are saved — try again.",
+  // The next four are *sequencing* messages, and they exist because the
+  // alternative was worse. These conditions used to raise a ValidationError,
+  // which resolves to "Something in that form didn't look right" — told to
+  // someone whose form was perfectly fine and who is simply one step earlier in
+  // the journey than the request assumed. An error that misdescribes the
+  // problem sends people to re-check work that was never wrong.
+  "brand.interview-incomplete": "Answer the remaining questions first, then we can build your brand.",
+  "brand.not-generated": "Build your brand first — this works from what it says.",
+  "package.empty": "Add at least one product before asking for a quote.",
+  "payment.not-started": "No payment has been started for this order yet.",
   "quote.expired": "This quote has expired. We can prepare a fresh one for you.",
   "order.not-found": "We couldn't find that order.",
   "auth.required": "Please sign in to continue.",

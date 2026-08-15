@@ -26,12 +26,42 @@ const pages = readdirSync(root).filter((file) => file.endsWith(".html"));
 
 if (pages.length === 0) problems.push("no HTML pages found in apps/brandora");
 
-/** Secrets that must never appear in anything served to a browser. */
+/**
+ * Names of secrets that must never appear in anything served to a browser.
+ *
+ * The name is not the secret, but a name in a file under the static root means
+ * someone was reading that variable in code the CDN serves — and the value is
+ * one edit away. Every secret the application reads belongs on this list; the
+ * list was previously short enough that a Paystack key or the session-signing
+ * secret could have been referenced here and the build would have passed.
+ */
 const FORBIDDEN = [
+  "ALIEXPRESS_APP_KEY",
   "ALIEXPRESS_APP_SECRET",
   "ALIEXPRESS_ACCESS_TOKEN",
   "ALIEXPRESS_REFRESH_TOKEN",
   "ANTHROPIC_API_KEY",
+  "PAYSTACK_SECRET_KEY",
+  "PAYSTACK_WEBHOOK_SECRET",
+  "RESEND_API_KEY",
+  "BRANDORA_AUTH_SECRET",
+  "BRANDORA_DATABASE_URL",
+];
+
+/**
+ * And the shapes of the values themselves.
+ *
+ * Matching names catches the careful mistake. This catches the careless one:
+ * a key pasted straight into a script while debugging, which carries no
+ * variable name at all and which the list above would wave through.
+ */
+const SECRET_SHAPES = [
+  [/\bsk-ant-[A-Za-z0-9_-]{16,}/, "an Anthropic API key"],
+  [/\bsk_(live|test)_[A-Za-z0-9]{16,}/, "a Paystack/Stripe secret key"],
+  [/\bre_[A-Za-z0-9]{16,}/, "a Resend API key"],
+  [/\bpostgres(ql)?:\/\/[^\s'"]*:[^\s'"@]+@/, "a Postgres URL with a password in it"],
+  [/\bAKIA[0-9A-Z]{16}\b/, "an AWS access key id"],
+  [/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/, "a private key"],
 ];
 
 for (const page of pages) {
@@ -90,13 +120,33 @@ function walk(dir, out = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) walk(full, out);
-    else if (/\.(js|json)$/.test(entry.name)) out.push(full);
+    // .css and .mjs are here because a secret does not care what extension it
+    // was pasted into, and everything under this root is served verbatim.
+    else if (/\.(js|mjs|json|css)$/.test(entry.name)) out.push(full);
   }
   return out;
 }
 
-for (const file of walk(root)) {
+/**
+ * `api/` is a function directory, not static content.
+ *
+ * Vercel compiles everything under `api/` into serverless functions and never
+ * serves it to a browser, so code there is *supposed* to read environment
+ * variables by name — that is what a backend is. Applying the name list to it
+ * would fail the build for `api/index.js` doing its job.
+ *
+ * The value shapes still apply. A key pasted into a function is not exposed to
+ * customers, but it is committed to git, and a repository is a place secrets
+ * leak from. Names are exempt here; values never are, anywhere.
+ */
+const isServerFunction = (file) => /(^|[/\\])api[/\\]/.test(file.slice(root.length));
+
+for (const file of [...walk(root), ...pages.map((page) => join(root, page))]) {
   const contents = readFileSync(file, "utf8");
+  for (const [shape, what] of SECRET_SHAPES) {
+    if (shape.test(contents)) problems.push(`${file}: looks like it contains ${what} (§29)`);
+  }
+  if (isServerFunction(file)) continue;
   for (const secret of FORBIDDEN) {
     if (contents.includes(secret)) problems.push(`${file}: references ${secret} (§29)`);
   }

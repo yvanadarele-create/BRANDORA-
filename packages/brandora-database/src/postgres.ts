@@ -61,8 +61,8 @@ export function assertPooledUrl(url: string, warn: (message: string) => void): v
   const looksPooled = /-pooler|pgbouncer|pool|6543/.test(url);
   if (!looksPooled && !isLocal) {
     warn(
-      "DATABASE_URL does not look like a pooled endpoint. On serverless this exhausts " +
-        "Postgres connections under load — use your provider's pooled/pgbouncer URL.",
+      "BRANDORA_DATABASE_URL does not look like a pooled endpoint. On serverless this " +
+        "exhausts Postgres connections under load — use your provider's pooled/pgbouncer URL.",
     );
   }
 }

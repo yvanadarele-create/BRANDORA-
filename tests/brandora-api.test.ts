@@ -1249,3 +1249,73 @@ describe("brandora api without credentials", () => {
     }
   });
 });
+
+/**
+ * Being at an earlier step is not a malformed form.
+ *
+ * Every case below used to answer `input.invalid`, which the interface renders
+ * as "Something in that form didn't look right. Please check and try again."
+ * Told to someone whose form was fine, that sends them back to re-check work
+ * that was never wrong, and it never mentions the one thing they need to do.
+ *
+ * So each asserts two things: the key is the sequencing one, and it is *not*
+ * `input.invalid`. The second half is the point — a future refactor that
+ * collapses these back into a generic validation error fails here.
+ */
+describe("a precondition says which step is missing", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(async () => { await h.close(); });
+
+  it("generating before the interview exists", async () => {
+    const client = await signUp(h, `seq-generate-${Date.now()}@example.com`);
+    const project = await client.post("/api/projects", { name: "Untitled brand" });
+    const response = await client.post(`/api/projects/${project.json["project"].id}/generate`);
+
+    assert.equal(response.status, 409);
+    assert.equal(response.json["error"], "brand.interview-incomplete");
+    assert.notEqual(response.json["error"], "input.invalid");
+  });
+
+  it("asking the assistant before a brand exists", async () => {
+    const client = await signUp(h, `seq-assistant-${Date.now()}@example.com`);
+    const project = await client.post("/api/projects", { name: "Untitled brand" });
+    const response = await client.post(`/api/projects/${project.json["project"].id}/assistant`, {
+      question: "Quel emballage pour 500 boîtes ?",
+    });
+
+    assert.equal(response.status, 409);
+    assert.equal(response.json["error"], "brand.not-generated");
+    // The question was well-formed. Nothing about it was a validation problem.
+    assert.notEqual(response.json["error"], "input.invalid");
+  });
+
+  it("recommendations before a brand exists", async () => {
+    const client = await signUp(h, `seq-recs-${Date.now()}@example.com`);
+    const project = await client.post("/api/projects", { name: "Untitled brand" });
+    const response = await client.get(`/api/projects/${project.json["project"].id}/recommendations`);
+
+    assert.equal(response.status, 409);
+    assert.equal(response.json["error"], "brand.not-generated");
+  });
+
+  it("quoting an empty package", async () => {
+    const client = await signUp(h, `seq-quote-${Date.now()}@example.com`);
+    const projectId = await projectWithBrand(client);
+    const response = await client.post(`/api/projects/${projectId}/quote`);
+
+    assert.equal(response.status, 409);
+    assert.equal(response.json["error"], "package.empty");
+    assert.notEqual(response.json["error"], "input.invalid");
+  });
+
+  it("each message names the next step rather than blaming the form", async () => {
+    const client = await signUp(h, `seq-wording-${Date.now()}@example.com`);
+    const project = await client.post("/api/projects", { name: "Untitled brand" });
+    const response = await client.post(`/api/projects/${project.json["project"].id}/generate`);
+
+    const message = String(response.json["message"]);
+    assert.match(message, /question/i, message);
+    assert.doesNotMatch(message, /didn't look right/i, message);
+  });
+});
