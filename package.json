@@ -15,7 +15,8 @@
     "dev": "node packages/brandora-server/dist/bin/serve.js",
     "lint": "turbo run lint",
     "migrate": "node scripts/migrate.mjs",
-    "check:i18n": "node scripts/check-i18n.mjs"
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check:live": "node scripts/check-live.mjs"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

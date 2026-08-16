@@ -7,8 +7,21 @@
  */
 import pw from '/opt/node22/lib/node_modules/playwright/index.js';
 
-const BASE = 'http://127.0.0.1:4600';
-const OUT = process.argv[2];
+/*
+ * Where to point this.
+ *
+ * Defaults to the local production-shape server. Pass a URL to run the same
+ * journey against a deployment — the assertions do not care which, because
+ * they are about what a customer sees:
+ *
+ *   BRANDORA_BASE=https://brandora-rho.vercel.app node tests/e2e-journey.mjs /tmp/shots
+ *
+ * Note that this creates a real account on whatever it points at. Against
+ * production that is a real row in your database, with a journey-*@example.com
+ * address, which you can delete afterwards.
+ */
+const BASE = (process.env.BRANDORA_BASE || 'http://127.0.0.1:4600').replace(/\/$/, '');
+const OUT = process.argv[2] || '/tmp';
 const results = [];
 const problems = [];
 const check = (name, ok, detail) => results.push({ name, ok: !!ok, detail });
