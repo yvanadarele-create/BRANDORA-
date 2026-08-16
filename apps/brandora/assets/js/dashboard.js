@@ -7,16 +7,18 @@
  */
 
 import {
-  ApiError,
   api,
+  ApiError,
   clear,
   el,
   mountAccountNav,
+  onLocaleChange,
   price,
   projectUrl,
   rememberProject,
   requireSignIn,
   showError,
+  t,
 } from './api.js';
 
 const node = {
@@ -59,7 +61,9 @@ function projectCard(project) {
     ),
     el('h3', { style: 'margin-bottom:0.25rem', text: project.name }),
     el('p', { class: 'product__meta', text: project.slogan || STATUS_WORDS[project.status] || project.status }),
-    el('p', { class: 'product__meta', text: `${project.packageItems} product${project.packageItems === 1 ? '' : 's'} in the package` }),
+    el('p', { class: 'product__meta', text: project.packageItems === 1
+        ? t('ui.dashboard.item-in-package', '{count} product in the package', { count: project.packageItems })
+        : t('ui.dashboard.items-in-package', '{count} products in the package', { count: project.packageItems }) }),
     el('div', { class: 'hero__actions' }, [
       el('a', {
         class: 'btn btn--primary btn--small',
@@ -71,7 +75,7 @@ function projectCard(project) {
         ? el('a', {
             class: 'btn btn--ghost btn--small',
             href: projectUrl('brand.html', project.id),
-            text: 'Brand book',
+            text: t('ui.dashboard.brand-book', 'Brand book'),
           })
         : null,
     ]),
@@ -89,8 +93,13 @@ function render(payload) {
   if (payload.projects.length === 0) {
     node.projects.appendChild(
       el('div', { class: 'card card--flat' }, [
-        el('h3', { text: 'No brands yet' }),
-        el('p', { text: 'The interview takes a few minutes and you can change everything afterwards.' }),
+        el('h3', { text: t('ui.dashboard.no-brands', 'No brands yet') }),
+        el('p', {
+          text: t(
+            'ui.dashboard.no-brands-hint',
+            'The interview takes a few minutes and you can change everything afterwards.',
+          ),
+        }),
         el('a', { class: 'btn btn--primary btn--small', href: 'create.html', text: 'Create my brand' }),
       ]),
     );
@@ -112,7 +121,7 @@ function render(payload) {
   });
   if (payload.quotes.length === 0) {
     node.quotes.appendChild(
-      el('tr', {}, [el('td', { colspan: '3', class: 'product__meta', text: 'No quotes yet.' })]),
+      el('tr', {}, [el('td', { colspan: '3', class: 'product__meta', text: t('ui.dashboard.no-quotes', 'No quotes yet.') })]),
     );
   }
 
@@ -131,7 +140,7 @@ function render(payload) {
   });
   if (payload.orders.length === 0) {
     node.orders.appendChild(
-      el('tr', {}, [el('td', { colspan: '4', class: 'product__meta', text: 'No orders yet.' })]),
+      el('tr', {}, [el('td', { colspan: '4', class: 'product__meta', text: t('ui.dashboard.no-orders', 'No orders yet.') })]),
     );
   }
 }
@@ -147,5 +156,6 @@ async function load() {
 
 void mountAccountNav().then((user) => {
   if (!user) return requireSignIn();
+  onLocaleChange(() => void load());
   return load();
 });

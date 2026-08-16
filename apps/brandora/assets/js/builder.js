@@ -23,10 +23,14 @@ import { derivePalette, deriveTypography } from './generated/identity.js';
 import {
   ApiError,
   api,
+  clear,
   currentProjectId,
+  el as node,
   mountAccountNav,
+  onLocaleChange,
   projectUrl,
   rememberProject,
+  t,
 } from './api.js';
 
 const DRAFT_KEY = 'brandora.interview.draft';
@@ -150,11 +154,6 @@ async function syncAnswers() {
 }
 
 /* --- Rendering --------------------------------------------------------------- */
-
-function t(key, fallback, vars) {
-  const translated = window.brandoraTranslate ? window.brandoraTranslate(key, vars) : null;
-  return translated === null || translated === undefined ? fallback : translated;
-}
 
 function escapeHtml(value) {
   return String(value === undefined || value === null ? '' : value).replace(/[&<>"']/g, (char) =>
@@ -507,8 +506,36 @@ async function boot() {
     const payload = await api.get('/api/interview/questions');
     state.questions = payload.questions;
   } catch (err) {
-    el.question.innerHTML =
-      '<div class="notice">We could not load the interview just now. Please refresh the page.</div>';
+    /*
+     * This route reads no database and needs no session — it returns a fixed
+     * list of questions. So it does not fail transiently: if it fails, the
+     * Brandora service did not start, which on a serverless deployment means a
+     * missing environment variable. "Please refresh the page" was therefore
+     * advice that could never work, offered to someone who then refreshed for
+     * a week.
+     *
+     * The button retries rather than reloads, because a reload also discards
+     * the draft answers held in this tab.
+     */
+    console.error('[brandora] the interview could not load:', err);
+    clear(el.question);
+    const notice = node('div', { class: 'notice' }, [
+      node('p', {
+        text: t(
+          'ui.interview.unavailable',
+          'The interview needs the Brandora service, which is not responding right now. ' +
+            'Nothing you have already answered has been lost.',
+        ),
+      }),
+      node('button', {
+        class: 'btn btn--small',
+        type: 'button',
+        'data-interview-retry': '1',
+        text: t('ui.interview.retry', 'Try again'),
+      }),
+    ]);
+    el.question.appendChild(notice);
+    notice.querySelector('[data-interview-retry]').addEventListener('click', () => void boot());
     return;
   }
 

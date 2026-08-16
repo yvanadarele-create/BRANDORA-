@@ -18,7 +18,7 @@
  * Nothing here fabricates a number, a supplier or a customer.
  */
 
-import { ApiError, api, clear, el } from './api.js';
+import { ApiError, api, clear, el, onLocaleChange, t } from './api.js';
 import { mountGlobe } from './globe.js';
 
 /* --- What can be sourced ---------------------------------------------------- */
@@ -65,7 +65,11 @@ function categoryCard(category, subcategories, productCount, lowestMinimum) {
     el('p', { class: 'catalogue-card__meta' }, [
       el('span', { text: `${productCount} ${productCount === 1 ? 'product' : 'products'}` }),
       lowestMinimum !== null
-        ? el('span', { text: ` · from ${lowestMinimum} ${lowestMinimum === 1 ? 'unit' : 'units'}` })
+        ? el('span', {
+            text: lowestMinimum === 1
+              ? t('ui.catalog.from-unit', ' · from {min} unit', { min: lowestMinimum })
+              : t('ui.catalog.from-units', ' · from {min} units', { min: lowestMinimum }),
+          })
         : null,
     ]),
   ]);
@@ -89,9 +93,9 @@ async function mountCatalogue() {
     grid.appendChild(
       el('p', { class: 'notice notice--quiet' }, [
         el('span', {
-          text: 'The catalogue could not be loaded just now. ',
+          text: t('ui.catalog.load-failed', 'The catalogue could not be loaded just now. '),
         }),
-        el('a', { href: 'catalog.html', text: 'Browse it directly' }),
+        el('a', { href: 'catalog.html', text: t('ui.catalog.browse-directly', 'Browse it directly') }),
         el('span', { text: '.' }),
       ]),
     );
@@ -140,29 +144,41 @@ function mountSubscribe() {
     // Checked here so an obvious typo gets an instant answer instead of a
     // round trip. The server checks again; this is courtesy, not security.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      say('That does not look like an email address.', 'error');
+      say(t('join.bad-email', 'That does not look like an email address.'), 'error');
       input.focus();
       return;
     }
 
     submit.disabled = true;
     const original = submit.textContent;
-    submit.textContent = 'Sending…';
+    submit.textContent = t('join.sending', 'Sending…');
+
+    // Optional, and sent only when answered. An empty string would be recorded
+    // as an answer of "nothing", which is not the same as not having asked.
+    const optional = (selector) => {
+      const field = form.querySelector(selector);
+      const value = field && field.value ? String(field.value).trim() : '';
+      return value === '' ? undefined : value;
+    };
 
     try {
       await api.post('/api/subscribe', {
         email,
         locale: document.documentElement.getAttribute('lang') || 'en',
         source: 'homepage',
+        name: optional('#subscribe-name'),
+        business: optional('#subscribe-business'),
+        interest: optional('#subscribe-interest'),
+        quantity: optional('#subscribe-quantity'),
       });
       form.reset();
       // Deliberately vague about whether this was new. See the route.
-      say("You're on the list. We'll be in touch as this grows.", 'ok');
+      say(t('join.ok', "You're on the list. We'll be in touch as this grows."), 'ok');
     } catch (err) {
       say(
         err instanceof ApiError && err.status === 429
-          ? 'Too many attempts from here. Try again a little later.'
-          : 'That did not go through. Try again, or email brandora.union@gmail.com.',
+          ? t('join.too-many', 'Too many attempts from here. Try again a little later.')
+          : t('join.failed', 'That did not go through. Try again, or email brandora.union@gmail.com.'),
         'error',
       );
     } finally {
@@ -184,6 +200,8 @@ function mountYear() {
 mountYear();
 mountSubscribe();
 void mountCatalogue();
+// The category tiles carry counts and "from N units" — both built in script.
+onLocaleChange(() => void mountCatalogue());
 
 
 /* --- The manufacturer network ------------------------------------------------ */
@@ -225,7 +243,10 @@ async function mountNetwork() {
           : '';
     } else {
       // Said plainly, and it is not an error state.
-      status.textContent = 'The manufacturer network is being built. Verified partners appear here as they join.';
+      status.textContent = t(
+        'ui.network.being-built',
+        'The manufacturer network is being built. Verified partners appear here as they join.',
+      );
     }
   } catch (err) {
     // The globe stays; only the numbers go. A rendering that depends on a
@@ -283,3 +304,4 @@ async function mountTestimonials() {
 
 void mountNetwork();
 void mountTestimonials();
+onLocaleChange(() => void mountNetwork());

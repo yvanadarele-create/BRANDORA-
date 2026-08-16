@@ -12,8 +12,8 @@
  */
 
 import {
-  ApiError,
   api,
+  ApiError,
   clear,
   currentProjectId,
   el,
@@ -23,6 +23,7 @@ import {
   projectUrl,
   requireSignIn,
   showError,
+  t,
 } from './api.js';
 
 const node = {
@@ -52,7 +53,7 @@ function addQuestion(text) {
 function addThinking() {
   const turn = el('div', { class: 'turn turn--brandora' }, [
     el('p', { class: 'turn__who', text: 'Brandora' }),
-    el('p', { class: 'turn__body turn__body--waiting', text: 'Looking through the catalogue…' }),
+    el('p', { class: 'turn__body turn__body--waiting', text: t('ui.assistant.searching', 'Looking through the catalogue…') }),
   ]);
   node.thread.appendChild(turn);
   turn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -67,8 +68,11 @@ function addThinking() {
 function productCard(product) {
   return el('article', { class: 'card card--flat suggested' }, [
     el('h3', { style: 'font-size:1rem;margin-bottom:0.25rem', text: product.name }),
-    el('p', { class: 'product__price', text: `${price(product.unitPrice)} per unit` }),
-    el('p', { class: 'product__meta', text: `Minimum ${product.minimumQuantity} · ${product.category}` }),
+    el('p', { class: 'product__price', text: t('ui.catalog.per-unit', '{price} per unit', { price: price(product.unitPrice) }) }),
+    el('p', { class: 'product__meta', text: t('ui.assistant.product-meta', 'Minimum {min} · {category}', {
+      min: product.minimumQuantity,
+      category: product.category,
+    }) }),
     el('span', {
       class: `tag ${product.customization.canCarryLogo ? 'tag--ok' : 'tag--unconfirmed'}`,
       text: product.customization.label,
@@ -76,7 +80,7 @@ function productCard(product) {
     el('a', {
       class: 'btn btn--ghost btn--small',
       href: projectUrl('catalog.html', state.projectId),
-      text: 'See in the catalogue',
+      text: t('ui.catalog.see-in-catalogue', 'See in the catalogue'),
     }),
   ]);
 }
@@ -182,7 +186,9 @@ async function boot() {
     clear(node.thread);
     node.thread.appendChild(
       el('div', { class: 'notice' }, [
-        el('span', { text: 'Build a brand first — the assistant answers from it. ' }),
+        el('span', {
+          text: t('ui.assistant.needs-brand', 'Build a brand first — the assistant answers from it. '),
+        }),
         el('a', { href: 'create.html', text: 'Create my brand' }),
       ]),
     );
@@ -194,9 +200,11 @@ async function boot() {
     if (project.strategy) {
       state.brandName = project.strategy.name;
       node.title.textContent = `Ask Brandora about ${state.brandName}`;
-      node.lede.textContent =
-        `Products, packaging, quantities, what to launch first — answered from ${state.brandName}'s ` +
-        'positioning and the catalogue Brandora can actually order from.';
+      node.lede.textContent = t(
+        'ui.assistant.placeholder-hint',
+        'Products, packaging, quantities, what to launch first — answered from {brand}.',
+        { brand: state.brandName },
+      );
     }
   } catch (err) {
     /* The assistant still works; it just does not greet them by name. */

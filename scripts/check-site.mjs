@@ -152,6 +152,57 @@ for (const file of [...walk(root), ...pages.map((page) => join(root, page))]) {
   }
 }
 
+/* --- Every helper used is a helper imported -------------------------------- */
+
+/**
+ * Catch `t is not defined` before a customer does.
+ *
+ * There is no bundler here — page scripts are ES modules the browser loads
+ * directly — so a helper used without being imported is not a build error. It
+ * is a ReferenceError at runtime, thrown at module evaluation, which stops the
+ * *entire script*. The symptom is not a missing word: it is a page where
+ * nothing works and the console says one line. That is precisely what happened
+ * to the homepage while these translations were being wired, and it survived a
+ * syntax check, a type check and 500 unit tests, because none of them evaluate
+ * a browser module.
+ *
+ * So: for each helper `api.js` exports, if a script calls it, the script must
+ * import it. Cheap, and it fails the build rather than the homepage.
+ */
+const apiSource = readFileSync(join(root, "assets/js/api.js"), "utf8");
+const HELPERS = [...apiSource.matchAll(/^export (?:async )?function (\w+)|^export const (\w+)/gm)]
+  .map((match) => match[1] ?? match[2])
+  .filter(Boolean);
+
+for (const file of walk(join(root, "assets/js"))) {
+  if (file.endsWith("/api.js") || file.includes("/generated/")) continue;
+  const source = readFileSync(file, "utf8");
+  if (!/from '\.\/api\.js'/.test(source)) continue;
+
+  const importBlock = /import\s*\{([\s\S]*?)\}\s*from\s*'\.\/api\.js'/.exec(source);
+  const imported = new Set(
+    (importBlock?.[1] ?? "")
+      .split(",")
+      .map((name) => name.trim().split(/\s+as\s+/)[0].trim())
+      .filter(Boolean),
+  );
+
+  for (const helper of HELPERS) {
+    // A call, not a mention: `t(` and not `t` inside a longer identifier, and
+    // not a property access like `state.t`.
+    const called = new RegExp(`(^|[^\\w.$])${helper}\\s*\\(`, "m");
+    if (!called.test(source)) continue;
+    // Declared locally instead — legitimate, and how this file used to work.
+    if (new RegExp(`(function|const|let|var)\\s+${helper}\\b`).test(source)) continue;
+    if (!imported.has(helper)) {
+      problems.push(
+        `${file}: calls ${helper}() but does not import it from api.js — ` +
+          `this is a ReferenceError that stops the whole script`,
+      );
+    }
+  }
+}
+
 /* --- Report --------------------------------------------------------------- */
 
 if (problems.length > 0) {

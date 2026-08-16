@@ -1371,6 +1371,26 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 .join__copy h2 { margin-top: 0; }
 .join__form { display: grid; gap: var(--s3); }
 .join__form .input { width: 100%; }
+
+/*
+ * The optional half of the waiting-list form.
+ *
+ * Two columns on a wide screen and one on a narrow one — a recomposition, not
+ * a shrink: four fields side by side would each be too small to type a business
+ * name into on a phone. The optional note sits above them so it is read before
+ * the fields rather than after, which is the difference between four questions
+ * and four requirements.
+ */
+.join__optional {
+  margin: 0; font-size: 0.85rem; color: var(--muted, inherit); opacity: 0.8;
+}
+.join__details { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.join__details .input--narrow { max-width: 10rem; }
+
+@media (max-width: 40rem) {
+  .join__details { grid-template-columns: 1fr; }
+  .join__details .input--narrow { max-width: none; }
+}
 .join__status { margin: 0; font-size: 0.88rem; }
 .join__status--ok { color: var(--accent); }
 .join__status--error { color: var(--warn); }

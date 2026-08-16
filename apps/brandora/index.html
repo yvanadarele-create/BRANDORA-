@@ -345,11 +345,45 @@
         <p class="lede" data-i18n="join.lede">Updates on new manufacturers, products, sourcing opportunities and Brandora Union launches.</p>
       </div>
 
-      <form class="join__form" data-subscribe-form novalidate>
+      <!--
+        The address is the only required field. Everything else is optional and
+        says so, because a waiting-list form that demands a business name from
+        someone who has not named their business yet is a form they close.
+
+        The optional answers are what make the list useful: knowing that eleven
+        people want printed boxes at around thirty units is a sourcing brief,
+        where eleven bare addresses are not.
+      -->
+      <form class="join__form join__form--detailed" data-subscribe-form novalidate>
         <label class="visually-hidden" for="subscribe-email" data-i18n="join.label">Your email</label>
         <input class="input" id="subscribe-email" name="email" type="email"
                autocomplete="email" required maxlength="254"
                placeholder="you@example.com" data-i18n-attr="placeholder:join.placeholder">
+
+        <p class="join__optional" data-i18n="join.optional">Optional — it helps us find the right manufacturer for you.</p>
+
+        <div class="join__details">
+          <label class="visually-hidden" for="subscribe-name" data-i18n="join.name">Your name</label>
+          <input class="input" id="subscribe-name" name="name" type="text"
+                 autocomplete="name" maxlength="120"
+                 placeholder="Your name" data-i18n-attr="placeholder:join.name">
+
+          <label class="visually-hidden" for="subscribe-business" data-i18n="join.business">Your business</label>
+          <input class="input" id="subscribe-business" name="business" type="text"
+                 autocomplete="organization" maxlength="160"
+                 placeholder="Your business" data-i18n-attr="placeholder:join.business">
+
+          <label class="visually-hidden" for="subscribe-interest" data-i18n="join.interest">What you want made</label>
+          <input class="input" id="subscribe-interest" name="interest" type="text" maxlength="200"
+                 placeholder="Boxes, cups, bags, stickers…"
+                 data-i18n-attr="placeholder:join.interest-placeholder">
+
+          <label class="visually-hidden" for="subscribe-quantity" data-i18n="join.quantity">Roughly how many</label>
+          <input class="input input--narrow" id="subscribe-quantity" name="quantity"
+                 type="number" inputmode="numeric" min="1" step="1"
+                 placeholder="30" data-i18n-attr="placeholder:join.quantity-placeholder">
+        </div>
+
         <button class="btn btn--primary" type="submit" data-subscribe-submit data-i18n="join.cta">Join the network</button>
         <p class="join__status" data-subscribe-status role="status" hidden></p>
       </form>

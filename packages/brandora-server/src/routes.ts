@@ -412,10 +412,39 @@ export function createRouter(deps: ServerDeps): Router {
     const locale = optionalString(ctx.body, "locale", 5);
     const source = optionalString(ctx.body, "source", 40);
 
+    /*
+     * Everything past the address is optional, and none of it is validated
+     * beyond a length cap. This is a waiting list, not an application form: a
+     * rejected submission here is a founder who wanted to hear from Brandora
+     * and did not get on the list because their business name had a slash in
+     * it. The one thing that must be right is the address, because it is the
+     * only way to reach them.
+     */
+    const name = optionalString(ctx.body, "name", 120);
+    const business = optionalString(ctx.body, "business", 160);
+    const interest = optionalString(ctx.body, "interest", 200);
+
+    const rawQuantity = ctx.body["quantity"];
+    const parsedQuantity =
+      typeof rawQuantity === "number"
+        ? rawQuantity
+        : Number.parseInt(String(rawQuantity ?? "").trim(), 10);
+    // Brandora is built for orders of 20 and 30, so there is no lower bound to
+    // enforce — only an upper one, to catch a pasted phone number rather than
+    // to tell anybody their order is too big.
+    const quantity =
+      Number.isFinite(parsedQuantity) && parsedQuantity > 0 && parsedQuantity <= 10_000_000
+        ? Math.floor(parsedQuantity)
+        : undefined;
+
     const { added } = await repos.subscribers.add({
       email,
       ...(locale && ["en", "fr", "es"].includes(locale) ? { locale } : {}),
       ...(source ? { source } : {}),
+      ...(name ? { name } : {}),
+      ...(business ? { business } : {}),
+      ...(interest ? { interest } : {}),
+      ...(quantity !== undefined ? { quantity } : {}),
     });
 
     // The same answer either way. `added` goes to the log, not to the wire.

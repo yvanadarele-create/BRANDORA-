@@ -285,6 +285,53 @@ export function hideError(node) {
 /** Money always arrives pre-formatted from the server. The browser never divides. */
 export const price = (money) => (money ? money.display : '—');
 
+/* --- Language --------------------------------------------------------------- */
+
+/**
+ * Translate a key, falling back to the English written at the call site.
+ *
+ * `data-i18n` only reaches text that already exists in the markup. Everything
+ * these page scripts build — a product card, a total, an empty state — is
+ * created after the translator has run over the document, so it never sees it.
+ * That is why the interface came out half French: the shell translated and the
+ * content did not.
+ *
+ * The English fallback stays in the source deliberately. A missing key then
+ * shows a real sentence rather than `catalog.add-to-package`, and the call site
+ * still reads as a sentence to whoever is editing it.
+ */
+export function t(key, fallback, vars) {
+  const translated = window.brandoraTranslate ? window.brandoraTranslate(key, vars) : null;
+  if (translated === null || translated === undefined) {
+    if (!vars) return fallback;
+    return String(fallback).replace(/\{(\w+)\}/g, (whole, name) =>
+      Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : whole,
+    );
+  }
+  return translated;
+}
+
+/**
+ * Redraw when the visitor changes language.
+ *
+ * Translating on first paint is not enough. Someone who opens the catalogue in
+ * English and then switches to French has a page of English product cards that
+ * no amount of re-running `applyLocale` will touch, because those cards are not
+ * in the markup — the script made them. So each page hands over the function
+ * that rebuilds its own content, and it runs again on every switch.
+ */
+export function onLocaleChange(redraw) {
+  document.addEventListener('brandora:locale', () => {
+    try {
+      redraw();
+    } catch (err) {
+      // A redraw that throws must not take the language switch down with it:
+      // the rest of the page has already translated correctly.
+      console.error('[brandora] redraw after a language change failed:', err);
+    }
+  });
+}
+
 /* --- Booking ---------------------------------------------------------------- */
 
 /**
@@ -341,7 +388,7 @@ function loadCalendly() {
 function openScheduler() {
   if (!schedulingUrl) return;
 
-  const dialog = el('div', { class: 'scheduler', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Book a call' }, [
+  const dialog = el('div', { class: 'scheduler', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('ui.booking.book-a-call', 'Book a call') }, [
     el('div', { class: 'scheduler__panel' }, [
       el('button', {
         class: 'btn btn--ghost btn--small scheduler__close',
@@ -388,8 +435,13 @@ function openScheduler() {
       clear(embed);
       embed.appendChild(
         el('p', { class: 'notice' }, [
-          el('span', { text: 'The scheduler could not load. ' }),
-          el('a', { href: schedulingUrl, target: '_blank', rel: 'noopener', text: 'Open it in a new tab' }),
+          el('span', { text: t('ui.booking.load-failed', 'The scheduler could not load. ') }),
+          el('a', {
+            href: schedulingUrl,
+            target: '_blank',
+            rel: 'noopener',
+            text: t('ui.booking.open-new-tab', 'Open it in a new tab'),
+          }),
         ]),
       );
     });

@@ -8,14 +8,15 @@
  */
 
 import {
-  ApiError,
   api,
+  ApiError,
   clear,
   el,
   mountAccountNav,
   price,
   requireSignIn,
   showError,
+  t,
 } from './api.js';
 
 const node = {
@@ -63,7 +64,7 @@ function define(term, value) {
 function render(payload) {
   const order = payload.order;
 
-  node.reference.textContent = `Order ${order.reference}`;
+  node.reference.textContent = t('ui.order.reference', 'Order {reference}', { reference: order.reference });
   document.title = `Order ${order.reference} — Brandora`;
 
   clear(node.summary);

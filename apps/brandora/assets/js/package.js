@@ -10,17 +10,19 @@
  */
 
 import {
-  ApiError,
   api,
+  ApiError,
   clear,
   currentProjectId,
   el,
   hideError,
   mountAccountNav,
+  onLocaleChange,
   price,
   projectUrl,
   requireSignIn,
   showError,
+  t,
 } from './api.js';
 
 const node = {
@@ -60,7 +62,10 @@ function renderIdentity(project) {
         ),
       ),
       el('p', {}, [
-        el('a', { href: projectUrl('brand.html', state.projectId), text: 'Open the brand book →' }),
+        el('a', {
+          href: projectUrl('brand.html', state.projectId),
+          text: t('ui.package.open-brand-book', 'Open the brand book →'),
+        }),
       ]),
     ]),
   );
@@ -74,15 +79,19 @@ function lineCard(item, adjustments) {
   return el('article', { class: 'card' }, [
     el('h3', { style: 'font-size:1.05rem', text: item.name }),
     item.customizationMethod
-      ? el('p', { class: 'product__meta', text: `With your logo · ${item.customizationMethod}` })
+      ? el('p', { class: 'product__meta', text: t('ui.package.with-logo', 'With your logo · {method}', { method: item.customizationMethod }) })
       : null,
     el('p', { class: 'product__price', text: price(item.lineTotal) }),
-    el('p', { class: 'product__meta', text: `${price(item.unitPrice)} per unit` }),
+    el('p', { class: 'product__meta', text: t('ui.catalog.per-unit', '{price} per unit', { price: price(item.unitPrice) }) }),
     adjusted
       ? el('p', {
           class: 'notice notice--accent',
           // Saying so beats charging for 25 when someone typed 10.
-          text: `You asked for ${adjusted.requested}; this product starts at ${adjusted.charged}, so that is what is priced.`,
+          text: t(
+            'ui.package.rounded-up',
+            'You asked for {requested}; this product starts at {charged}, so that is what is priced.',
+            { requested: adjusted.requested, charged: adjusted.charged },
+          ),
         })
       : null,
     el('div', { class: 'line-controls' }, [
@@ -119,12 +128,17 @@ function renderTotals(payload) {
   clear(node.totals);
 
   if (!payload.totals) {
-    node.totals.appendChild(el('p', { class: 'product__meta', text: 'Add a product to see your total.' }));
+    node.totals.appendChild(
+      el('p', {
+        class: 'product__meta',
+        text: t('ui.package.add-to-see-total', 'Add a product to see your total.'),
+      }),
+    );
     return;
   }
 
   const table = el('table', { class: 'totals' }, [
-    el('caption', { class: 'visually-hidden', text: 'Package totals' }),
+    el('caption', { class: 'visually-hidden', text: t('ui.package.totals', 'Package totals') }),
   ]);
   const body = el('tbody', {});
 
@@ -148,7 +162,10 @@ function renderTotals(payload) {
   node.totals.appendChild(
     el('p', {
       class: 'product__meta',
-      text: 'Delivery is Brandora’s own charge, not a carrier quote. A carrier estimate is confirmed after your order.',
+      text: t(
+        'ui.package.delivery-note',
+        'Delivery is Brandora’s own charge, not a carrier quote. A carrier estimate is confirmed at order.',
+      ),
     }),
   );
 }
@@ -178,11 +195,11 @@ async function renderRecommendations() {
         el('article', { class: 'card' }, [
           el('h3', { style: 'font-size:1.02rem', text: entry.product.name }),
           el('p', { class: 'product__reason', text: entry.reasons[0] || '' }),
-          el('p', { class: 'product__price', text: `${price(entry.product.unitPrice)} per unit` }),
+          el('p', { class: 'product__price', text: t('ui.catalog.per-unit', '{price} per unit', { price: price(entry.product.unitPrice) }) }),
           el('a', {
             class: 'btn btn--ghost btn--small',
             href: projectUrl('catalog.html', state.projectId),
-            text: 'See in the catalogue',
+            text: t('ui.catalog.see-in-catalogue', 'See in the catalogue'),
           }),
         ]),
       );
@@ -274,6 +291,10 @@ async function boot() {
   });
   await load();
   await renderRecommendations();
+
+  // The line items and totals are built here, so they do not translate on
+  // their own when someone switches language mid-page.
+  onLocaleChange(() => void load());
 }
 
 void boot();

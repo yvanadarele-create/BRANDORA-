@@ -24,9 +24,11 @@ import {
   el,
   hideError,
   mountAccountNav,
+  onLocaleChange,
   price,
   projectUrl,
   showError,
+  t,
 } from './api.js';
 
 const node = {
@@ -68,13 +70,15 @@ function productCard(product, orderable, quantity) {
           class: 'btn btn--primary btn--small',
           type: 'button',
           'data-add': product.id,
-          text: 'Add to my package',
+          text: t('ui.catalog.add-to-package', 'Add to my package'),
         }),
       ]
     : [
         el('p', {
           class: 'product__meta',
-          text: `Minimum order ${product.minimumQuantity}. Raise your quantity to add it.`,
+          text: t('ui.catalog.raise-quantity', 'Minimum order {min}. Raise your quantity to add it.', {
+            min: product.minimumQuantity,
+          }),
         }),
       ];
 
@@ -82,14 +86,25 @@ function productCard(product, orderable, quantity) {
     el('h3', { text: product.name }),
     el('p', { class: 'product__meta', text: `${product.category} · ${product.subcategory}` }),
     el('p', { text: product.description }),
-    reason ? el('p', { class: 'product__reason', text: `Recommended: ${reason}` }) : null,
-    el('p', { class: 'product__price', text: `${price(product.unitPrice)} per unit` }),
+    reason
+      ? el('p', {
+          class: 'product__reason',
+          text: t('ui.catalog.recommended', 'Recommended: {reason}', { reason }),
+        })
+      : null,
+    el('p', {
+      class: 'product__price',
+      text: t('ui.catalog.per-unit', '{price} per unit', { price: price(product.unitPrice) }),
+    }),
     el('p', { class: 'product__meta' }, [
       customizationTag(product),
-      el('span', { text: ` Minimum ${product.minimumQuantity}` }),
+      el('span', { text: ` ${t('ui.catalog.minimum', 'Minimum {min}', { min: product.minimumQuantity })}` }),
     ]),
     // §38 in the interface, not only in the data.
-    el('p', { class: 'product__meta', text: 'Delivery estimate available once your order is confirmed.' }),
+    el('p', {
+      class: 'product__meta',
+      text: t('ui.catalog.delivery-later', 'Delivery estimate available once your order is confirmed.'),
+    }),
     ...actions,
   ]);
 }
@@ -109,12 +124,35 @@ function render(payload, quantity) {
 
   node.nearWrap.hidden = near.length === 0;
 
-  node.count.textContent = `${payload.products.length} of ${payload.total} products can be ordered at ${quantity} units.`;
+  node.count.textContent = t(
+    'ui.catalog.count',
+    '{shown} of {total} products can be ordered at {quantity} units.',
+    { shown: payload.products.length, total: payload.total, quantity },
+  );
 
   if (payload.products.length === 0 && near.length === 0) {
+    // Two different situations, and telling them apart matters. `total` counts
+    // the catalogue before this page's filters; when it is zero there is
+    // nothing to find and no filter the visitor could change would help, so
+    // suggesting they try another category sends them hunting for something
+    // that does not exist. A catalogue still being assembled is not a failure
+    // and must not read like one — nor like an error, which is a third state
+    // handled by showError().
+    const nothingAtAll = payload.total === 0;
+    node.count.hidden = nothingAtAll;
     node.products.appendChild(
-      el('p', { class: 'notice', text: 'Nothing matches that yet. Try a different category or quantity.' }),
+      el('p', {
+        class: 'notice',
+        text: nothingAtAll
+          ? t(
+              'ui.catalog.preparing',
+              'Our catalogue is being prepared. We are putting together our first references.',
+            )
+          : t('ui.catalog.no-match', 'Nothing matches that yet. Try a different category or quantity.'),
+      }),
     );
+  } else {
+    node.count.hidden = false;
   }
 }
 
@@ -161,7 +199,11 @@ async function loadRecommendations() {
     });
 
     if (state.brandName) {
-      node.banner.textContent = `Browsing for ${state.brandName}. Products we recommend for it are marked.`;
+      node.banner.textContent = t(
+        'ui.catalog.browsing-for',
+        'Browsing for {brand}. Products we recommend for it are marked.',
+        { brand: state.brandName },
+      );
       node.banner.hidden = false;
     }
   } catch (err) {
@@ -240,6 +282,11 @@ async function boot() {
 
   await loadRecommendations();
   await load();
+
+  // Product cards are built here, not in the markup, so `applyLocale` cannot
+  // reach them. Rebuilding is cheaper and more honest than trying to patch
+  // individual nodes, and it also re-reads the current filters.
+  onLocaleChange(() => void load());
 }
 
 void boot();

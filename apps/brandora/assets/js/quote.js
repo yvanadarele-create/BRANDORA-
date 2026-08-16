@@ -8,8 +8,8 @@
  */
 
 import {
-  ApiError,
   api,
+  ApiError,
   clear,
   el,
   hideError,
@@ -17,6 +17,7 @@ import {
   price,
   requireSignIn,
   showError,
+  t,
 } from './api.js';
 
 const node = {
@@ -32,15 +33,22 @@ const node = {
 const quoteId = new URLSearchParams(window.location.search).get('id');
 
 function render(quote) {
-  node.reference.textContent = `Quote ${quote.reference}`;
+  node.reference.textContent = t('ui.quote.reference', 'Quote {reference}', { reference: quote.reference });
   document.title = `Quote ${quote.reference} — Brandora`;
 
   const until = new Date(quote.validUntil);
-  node.validity.textContent = `Held until ${until.toLocaleDateString(undefined, {
+  // The date follows the page's language, not the browser's: a French page
+  // showing "January 4" is the same half-translated seam as an English button.
+  const dated = until.toLocaleDateString(document.documentElement.lang || undefined, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  })}. Freight and supplier prices move, so a quote does not hold forever.`;
+  });
+  node.validity.textContent = t(
+    'ui.quote.validity',
+    'Held until {date}. Freight and supplier prices move, so a quote does not hold forever.',
+    { date: dated },
+  );
 
   clear(node.lines);
   quote.lines.forEach((line) => {

@@ -417,6 +417,15 @@ CREATE TABLE IF NOT EXISTS subscribers (
   email      TEXT NOT NULL UNIQUE,
   locale     TEXT NOT NULL DEFAULT 'en',
   source     TEXT NOT NULL DEFAULT 'homepage',
+  -- Everything below is optional, and that is the design. The address alone is
+  -- enough to join; the rest is what turns a list of addresses into something
+  -- the founder can act on — who they are, what they sell, what they want made
+  -- and roughly how many. A required field on a waiting-list form is a person
+  -- who does not join.
+  name       TEXT,
+  business   TEXT,
+  interest   TEXT,
+  quantity   INTEGER,
   created_at TEXT NOT NULL
 );
 

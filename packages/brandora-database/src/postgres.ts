@@ -67,6 +67,32 @@ export function assertPooledUrl(url: string, warn: (message: string) => void): v
   }
 }
 
+/**
+ * Columns added to tables that already exist somewhere.
+ *
+ * `CREATE TABLE IF NOT EXISTS` is idempotent, which is exactly why it is not
+ * enough on its own: on a database where the table is already there, the whole
+ * statement is skipped and a column added to the schema file never appears. A
+ * fresh deployment would have the column and a live one would not, and the
+ * mismatch shows up as a query failing in production against a schema that
+ * looks correct in the repository.
+ *
+ * Postgres has `ADD COLUMN IF NOT EXISTS`, so these are safe to run on every
+ * boot and safe to run concurrently. SQLite does not have it — and does not
+ * need it, because every SQLite database here is created from scratch by the
+ * test that uses it.
+ *
+ * Additive only. A column that needs dropping or retyping is a real migration
+ * with a real ordering problem, and it does not belong in a list that runs
+ * unattended on every cold start.
+ */
+const ADDITIVE_COLUMNS: readonly string[] = [
+  "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS name TEXT;",
+  "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS business TEXT;",
+  "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS interest TEXT;",
+  "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS quantity INTEGER;",
+];
+
 export interface PostgresOptions {
   connectionString: string;
   /** One connection per instance: a serverless invocation serves one request. */
@@ -182,6 +208,9 @@ export class PostgresDriver implements SqlDriver {
   /** Apply the schema. Every statement is `IF NOT EXISTS`, so this is idempotent. */
   async migrate(): Promise<void> {
     for (const statement of schemaStatements()) {
+      await this.run(statement);
+    }
+    for (const statement of ADDITIVE_COLUMNS) {
       await this.run(statement);
     }
   }

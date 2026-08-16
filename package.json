@@ -14,7 +14,8 @@
     "test": "pnpm --filter @brandora/tests test",
     "dev": "node packages/brandora-server/dist/bin/serve.js",
     "lint": "turbo run lint",
-    "migrate": "node scripts/migrate.mjs"
+    "migrate": "node scripts/migrate.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

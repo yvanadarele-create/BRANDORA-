@@ -309,6 +309,114 @@ export const en = {
   "error.input.invalid": "Something in that form didn't look right. Please check and try again.",
   "error.rate.limited": "That's a lot of requests. Please wait a moment and try again.",
   "error.internal": "Something went wrong on our side. We're on it.",
+  "ui.catalog.add-to-package":
+    "Add to my package",
+  "ui.catalog.raise-quantity":
+    "Minimum order {min}. Raise your quantity to add it.",
+  "ui.catalog.per-unit":
+    "{price} per unit",
+  "ui.catalog.minimum":
+    "Minimum {min}",
+  "ui.catalog.delivery-later":
+    "Delivery estimate available once your order is confirmed.",
+  "ui.catalog.no-match":
+    "Nothing matches that yet. Try a different category or quantity.",
+  "ui.catalog.preparing":
+    "Our catalogue is being prepared. We are putting together our first references.",
+  "ui.catalog.count":
+    "{shown} of {total} products can be ordered at {quantity} units.",
+  "ui.catalog.browsing-for":
+    "Browsing for {brand}. Products we recommend for it are marked.",
+  "ui.catalog.recommended":
+    "Recommended: {reason}",
+  "ui.catalog.see-in-catalogue":
+    "See in the catalogue",
+  "ui.catalog.load-failed":
+    "The catalogue could not be loaded just now. ",
+  "ui.catalog.browse-directly":
+    "Browse it directly",
+  "ui.catalog.from-units":
+    " \u00b7 from {min} units",
+  "ui.catalog.from-unit":
+    " \u00b7 from {min} unit",
+  "ui.package.open-brand-book":
+    "Open the brand book \u2192",
+  "ui.package.with-logo":
+    "With your logo \u00b7 {method}",
+  "ui.package.rounded-up":
+    "You asked for {requested}; this product starts at {charged}, so that is what is priced.",
+  "ui.package.add-to-see-total":
+    "Add a product to see your total.",
+  "ui.package.totals":
+    "Package totals",
+  "ui.package.delivery-note":
+    "Delivery is Brandora's own charge, not a carrier quote. A carrier estimate is confirmed at order.",
+  "ui.dashboard.items-in-package":
+    "{count} products in the package",
+  "ui.dashboard.item-in-package":
+    "{count} product in the package",
+  "ui.dashboard.brand-book":
+    "Brand book",
+  "ui.dashboard.no-brands":
+    "No brands yet",
+  "ui.dashboard.no-brands-hint":
+    "The interview takes a few minutes and you can change everything afterwards.",
+  "ui.dashboard.no-quotes":
+    "No quotes yet.",
+  "ui.dashboard.no-orders":
+    "No orders yet.",
+  "ui.assistant.searching":
+    "Looking through the catalogue\u2026",
+  "ui.assistant.product-meta":
+    "Minimum {min} \u00b7 {category}",
+  "ui.assistant.needs-brand":
+    "Build a brand first \u2014 the assistant answers from it. ",
+  "ui.assistant.placeholder-hint":
+    "Products, packaging, quantities, what to launch first \u2014 answered from {brand}.",
+  "ui.order.reference":
+    "Order {reference}",
+  "ui.quote.held-until":
+    "Held until {date}",
+  "ui.network.being-built":
+    "The manufacturer network is being built. Verified partners appear here as they join.",
+  "ui.booking.book-a-call":
+    "Book a call",
+  "ui.booking.load-failed":
+    "The scheduler could not load. ",
+  "ui.booking.open-new-tab":
+    "Open it in a new tab",
+  "ui.interview.unavailable":
+    "The interview needs the Brandora service, which is not responding right now. Nothing you have already answered has been lost.",
+  "ui.interview.retry":
+    "Try again",
+  "ui.quote.validity":
+    "Held until {date}. Freight and supplier prices move, so a quote does not hold forever.",
+  "ui.quote.reference":
+    "Quote {reference}",
+  "join.name":
+    "Your name",
+  "join.business":
+    "Your business",
+  "join.interest":
+    "What you want made",
+  "join.interest-placeholder":
+    "Boxes, cups, bags, stickers\u2026",
+  "join.quantity":
+    "Roughly how many",
+  "join.quantity-placeholder":
+    "30",
+  "join.optional":
+    "Optional \u2014 it helps us find the right manufacturer for you.",
+  "join.sending":
+    "Sending\u2026",
+  "join.bad-email":
+    "That does not look like an email address.",
+  "join.ok":
+    "You're on the list. We'll be in touch as this grows.",
+  "join.too-many":
+    "Too many attempts from here. Try again a little later.",
+  "join.failed":
+    "That did not go through. Try again, or email brandora.union@gmail.com.",
 } as const;
 
 export type MessageKey = keyof typeof en;

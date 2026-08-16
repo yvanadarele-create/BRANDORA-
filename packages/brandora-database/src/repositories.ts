@@ -774,7 +774,15 @@ export interface Repositories {
      * the same thing either way: a form that says "you are already on the list"
      * tells whoever typed the address whether someone else subscribed with it.
      */
-    add(input: { email: string; locale?: string; source?: string }): Promise<{ added: boolean }>;
+    add(input: {
+      email: string;
+      locale?: string;
+      source?: string;
+      name?: string;
+      business?: string;
+      interest?: string;
+      quantity?: number;
+    }): Promise<{ added: boolean }>;
     count(): Promise<number>;
     listAsAdmin(limit?: number): Promise<SubscriberRow[]>;
     remove(email: string): Promise<void>;
@@ -862,6 +870,11 @@ export interface SubscriberRow {
   email: string;
   locale: string;
   source: string;
+  /** Optional on the form, so optional here. Absent means not asked, not empty. */
+  name?: string;
+  business?: string;
+  interest?: string;
+  quantity?: number;
   createdAt: string;
 }
 
@@ -1947,10 +1960,22 @@ export function createRepositories(db: SqlDriver): Repositories {
         // submitting the same address at the same moment would both see no row
         // and both insert, and one of them would get a UNIQUE violation as a
         // 500 on a newsletter form.
-        await run(`INSERT INTO subscribers (id,email,locale,source,created_at)
-           VALUES (?,?,?,?,?)
+        await run(
+          `INSERT INTO subscribers (id,email,locale,source,name,business,interest,quantity,created_at)
+           VALUES (?,?,?,?,?,?,?,?,?)
            ON CONFLICT(email) DO NOTHING`,
-          id, email, input.locale ?? "en", input.source ?? "homepage", nowIso(),
+          id,
+          email,
+          input.locale ?? "en",
+          input.source ?? "homepage",
+          // Null rather than "" for anything unanswered: a blank string reads
+          // as "they were asked and said nothing", and these fields are
+          // optional precisely so that people can skip them.
+          input.name ?? null,
+          input.business ?? null,
+          input.interest ?? null,
+          input.quantity ?? null,
+          nowIso(),
         );
 
         // Whether *this* call was the one that added it, decided by reading the
@@ -1974,6 +1999,14 @@ export function createRepositories(db: SqlDriver): Repositories {
           email: text(row["email"]),
           locale: text(row["locale"]),
           source: text(row["source"]),
+          ...(optionalText(row["name"]) ? { name: optionalText(row["name"]) as string } : {}),
+          ...(optionalText(row["business"]) ? { business: optionalText(row["business"]) as string } : {}),
+          ...(optionalText(row["interest"]) ? { interest: optionalText(row["interest"]) as string } : {}),
+          // A quantity of 0 is not a quantity anybody typed; null and 0 both
+          // mean "not stated" here, and neither should render as "0 units".
+          ...(typeof row["quantity"] === "number" && row["quantity"] > 0
+            ? { quantity: row["quantity"] }
+            : {}),
           createdAt: text(row["created_at"]),
         }));
       },

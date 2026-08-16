@@ -122,7 +122,8 @@ console.log(`\n${after.size} tables, ${total} rows.`);
 console.log(
   total === 0
     ? "The database is empty — this looks like a first-time setup."
-    : "Existing rows were left alone. Every statement is CREATE … IF NOT EXISTS.",
+    : "Existing rows were left alone. Every statement is CREATE … IF NOT EXISTS or " +
+      "ALTER TABLE … ADD COLUMN IF NOT EXISTS — additive only, never destructive.",
 );
 
 await db.close();

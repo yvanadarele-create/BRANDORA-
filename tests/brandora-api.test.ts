@@ -1319,3 +1319,85 @@ describe("a precondition says which step is missing", () => {
     assert.doesNotMatch(message, /didn't look right/i, message);
   });
 });
+
+/**
+ * The waiting list records what the person actually told us.
+ *
+ * The list existed but held only an address, which makes it a mailing list
+ * rather than a sourcing signal: eleven addresses say nothing, while eleven
+ * people wanting printed boxes at around thirty units is a brief you can take
+ * to a manufacturer. Everything past the address is optional, so the tests
+ * that matter are the ones about *absence* — a skipped field must come back
+ * absent, not as an empty string or a zero that reads like an answer.
+ */
+describe("the waiting list", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(async () => { await h.close(); });
+
+  it("keeps the name, business, interest and quantity", async () => {
+    const email = `wl-full-${Date.now()}@example.com`;
+    const response = await new Client(h.base).post("/api/subscribe", {
+      email,
+      name: "Aïcha Traoré",
+      business: "Boulangerie Cocody",
+      interest: "Boîtes imprimées et stickers",
+      quantity: 30,
+      locale: "fr",
+    });
+    assert.equal(response.status, 201);
+
+    const row = (await h.app.repos.subscribers.listAsAdmin()).find((s) => s.email === email);
+    assert.ok(row, "the row was not written");
+    assert.equal(row.name, "Aïcha Traoré");
+    assert.equal(row.business, "Boulangerie Cocody");
+    assert.equal(row.interest, "Boîtes imprimées et stickers");
+    assert.equal(row.quantity, 30);
+    assert.equal(row.locale, "fr");
+  });
+
+  it("an address alone still joins", async () => {
+    const email = `wl-bare-${Date.now()}@example.com`;
+    assert.equal((await new Client(h.base).post("/api/subscribe", { email })).status, 201);
+
+    const row = (await h.app.repos.subscribers.listAsAdmin()).find((s) => s.email === email);
+    assert.ok(row);
+    // Absent, not "" and not 0 — nobody was asked and answered nothing.
+    assert.equal(row.name, undefined);
+    assert.equal(row.business, undefined);
+    assert.equal(row.interest, undefined);
+    assert.equal(row.quantity, undefined);
+  });
+
+  it("a small quantity is a real answer", async () => {
+    // Brandora is for founders ordering 20 and 30. A minimum that quietly
+    // rejected those would reject exactly the customer it is built for.
+    const email = `wl-small-${Date.now()}@example.com`;
+    await new Client(h.base).post("/api/subscribe", { email, quantity: 20 });
+
+    const row = (await h.app.repos.subscribers.listAsAdmin()).find((s) => s.email === email);
+    assert.equal(row?.quantity, 20);
+  });
+
+  it("a quantity that is not a number is dropped, not a 400", async () => {
+    const email = `wl-junk-${Date.now()}@example.com`;
+    const response = await new Client(h.base).post("/api/subscribe", {
+      email,
+      quantity: "je ne sais pas encore",
+    });
+
+    // Joining still succeeds. Losing someone from the waiting list because
+    // they typed words into a number box is the worst possible trade.
+    assert.equal(response.status, 201);
+    const row = (await h.app.repos.subscribers.listAsAdmin()).find((s) => s.email === email);
+    assert.ok(row);
+    assert.equal(row.quantity, undefined);
+  });
+
+  it("a quantity typed as a string is understood", async () => {
+    const email = `wl-str-${Date.now()}@example.com`;
+    await new Client(h.base).post("/api/subscribe", { email, quantity: "50" });
+    const row = (await h.app.repos.subscribers.listAsAdmin()).find((s) => s.email === email);
+    assert.equal(row?.quantity, 50);
+  });
+});

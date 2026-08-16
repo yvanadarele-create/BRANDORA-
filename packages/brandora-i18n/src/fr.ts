@@ -298,4 +298,112 @@ export const fr: Catalogue = {
   "error.input.invalid": "Un champ ne semble pas correct. Vérifiez et réessayez.",
   "error.rate.limited": "Cela fait beaucoup de requêtes. Patientez un instant et réessayez.",
   "error.internal": "Un problème est survenu de notre côté. Nous nous en occupons.",
+  "ui.catalog.add-to-package":
+    "Ajouter \u00e0 mon lot",
+  "ui.catalog.raise-quantity":
+    "Commande minimum : {min}. Augmentez votre quantit\u00e9 pour l'ajouter.",
+  "ui.catalog.per-unit":
+    "{price} l'unit\u00e9",
+  "ui.catalog.minimum":
+    "Minimum {min}",
+  "ui.catalog.delivery-later":
+    "L'estimation de livraison sera disponible une fois votre commande confirm\u00e9e.",
+  "ui.catalog.no-match":
+    "Rien ne correspond pour l'instant. Essayez une autre cat\u00e9gorie ou une autre quantit\u00e9.",
+  "ui.catalog.preparing":
+    "Notre catalogue est en cours de pr\u00e9paration. Nous rassemblons actuellement nos premi\u00e8res r\u00e9f\u00e9rences.",
+  "ui.catalog.count":
+    "{shown} produits sur {total} peuvent \u00eatre command\u00e9s \u00e0 {quantity} unit\u00e9s.",
+  "ui.catalog.browsing-for":
+    "Vous parcourez le catalogue pour {brand}. Les produits que nous recommandons sont signal\u00e9s.",
+  "ui.catalog.recommended":
+    "Recommand\u00e9 : {reason}",
+  "ui.catalog.see-in-catalogue":
+    "Voir dans le catalogue",
+  "ui.catalog.load-failed":
+    "Le catalogue n'a pas pu \u00eatre charg\u00e9 pour le moment. ",
+  "ui.catalog.browse-directly":
+    "Le parcourir directement",
+  "ui.catalog.from-units":
+    " \u00b7 \u00e0 partir de {min} unit\u00e9s",
+  "ui.catalog.from-unit":
+    " \u00b7 \u00e0 partir de {min} unit\u00e9",
+  "ui.package.open-brand-book":
+    "Ouvrir le livre de marque \u2192",
+  "ui.package.with-logo":
+    "Avec votre logo \u00b7 {method}",
+  "ui.package.rounded-up":
+    "Vous avez demand\u00e9 {requested} ; ce produit d\u00e9marre \u00e0 {charged}, c'est donc ce qui est factur\u00e9.",
+  "ui.package.add-to-see-total":
+    "Ajoutez un produit pour voir votre total.",
+  "ui.package.totals":
+    "Totaux du lot",
+  "ui.package.delivery-note":
+    "La livraison est un tarif Brandora, pas un devis de transporteur. Une estimation transporteur est confirm\u00e9e \u00e0 la commande.",
+  "ui.dashboard.items-in-package":
+    "{count} produits dans le lot",
+  "ui.dashboard.item-in-package":
+    "{count} produit dans le lot",
+  "ui.dashboard.brand-book":
+    "Livre de marque",
+  "ui.dashboard.no-brands":
+    "Aucune marque pour l'instant",
+  "ui.dashboard.no-brands-hint":
+    "L'entretien prend quelques minutes et vous pourrez tout modifier ensuite.",
+  "ui.dashboard.no-quotes":
+    "Aucun devis pour l'instant.",
+  "ui.dashboard.no-orders":
+    "Aucune commande pour l'instant.",
+  "ui.assistant.searching":
+    "Recherche dans le catalogue\u2026",
+  "ui.assistant.product-meta":
+    "Minimum {min} \u00b7 {category}",
+  "ui.assistant.needs-brand":
+    "Cr\u00e9ez d'abord une marque \u2014 l'assistant r\u00e9pond \u00e0 partir d'elle. ",
+  "ui.assistant.placeholder-hint":
+    "Produits, emballages, quantit\u00e9s, par quoi commencer \u2014 r\u00e9pondu \u00e0 partir de {brand}.",
+  "ui.order.reference":
+    "Commande {reference}",
+  "ui.quote.held-until":
+    "Valable jusqu'au {date}",
+  "ui.network.being-built":
+    "Le r\u00e9seau de fabricants est en cours de constitution. Les partenaires v\u00e9rifi\u00e9s appara\u00eetront ici au fur et \u00e0 mesure.",
+  "ui.booking.book-a-call":
+    "R\u00e9server un appel",
+  "ui.booking.load-failed":
+    "L'agenda n'a pas pu se charger. ",
+  "ui.booking.open-new-tab":
+    "L'ouvrir dans un nouvel onglet",
+  "ui.interview.unavailable":
+    "L'entretien a besoin du service Brandora, qui ne r\u00e9pond pas pour le moment. Rien de ce que vous avez d\u00e9j\u00e0 r\u00e9pondu n'a \u00e9t\u00e9 perdu.",
+  "ui.interview.retry":
+    "R\u00e9essayer",
+  "ui.quote.validity":
+    "Valable jusqu'au {date}. Les prix du fret et des fournisseurs \u00e9voluent : un devis ne tient pas ind\u00e9finiment.",
+  "ui.quote.reference":
+    "Devis {reference}",
+  "join.name":
+    "Votre nom",
+  "join.business":
+    "Votre entreprise",
+  "join.interest":
+    "Ce que vous voulez faire fabriquer",
+  "join.interest-placeholder":
+    "Bo\u00eetes, gobelets, sacs, stickers\u2026",
+  "join.quantity":
+    "Environ combien",
+  "join.quantity-placeholder":
+    "30",
+  "join.optional":
+    "Facultatif \u2014 cela nous aide \u00e0 trouver le bon fabricant pour vous.",
+  "join.sending":
+    "Envoi\u2026",
+  "join.bad-email":
+    "Cela ne ressemble pas \u00e0 une adresse e-mail.",
+  "join.ok":
+    "Vous \u00eates sur la liste. Nous vous \u00e9crirons au fur et \u00e0 mesure.",
+  "join.too-many":
+    "Trop de tentatives depuis cet appareil. R\u00e9essayez un peu plus tard.",
+  "join.failed":
+    "L'envoi n'a pas abouti. R\u00e9essayez ou \u00e9crivez \u00e0 brandora.union@gmail.com.",
 };
