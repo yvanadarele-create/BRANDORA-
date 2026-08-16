@@ -29,6 +29,13 @@ export const CUSTOMER_MESSAGES = {
   "payment.not-started": "No payment has been started for this order yet.",
   "quote.expired": "This quote has expired. We can prepare a fresh one for you.",
   "order.not-found": "We couldn't find that order.",
+  // NotFoundError covers brands, quotes, suppliers and products as well as
+  // orders, and it answered "We couldn't find that order." for all of them —
+  // so someone opening a brand link that is not theirs was told about an order
+  // they had never placed. Deliberately vague about *what* was not found:
+  // saying "that brand does not exist" to someone probing ids confirms which
+  // ids do, which is the whole reason these are 404 and not 403.
+  "not-found": "We couldn't find that.",
   "auth.required": "Please sign in to continue.",
   // Deliberately identical for "no such account" and "wrong password": a
   // message that distinguishes them tells an attacker which addresses have
@@ -82,7 +89,9 @@ export class ValidationError extends BrandoraError {
 
 export class NotFoundError extends BrandoraError {
   constructor(kind: string, id: string) {
-    super("order.not-found", `${kind} ${id} not found`, 404);
+    // `kind` and `id` go to the technical detail, for the log and the admin
+    // view. The customer sentence stays generic on purpose.
+    super(kind === "order" ? "order.not-found" : "not-found", `${kind} ${id} not found`, 404);
     this.name = "NotFoundError";
   }
 }

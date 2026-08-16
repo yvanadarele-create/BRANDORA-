@@ -292,5 +292,6 @@
   "join.bad-email": "Cela ne ressemble pas à une adresse e-mail.",
   "join.ok": "Vous êtes sur la liste. Nous vous écrirons au fur et à mesure.",
   "join.too-many": "Trop de tentatives depuis cet appareil. Réessayez un peu plus tard.",
-  "join.failed": "L'envoi n'a pas abouti. Réessayez ou écrivez à brandora.union@gmail.com."
+  "join.failed": "L'envoi n'a pas abouti. Réessayez ou écrivez à brandora.union@gmail.com.",
+  "error.not-found": "Nous n'avons pas trouvé cela."
 }

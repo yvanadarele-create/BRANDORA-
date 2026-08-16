@@ -398,4 +398,5 @@ export const es: Catalogue = {
     "Demasiados intentos desde aqu\u00ed. Int\u00e9ntalo un poco m\u00e1s tarde.",
   "join.failed":
     "No se ha enviado. Int\u00e9ntalo de nuevo o escribe a brandora.union@gmail.com.",
+  "error.not-found": "No hemos encontrado eso.",
 };

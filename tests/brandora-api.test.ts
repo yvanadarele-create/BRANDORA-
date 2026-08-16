@@ -1401,3 +1401,47 @@ describe("the waiting list", () => {
     assert.equal(row?.quantity, 50);
   });
 });
+
+/**
+ * One customer cannot read another's brand, and is not told it exists.
+ *
+ * Ownership lives in the SQL WHERE clause, not in a check above the query, so
+ * a missing row and someone else's row are indistinguishable by construction.
+ * The status is 404 rather than 403 for the same reason: 403 confirms the id
+ * is real, which is exactly what someone walking ids wants to learn.
+ */
+describe("another customer's brand", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(async () => { await h.close(); });
+
+  it("is a 404, and its contents never appear in the response", async () => {
+    const owner = await signUp(h, `owner-${Date.now()}@example.com`);
+    const stranger = await signUp(h, `stranger-${Date.now()}@example.com`);
+
+    const created = await owner.post("/api/projects", { name: "Confidential brand" });
+    const id = created.json["project"].id as string;
+    await owner.request("PUT", `/api/projects/${id}/interview`, {
+      answers: [{ field: "business", value: "A private idea nobody else should read" }],
+    });
+
+    assert.equal((await owner.get(`/api/projects/${id}`)).status, 200);
+
+    for (const path of [`/api/projects/${id}`, `/api/projects/${id}/interview`, `/api/projects/${id}/package`]) {
+      const response = await stranger.get(path);
+      assert.equal(response.status, 404, `${path} answered ${response.status}`);
+      assert.doesNotMatch(JSON.stringify(response.json), /private idea|Confidential/, path);
+    }
+  });
+
+  it("says 'that', not 'that order' — it is not an order", async () => {
+    const owner = await signUp(h, `msg-owner-${Date.now()}@example.com`);
+    const stranger = await signUp(h, `msg-stranger-${Date.now()}@example.com`);
+    const created = await owner.post("/api/projects", { name: "Another brand" });
+
+    const response = await stranger.get(`/api/projects/${created.json["project"].id}`);
+    assert.equal(response.json["error"], "not-found");
+    // Being told about an order you never placed is its own small confusion.
+    assert.doesNotMatch(String(response.json["message"]), /order/i, String(response.json["message"]));
+  });
+});

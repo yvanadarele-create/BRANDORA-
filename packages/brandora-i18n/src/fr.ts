@@ -406,4 +406,5 @@ export const fr: Catalogue = {
     "Trop de tentatives depuis cet appareil. R\u00e9essayez un peu plus tard.",
   "join.failed":
     "L'envoi n'a pas abouti. R\u00e9essayez ou \u00e9crivez \u00e0 brandora.union@gmail.com.",
+  "error.not-found": "Nous n'avons pas trouv\u00e9 cela.",
 };

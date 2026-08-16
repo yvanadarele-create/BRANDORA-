@@ -417,6 +417,7 @@ export const en = {
     "Too many attempts from here. Try again a little later.",
   "join.failed":
     "That did not go through. Try again, or email brandora.union@gmail.com.",
+  "error.not-found": "We couldn't find that.",
 } as const;
 
 export type MessageKey = keyof typeof en;
