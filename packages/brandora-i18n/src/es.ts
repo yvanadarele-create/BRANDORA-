@@ -17,6 +17,11 @@ export const es: Catalogue = {
   "nav.signup": "Crear cuenta",
   "nav.logout": "Cerrar sesión",
 
+  /* El control oscuro/claro. La etiqueta nombra el modo visible, no
+     aquel al que cambia el botón. */
+  "theme.dark": "Oscuro",
+  "theme.light": "Claro",
+
   /* La empresa.
 
      «Brandora Union» es la empresa; «Brandora» sigue siendo el producto — por

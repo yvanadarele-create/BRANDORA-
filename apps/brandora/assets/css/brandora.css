@@ -1535,3 +1535,325 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   .network__pair { grid-template-columns: 1fr; }
   .globe-stats { gap: var(--s5); }
 }
+
+/* --- The French launch page ----------------------------------------------- */
+
+/*
+ * Scoped to `.page-fr` so none of it can reach the application's own screens.
+ * The tokens are the ones already defined at the top of this file — the deep
+ * metallic purple, the two surfaces, the one spacing scale — because a campaign
+ * page that invents its own palette is a campaign page that stops looking like
+ * the product it is selling. Light and dark both work here for free as a
+ * result: every colour below is a variable, and not one is a literal.
+ */
+
+.page-fr .fr-section-head { max-width: var(--measure); margin-bottom: var(--s6); }
+.page-fr .fr-section-head--tight { margin-bottom: var(--s5); }
+.page-fr .fr-section-head h2 {
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+  line-height: 1.15;
+  text-wrap: balance;
+  margin: 0 0 var(--s4);
+}
+
+/* Hero */
+.page-fr .fr-hero { padding-block: clamp(3.5rem, 9vw, 7rem); }
+.page-fr .fr-hero .hero__headline {
+  font-size: clamp(2.1rem, 6vw, 3.9rem);
+  line-height: 1.05;
+  text-wrap: balance;
+  max-width: 18ch;
+}
+.page-fr .fr-hero .lede { max-width: 54ch; }
+
+/*
+ * The trust line. Quiet by design — it is a statement of stage, not a claim,
+ * and styling it like a badge would turn "we are still building" into a boast.
+ */
+.page-fr .fr-hero__trust {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  margin-top: var(--s6);
+  max-width: 52ch;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+.page-fr .fr-dot {
+  flex: none;
+  width: 7px; height: 7px;
+  margin-top: 0.5em;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Cards */
+.page-fr .fr-grid-3 { grid-template-columns: 1fr; }
+.page-fr .fr-grid-4 { grid-template-columns: 1fr; }
+@media (min-width: 44rem) {
+  .page-fr .fr-grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .page-fr .fr-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 64rem) {
+  .page-fr .fr-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .page-fr .fr-grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+.page-fr .fr-card { padding: var(--s5); }
+.page-fr .fr-card h3 { font-size: 1.02rem; margin: 0 0 var(--s3); }
+.page-fr .fr-card p { margin: 0; font-size: 0.92rem; line-height: 1.6; color: var(--ink-muted); }
+.page-fr .fr-card__ref {
+  display: block;
+  margin-bottom: var(--s3);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+}
+
+/* The list of things a small business is looking for */
+.page-fr .fr-needs {
+  margin-bottom: var(--s6);
+  padding: var(--s5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  background-image: var(--sheen);
+}
+.page-fr .fr-needs__label { margin: 0 0 var(--s4); color: var(--ink-muted); font-size: 0.92rem; }
+.page-fr .fr-needs__list {
+  display: flex; flex-wrap: wrap; gap: var(--s2);
+  margin: 0; padding: 0; list-style: none;
+}
+.page-fr .fr-needs__list li {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+
+/* The five steps */
+.page-fr .fr-flow {
+  display: grid; gap: var(--s4);
+  margin: 0; padding: 0; list-style: none;
+  counter-reset: none;
+}
+@media (min-width: 52rem) { .page-fr .fr-flow { grid-template-columns: repeat(5, 1fr); } }
+.page-fr .fr-flow__step {
+  position: relative;
+  padding: var(--s5) var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+.page-fr .fr-flow__n {
+  display: grid; place-items: center;
+  width: 2rem; height: 2rem;
+  margin-bottom: var(--s4);
+  border-radius: 50%;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.page-fr .fr-flow__step h3 { font-size: 0.95rem; line-height: 1.35; margin: 0 0 var(--s2); }
+.page-fr .fr-flow__step p { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--ink-muted); }
+
+/* Products.
+
+   Seven categories, so some row is always partial. Four across leaves a 3-up
+   final row, which reads as a deliberate block; `auto-fit` left one orphaned
+   tile alone on the last line at desktop widths. */
+.page-fr .fr-products__grid { display: grid; gap: var(--s4); grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 44rem) { .page-fr .fr-products__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 64rem) { .page-fr .fr-products__grid { grid-template-columns: repeat(4, 1fr); } }
+.page-fr .fr-product {
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  text-align: center;
+}
+.page-fr .fr-product h3 { font-size: 0.92rem; margin: var(--s4) 0 var(--s1); }
+.page-fr .fr-product__note {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/*
+ * The product visual.
+ *
+ * Drawn, not photographed. Brandora holds no stock, so there is no honest
+ * photograph to put here yet — and a stock image of somebody else's cup would
+ * be read as a picture of a product Brandora sells. Each shape is a plain
+ * silhouette in the brand's own purple: clearly a placeholder, clearly not a
+ * claim, and it costs no image request.
+ */
+.page-fr .fr-product__visual {
+  position: relative;
+  height: 6.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.page-fr .fr-product__visual::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+}
+/* Cup: a tapered vessel. */
+.page-fr .fr-product__visual[data-shape='cup']::after {
+  width: 2.6rem; height: 3.3rem;
+  clip-path: polygon(14% 0, 86% 0, 74% 100%, 26% 100%);
+}
+/* Box and carton: one square-on, one with a lid seam. */
+.page-fr .fr-product__visual[data-shape='box']::after { width: 3.4rem; height: 2.8rem; border-radius: 3px; }
+.page-fr .fr-product__visual[data-shape='carton']::after {
+  width: 3.4rem; height: 3rem; border-radius: 3px;
+  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--accent) 55%, transparent) 0 0.55rem, transparent 0.55rem);
+}
+/* Bag: a pouch with a fold at the top. */
+.page-fr .fr-product__visual[data-shape='bag']::after {
+  width: 2.8rem; height: 3.4rem; border-radius: 2px;
+  clip-path: polygon(0 12%, 20% 0, 80% 0, 100% 12%, 100% 100%, 0 100%);
+}
+/* Sticker: a circle. */
+.page-fr .fr-product__visual[data-shape='sticker']::after { width: 3rem; height: 3rem; border-radius: 50%; }
+/* Card and label: landscape rectangles, the label narrower. */
+.page-fr .fr-product__visual[data-shape='card']::after { width: 3.8rem; height: 2.4rem; border-radius: 3px; }
+.page-fr .fr-product__visual[data-shape='label']::after { width: 3.8rem; height: 1.6rem; border-radius: 999px; }
+
+/* Video slots */
+.page-fr .fr-player { margin: 0; }
+.page-fr .fr-player__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  background-image: var(--sheen);
+  overflow: hidden;
+}
+.page-fr .fr-player__media { width: 100%; height: 100%; object-fit: cover; display: block; }
+.page-fr .fr-player__pending { text-align: center; padding: var(--s5); }
+.page-fr .fr-player__mark {
+  display: block;
+  width: 3rem; height: 3rem;
+  margin: 0 auto var(--s4);
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  position: relative;
+}
+/* A play triangle, so the slot reads as "a video goes here" without a label. */
+.page-fr .fr-player__mark::after {
+  content: '';
+  position: absolute; left: 54%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-left: 0.75rem solid color-mix(in srgb, var(--accent) 85%, transparent);
+  border-top: 0.5rem solid transparent;
+  border-bottom: 0.5rem solid transparent;
+}
+.page-fr .fr-player__pending-title { margin: 0 0 var(--s2); font-size: 0.95rem; color: var(--ink); }
+.page-fr .fr-player__pending-note { margin: 0; font-size: 0.86rem; color: var(--ink-muted); max-width: 34ch; }
+.page-fr .fr-player__caption {
+  margin-top: var(--s3);
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
+/* The waiting-list form */
+.page-fr .fr-join__inner {
+  max-width: 44rem; margin-inline: auto;
+  padding: clamp(1.5rem, 4vw, var(--s7));
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  background-image: var(--sheen);
+  box-shadow: var(--shadow);
+}
+.page-fr .fr-form { display: grid; gap: var(--s4); }
+.page-fr .fr-form__row { display: grid; gap: var(--s4); }
+@media (min-width: 40rem) { .page-fr .fr-form__row { grid-template-columns: 1fr 1fr; } }
+.page-fr .fr-field { display: grid; gap: var(--s2); }
+.page-fr .fr-field label { font-size: 0.85rem; color: var(--ink-muted); }
+.page-fr .fr-field__req { color: var(--accent); }
+.page-fr .fr-field__help { margin: 0; font-size: 0.78rem; color: var(--ink-faint); }
+.page-fr .fr-form__submit { justify-self: start; margin-top: var(--s2); }
+.page-fr .fr-form__legal { margin: 0; font-size: 0.76rem; line-height: 1.5; color: var(--ink-faint); }
+
+/* One status line, three outcomes. */
+.page-fr .fr-form__status {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+.page-fr .fr-form__status.is-error {
+  border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  color: var(--ink);
+}
+.page-fr .fr-form__status.is-ok {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--ink);
+}
+/* What replaces the form once somebody has joined. */
+.page-fr .fr-form__done {
+  margin: 0;
+  padding: var(--s5);
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* Trust */
+.page-fr .fr-trust__panel {
+  max-width: var(--measure);
+  padding: var(--s6);
+  border-left: 2px solid var(--accent);
+  background: var(--surface-raised);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.page-fr .fr-trust__copy { margin: 0 0 var(--s4); font-size: 1.05rem; line-height: 1.6; color: var(--ink); }
+.page-fr .fr-trust__note { margin: 0; font-size: 0.88rem; color: var(--ink-muted); }
+
+/*
+ * Motion is limited to what the shared stylesheet already does. Nothing on this
+ * page animates on scroll: the brief asked for no excessive animation, and a
+ * validation page's job is to be readable in five seconds, which is not helped
+ * by content that arrives late.
+ */
+
+/*
+ * The launch page's header on a narrow screen.
+ *
+ * The brand lockup, a "Rejoindre la liste" button and the theme control do not
+ * fit across 390px — the French labels are wider than the English ones the
+ * shared header was measured against, and the row overflowed by about ten
+ * pixels, which is a horizontal scrollbar on a phone.
+ *
+ * The header CTA is the one that goes, because it is the only element here that
+ * is duplicated: the hero's primary button is a few hundred pixels below it and
+ * says the same thing. Losing the theme control instead would remove the only
+ * way to reach light mode, and shrinking the lockup would shrink the brand.
+ */
+@media (max-width: 26rem) {
+  .page-fr .header-tools [href="#liste"] { display: none; }
+}

@@ -13,6 +13,8 @@
   "nav.login": "Log in",
   "nav.signup": "Sign up",
   "nav.logout": "Log out",
+  "theme.dark": "Dark",
+  "theme.light": "Light",
   "brand.company": "Brandora Union",
   "brand.tagline": "Where brands take form.",
   "brand.what": "Infrastructure for building physical brands.",

@@ -80,6 +80,7 @@ import { DEFAULT_VALIDITY_DAYS, quoteReference } from "@brandora/quotes";
 import {
   aliexpressIntegrationStatus,
   calendlyUrl,
+  founderEmail,
   notificationsIntegrationStatus,
   paystackIntegrationStatus,
   paystackWebhookSecret,
@@ -343,6 +344,71 @@ export function createRouter(deps: ServerDeps): Router {
     }
   };
 
+  /**
+   * Tell the founder that somebody joined the waiting list.
+   *
+   * This does not go through `notify` and the `notifications` table, and the
+   * reason is structural rather than stylistic: every row in that table belongs
+   * to a `user_id`, and `deliverOne` resolves the recipient by looking the
+   * account up. A waiting-list lead has no account — that is the entire point
+   * of a waiting list — so a row written for one could never be delivered to
+   * anybody. This sends directly instead, to an address that comes from the
+   * environment.
+   *
+   * Best-effort by design. The lead is already committed before this runs, so
+   * every failure path here ends in a log line and a successful response: a
+   * provider outage must not tell someone who joined correctly that they did
+   * not. And nothing here reports a send that did not happen — an unconfigured
+   * deployment names the missing variable so an operator can fix it, which is
+   * the difference between a queue nobody drains and a setting nobody set.
+   */
+  const announceLead = async (lead: {
+    email: string;
+    name?: string | undefined;
+    business?: string | undefined;
+    sector?: string | undefined;
+    interest?: string | undefined;
+    quantityBand?: string | undefined;
+    locale?: string | undefined;
+  }): Promise<void> => {
+    const to = founderEmail(deps.env ?? process.env);
+
+    if (!transport.configured || to === "") {
+      deps.logger.error(
+        "subscribe: lead recorded but not announced — " +
+          (to === ""
+            ? "BRANDORA_FOUNDER_EMAIL is not set"
+            : "RESEND_API_KEY and BRANDORA_EMAIL_FROM are not both set"),
+      );
+      return;
+    }
+
+    // Written as lines rather than a template so an unanswered optional field
+    // is absent from the mail instead of appearing as "Secteur : undefined".
+    const lines = [
+      `Email       : ${lead.email}`,
+      ...(lead.name ? [`Nom         : ${lead.name}`] : []),
+      ...(lead.business ? [`Entreprise  : ${lead.business}`] : []),
+      ...(lead.sector ? [`Activité    : ${lead.sector}`] : []),
+      ...(lead.interest ? [`Produit     : ${lead.interest}`] : []),
+      ...(lead.quantityBand ? [`Quantité    : ${lead.quantityBand}`] : []),
+      ...(lead.locale ? [`Langue      : ${lead.locale}`] : []),
+    ];
+
+    try {
+      await transport.send({
+        to,
+        subject: `Brandora — nouvelle inscription : ${lead.business || lead.name || lead.email}`,
+        body: `Une nouvelle personne a rejoint la liste d'attente.\n\n${lines.join("\n")}\n`,
+        kind: "waitlist-lead",
+      });
+    } catch (err) {
+      // The address is not logged: this line goes to a platform log, and the
+      // lead is already safely in the database under it.
+      deps.logger.error(`subscribe: lead recorded but the alert failed to send: ${String(err)}`);
+    }
+  };
+
   /* --- Health and reference data ----------------------------------------- */
 
   router.get("/api/health", async () =>
@@ -423,6 +489,8 @@ export function createRouter(deps: ServerDeps): Router {
     const name = optionalString(ctx.body, "name", 120);
     const business = optionalString(ctx.body, "business", 160);
     const interest = optionalString(ctx.body, "interest", 200);
+    const sector = optionalString(ctx.body, "sector", 80);
+    const quantityBand = optionalString(ctx.body, "quantityBand", 40);
 
     const rawQuantity = ctx.body["quantity"];
     const parsedQuantity =
@@ -445,10 +513,29 @@ export function createRouter(deps: ServerDeps): Router {
       ...(business ? { business } : {}),
       ...(interest ? { interest } : {}),
       ...(quantity !== undefined ? { quantity } : {}),
+      ...(sector ? { sector } : {}),
+      ...(quantityBand ? { quantityBand } : {}),
     });
 
     // The same answer either way. `added` goes to the log, not to the wire.
     if (!added) deps.logger.error(`subscribe: ${email.slice(0, 3)}… was already recorded`);
+
+    /*
+     * Tell the founder, if there is a way to.
+     *
+     * Deliberately after the row is written and deliberately not awaited into
+     * the response's success: the lead is saved either way, and a Resend outage
+     * must not turn a joined waiting list into an error page for someone who
+     * did everything right. What it must not do is pretend — an unconfigured
+     * deployment logs exactly which variable is missing rather than reporting a
+     * send that never happened.
+     *
+     * Only for genuinely new addresses. A resubmission enriches the row (see
+     * `subscribers.add`), and a second email saying "new lead" about someone
+     * already on the list is how a founder learns to ignore the alerts.
+     */
+    if (added) await announceLead({ email, name, business, sector, interest, quantityBand, locale });
+
     return json(201, { subscribed: true });
   });
 

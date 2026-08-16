@@ -49,8 +49,34 @@
     for (var i = 0; i < toggles.length; i += 1) {
       toggles[i].setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
       var label = toggles[i].querySelector('[data-theme-label]');
-      if (label) label.textContent = theme === 'light' ? 'Light' : 'Dark';
+      if (label) label.textContent = themeLabel(toggles[i], theme);
     }
+  }
+
+  /**
+   * The word on the theme button, in the reader's language.
+   *
+   * This used to be `theme === 'light' ? 'Light' : 'Dark'`, which put an English
+   * word in the header of every page in all three languages — the exact "Votre
+   * compte / Something went wrong" mix the brief calls out, sitting in the one
+   * control that appears on every single screen. It survived this long because
+   * the label is written by script and so carries no `data-i18n` for the
+   * translation pass to find.
+   *
+   * Three sources, most specific first:
+   *
+   *   1. `data-label-dark` / `data-label-light` on the button itself. A
+   *      single-language page carries its own words and needs no catalogue —
+   *      that is how the French launch page says "Sombre" without loading one.
+   *   2. The translation catalogue, once it has loaded.
+   *   3. English, the authored fallback used everywhere else in this file.
+   */
+  function themeLabel(toggle, theme) {
+    var attr = toggle.getAttribute(theme === 'light' ? 'data-label-light' : 'data-label-dark');
+    if (attr) return attr;
+    var translated = translate(theme === 'light' ? 'theme.light' : 'theme.dark');
+    if (translated) return translated;
+    return theme === 'light' ? 'Light' : 'Dark';
   }
 
   function setTheme(theme) {
@@ -93,7 +119,14 @@
   var catalogue = {};
 
   function translate(key, vars) {
-    var template = catalogue[key];
+    // `catalogue` is a hoisted `var`, so it is still `undefined` during the
+    // first `applyTheme` call above — which runs before this section is
+    // reached. Indexing it there would be a TypeError at module scope, which
+    // stops the entire script and leaves the page with no theme, no language
+    // and no navigation. Guarded rather than reordered, because the theme has
+    // to be applied before first paint and the catalogue arrives over the
+    // network.
+    var template = catalogue && catalogue[key];
     if (!template) return null;
     if (!vars) return template;
     return template.replace(/\{(\w+)\}/g, function (whole, name) {
@@ -130,6 +163,12 @@
 
     var switches = document.querySelectorAll('[data-locale-switch]');
     for (var m = 0; m < switches.length; m += 1) switches[m].value = locale;
+
+    // The theme button's label is written by script, so the pass above cannot
+    // reach it. Re-applying the current theme rewrites it from the catalogue
+    // that has just loaded — without this, switching to French translates the
+    // whole header except the one control next to the switcher.
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
 
     document.dispatchEvent(new CustomEvent('brandora:locale', { detail: { locale: locale, t: translate } }));
   }

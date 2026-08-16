@@ -768,11 +768,18 @@ export interface Repositories {
 
   subscribers: {
     /**
-     * Record an address, or do nothing if it is already recorded.
+     * Record an address, filling in any detail it did not already carry.
      *
      * `added` is returned rather than thrown, because the caller must answer
      * the same thing either way: a form that says "you are already on the list"
      * tells whoever typed the address whether someone else subscribed with it.
+     *
+     * A repeat submission enriches the row rather than being discarded. Someone
+     * who joins from the homepage with an address alone and then fills in the
+     * full French form is the ordinary case, and dropping the second submission
+     * loses exactly the detail — sector, product, quantity — that makes the
+     * lead worth having. Nothing already recorded is overwritten by a blank,
+     * so the enrichment can only ever add.
      */
     add(input: {
       email: string;
@@ -782,6 +789,8 @@ export interface Repositories {
       business?: string;
       interest?: string;
       quantity?: number;
+      sector?: string;
+      quantityBand?: string;
     }): Promise<{ added: boolean }>;
     count(): Promise<number>;
     listAsAdmin(limit?: number): Promise<SubscriberRow[]>;
@@ -875,6 +884,9 @@ export interface SubscriberRow {
   business?: string;
   interest?: string;
   quantity?: number;
+  /** What the business does, and the range of units asked for. */
+  sector?: string;
+  quantityBand?: string;
   createdAt: string;
 }
 
@@ -1956,25 +1968,46 @@ export function createRepositories(db: SqlDriver): Repositories {
         const email = input.email.trim().toLowerCase();
         const id = newId("subscriber");
 
-        // ON CONFLICT DO NOTHING rather than a SELECT then an INSERT: two people
-        // submitting the same address at the same moment would both see no row
-        // and both insert, and one of them would get a UNIQUE violation as a
-        // 500 on a newsletter form.
+        // ON CONFLICT rather than a SELECT then an INSERT: two people submitting
+        // the same address at the same moment would both see no row and both
+        // insert, and one of them would get a UNIQUE violation as a 500 on a
+        // newsletter form.
+        //
+        // DO UPDATE rather than DO NOTHING, with COALESCE on every optional
+        // column. Someone who joined from the homepage with an address alone
+        // and later fills in the full French form is the ordinary case, and
+        // DO NOTHING threw away the second submission entirely — the sector,
+        // the product and the quantity, which is the whole reason for asking.
+        // COALESCE takes the new value only where there was nothing before, so
+        // a later blank can never erase an earlier answer.
+        //
+        // `email` is excluded because it is the conflict key, and `created_at`
+        // because it records when they first joined, not when they were last
+        // seen.
         await run(
-          `INSERT INTO subscribers (id,email,locale,source,name,business,interest,quantity,created_at)
-           VALUES (?,?,?,?,?,?,?,?,?)
-           ON CONFLICT(email) DO NOTHING`,
+          `INSERT INTO subscribers (id,email,locale,source,name,business,interest,quantity,sector,quantity_band,created_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)
+           ON CONFLICT(email) DO UPDATE SET
+             name          = COALESCE(subscribers.name,          EXCLUDED.name),
+             business      = COALESCE(subscribers.business,      EXCLUDED.business),
+             interest      = COALESCE(subscribers.interest,      EXCLUDED.interest),
+             quantity      = COALESCE(subscribers.quantity,      EXCLUDED.quantity),
+             sector        = COALESCE(subscribers.sector,        EXCLUDED.sector),
+             quantity_band = COALESCE(subscribers.quantity_band, EXCLUDED.quantity_band)`,
           id,
           email,
           input.locale ?? "en",
           input.source ?? "homepage",
           // Null rather than "" for anything unanswered: a blank string reads
           // as "they were asked and said nothing", and these fields are
-          // optional precisely so that people can skip them.
+          // optional precisely so that people can skip them. It is also what
+          // makes the COALESCE above additive.
           input.name ?? null,
           input.business ?? null,
           input.interest ?? null,
           input.quantity ?? null,
+          input.sector ?? null,
+          input.quantityBand ?? null,
           nowIso(),
         );
 
@@ -2006,6 +2039,10 @@ export function createRepositories(db: SqlDriver): Repositories {
           // mean "not stated" here, and neither should render as "0 units".
           ...(typeof row["quantity"] === "number" && row["quantity"] > 0
             ? { quantity: row["quantity"] }
+            : {}),
+          ...(optionalText(row["sector"]) ? { sector: optionalText(row["sector"]) as string } : {}),
+          ...(optionalText(row["quantity_band"])
+            ? { quantityBand: optionalText(row["quantity_band"]) as string }
             : {}),
           createdAt: text(row["created_at"]),
         }));

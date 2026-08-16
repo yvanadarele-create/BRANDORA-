@@ -91,6 +91,8 @@ const ADDITIVE_COLUMNS: readonly string[] = [
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS business TEXT;",
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS interest TEXT;",
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS quantity INTEGER;",
+  "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS sector TEXT;",
+  "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS quantity_band TEXT;",
 ];
 
 export interface PostgresOptions {

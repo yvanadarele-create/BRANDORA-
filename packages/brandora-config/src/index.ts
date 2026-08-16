@@ -194,6 +194,26 @@ export function notificationsConfigured(source: Env = env()): boolean {
   return typeof key === "string" && key.trim() !== "" && typeof from === "string" && from.trim() !== "";
 }
 
+/**
+ * Where a new waiting-list lead is announced.
+ *
+ * Not a secret — it is one internal address — but it belongs in the
+ * environment rather than in the page, because a founder's address written into
+ * the landing page's HTML is an address harvested by the first crawler that
+ * reads it. The page posts to Brandora; Brandora knows who to tell.
+ *
+ * Returns "" when unset, which the subscribe route reads as "nobody to notify":
+ * the lead is still recorded and the log says why no mail went out. A
+ * deployment with no founder address must not fail a signup over it.
+ */
+export function founderEmail(source: Env = env()): string {
+  return optional("BRANDORA_FOUNDER_EMAIL", "", source);
+}
+
+/** Whether a lead can actually be announced: a transport *and* somewhere to send. */
+export const founderNotificationsConfigured = (source: Env = env()): boolean =>
+  notificationsConfigured(source) && founderEmail(source) !== "";
+
 export function notificationsIntegrationStatus(source: Env = env()): IntegrationStatus {
   return {
     name: "Email (Resend)",

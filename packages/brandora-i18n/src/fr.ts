@@ -23,6 +23,11 @@ export const fr: Catalogue = {
   "nav.signup": "S'inscrire",
   "nav.logout": "Se déconnecter",
 
+  /* Le contrôle sombre/clair. Le libellé nomme le mode affiché, pas
+     celui vers lequel le bouton bascule. */
+  "theme.dark": "Sombre",
+  "theme.light": "Clair",
+
   /* L'entreprise.
 
      « Brandora Union » est l'entreprise ; « Brandora » reste le produit — c'est

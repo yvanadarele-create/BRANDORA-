@@ -13,6 +13,8 @@
   "nav.login": "Se connecter",
   "nav.signup": "S'inscrire",
   "nav.logout": "Se déconnecter",
+  "theme.dark": "Sombre",
+  "theme.light": "Clair",
   "brand.company": "Brandora Union",
   "brand.tagline": "Là où les marques prennent forme.",
   "brand.what": "L'infrastructure pour créer des marques physiques.",

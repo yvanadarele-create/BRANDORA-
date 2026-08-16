@@ -64,6 +64,22 @@ const SECRET_SHAPES = [
   [/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/, "a private key"],
 ];
 
+/**
+ * Pages that are deliberately in one language, and so carry no switcher.
+ *
+ * The §23 rule below — every page offers all three languages — is a promise
+ * about the *application*, and it stays in force for every screen a customer
+ * uses. A single-market campaign page is a different object: `lancement.html`
+ * is French throughout, aimed at the launch market, and a switcher there would
+ * offer two languages the page does not have. That is a broken control, not a
+ * translated page.
+ *
+ * Listed by name rather than inferred from `lang="fr"`, so a page can only ever
+ * lose the switcher on purpose. Adding one here is a decision; forgetting the
+ * switcher is still a build failure everywhere else.
+ */
+const FRENCH_ONLY = new Set(["lancement.html"]);
+
 for (const page of pages) {
   const html = readFileSync(join(root, page), "utf8");
   const where = `apps/brandora/${page}`;
@@ -73,7 +89,9 @@ for (const page of pages) {
   if (!/<meta\s+name="description"/.test(html)) problems.push(`${where}: missing meta description`);
   if (!/<meta\s+name="viewport"/.test(html)) problems.push(`${where}: missing viewport`);
 
-  if (!/data-locale-switch/.test(html)) problems.push(`${where}: no language switcher (§23)`);
+  if (!FRENCH_ONLY.has(page) && !/data-locale-switch/.test(html)) {
+    problems.push(`${where}: no language switcher (§23)`);
+  }
   if (!/data-theme-toggle/.test(html)) problems.push(`${where}: no dark/light toggle (§7)`);
   if (!/class="skip-link"/.test(html)) problems.push(`${where}: no skip link`);
 

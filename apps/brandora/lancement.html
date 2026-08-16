@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<!--
+  The French launch page.
+
+  This is a validation page, not a second homepage. Its whole job is to take a
+  small-business owner from "je ne sais pas où trouver mes emballages" to an
+  address on the waiting list, and everything on it is either evidence for that
+  decision or removed.
+
+  Three rules it keeps, because breaking any of them would make the page worth
+  less than nothing to the people it is meant to convince:
+
+  - **Nothing is invented.** No testimonial, no customer logo, no delivery
+    promise, no price, no stock figure. Brandora has not delivered its first
+    order, and a page that implies otherwise is a page that gets found out in
+    the first conversation. Where the honest answer is "we are still building
+    that", the page says so — see the `#confiance` section.
+  - **The product tiles carry no photographs.** Using a stock photo of somebody
+    else's packaging to illustrate a product Brandora does not yet stock is the
+    same lie in a nicer typeface. Each tile is drawn in CSS and labelled
+    "Visuel à venir" until a real supplier or customer photograph exists.
+  - **French only, deliberately.** The rest of the application is FR/EN/ES and
+    every other page carries the language switcher. This one does not, because
+    it is a campaign page aimed at one market, and a switcher offering two
+    languages that do not exist here would be a broken control. That exemption
+    is declared by name in scripts/check-site.mjs rather than by weakening the
+    rule for every page.
+-->
+<html lang="fr" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brandora — Votre marque mérite mieux qu'un emballage ordinaire.</title>
+<meta name="description" content="Brandora aide les petites entreprises — restaurants, pâtisseries, cafés, commerces — à trouver et personnaliser leurs emballages, gobelets, boîtes, sachets et supports de marque, en petites quantités.">
+<meta name="theme-color" content="#050507">
+
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brandora">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Brandora — Votre marque mérite mieux qu'un emballage ordinaire.">
+<meta property="og:description" content="Trouvez et personnalisez vos emballages, gobelets, boîtes et supports de marque. Pensé pour les petites quantités.">
+</head>
+<body class="page-fr">
+
+<a class="skip-link" href="#main">Aller au contenu</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="lancement.html" aria-label="Brandora — accueil">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__stack">
+        <span class="brand-lockup__word">BRANDORA</span>
+        <span class="brand-lockup__union">UNION</span>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="#probleme">Le problème</a>
+      <a href="#solution">Comment ça marche</a>
+      <a href="#produits">Produits</a>
+      <a href="#fondatrice">À propos</a>
+    </nav>
+
+    <div class="header-tools">
+      <a class="btn btn--small btn--primary" href="#liste">Rejoindre la liste</a>
+      <!--
+        The labels are on the button rather than in a translation catalogue.
+        This page loads no catalogue — it is French throughout — and app.js
+        reads these two attributes before it reaches for one, so the control
+        says "Sombre" and "Clair" without the page fetching anything.
+      -->
+      <button class="control" type="button" data-theme-toggle aria-pressed="false"
+              data-label-dark="Sombre" data-label-light="Clair"
+              aria-label="Changer le thème">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Sombre</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Hero -->
+  <section class="hero fr-hero">
+    <div class="wrap">
+      <p class="eyebrow eyebrow--brand">
+        <span class="eyebrow__company">Brandora</span>
+        <span class="eyebrow__tagline">Construire. Présenter. Grandir.</span>
+      </p>
+
+      <h1 class="hero__headline">Votre marque mérite mieux qu'un emballage ordinaire.</h1>
+
+      <p class="lede">
+        Brandora aide les petites entreprises à trouver et personnaliser leurs emballages,
+        leurs gobelets, leurs boîtes et leurs supports de marque — simplement.
+      </p>
+
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="#liste">Rejoindre la liste d'attente</a>
+        <a class="btn btn--ghost" href="#probleme">Découvrir Brandora</a>
+      </div>
+
+      <!--
+        The trust line. It says "nous construisons", present tense, because that
+        is the true state of the company — and because a validation page that
+        overstates its stage attracts exactly the wrong first customers.
+      -->
+      <p class="fr-hero__trust">
+        <span class="fr-dot" aria-hidden="true"></span>
+        Nous construisons actuellement Brandora avec des entrepreneurs et des fournisseurs
+        sélectionnés.
+      </p>
+    </div>
+  </section>
+
+  <!--
+    Founder video.
+
+    `data-clip` rather than `src`, for two reasons that both matter. The file is
+    not in the repository yet, and a real `src` to a missing file is a broken
+    reference the build check would reject — correctly, because on the live site
+    it is a black rectangle and a console error. And a video the visitor has not
+    asked for should not be downloaded on a metered mobile connection before
+    they have decided they are interested.
+
+    Drop the recording at `apps/brandora/assets/video/founder-video.mp4` and it
+    appears on the next load. Nothing else needs changing.
+
+    fr-launch.js checks whether the file is actually there and only then wires
+    up the player. Until the founder records it, the section shows what it is
+    waiting for instead of a broken control.
+  -->
+  <section class="section fr-video" id="fondatrice">
+    <div class="wrap">
+      <div class="fr-section-head">
+        <p class="eyebrow">La fondatrice</p>
+        <h2>Pourquoi Brandora existe.</h2>
+        <p class="lede">
+          Ce que nous construisons, pour qui, et ce que nous cherchons en ce moment —
+          expliqué directement.
+        </p>
+      </div>
+
+      <figure class="fr-player" data-player data-clip="assets/video/founder-video.mp4">
+        <div class="fr-player__stage">
+          <div class="fr-player__pending" data-player-pending>
+            <span class="fr-player__mark" aria-hidden="true"></span>
+            <p class="fr-player__pending-title">Vidéo en préparation</p>
+            <p class="fr-player__pending-note">
+              Le message de la fondatrice sera publié ici très prochainement.
+            </p>
+          </div>
+        </div>
+        <figcaption class="fr-player__caption">
+          Affriee Darele Yvana — fondatrice de Brandora.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- The problem -->
+  <section class="section fr-problem" id="probleme">
+    <div class="wrap">
+      <div class="fr-section-head">
+        <p class="eyebrow">Le problème</p>
+        <h2>Créer une marque est difficile. La faire vivre physiquement l'est encore plus.</h2>
+        <p class="lede">
+          Vous pouvez avoir un logo, de bons produits et des clients fidèles — et rester bloqué
+          au moment de mettre votre marque sur quelque chose que l'on peut tenir dans la main.
+        </p>
+      </div>
+
+      <div class="fr-needs">
+        <p class="fr-needs__label">Ce qu'une petite entreprise cherche, souvent sans savoir où&nbsp;:</p>
+        <ul class="fr-needs__list">
+          <li>Gobelets</li>
+          <li>Boîtes</li>
+          <li>Sachets</li>
+          <li>Stickers</li>
+          <li>Cartes de remerciement</li>
+          <li>Emballages personnalisés</li>
+        </ul>
+      </div>
+
+      <div class="grid fr-grid-3">
+        <article class="card fr-card">
+          <span class="fr-card__ref">01</span>
+          <h3>Les quantités</h3>
+          <p>
+            Les fournisseurs demandent souvent des centaines ou des milliers d'unités. Une
+            pâtisserie qui a besoin de trente boîtes n'entre pas dans ce cadre.
+          </p>
+        </article>
+        <article class="card fr-card">
+          <span class="fr-card__ref">02</span>
+          <h3>La qualité</h3>
+          <p>
+            Difficile de savoir à l'avance ce que l'on va recevoir. Un échantillon convaincant
+            et une commande décevante, c'est la même facture.
+          </p>
+        </article>
+        <article class="card fr-card">
+          <span class="fr-card__ref">03</span>
+          <h3>Le prix</h3>
+          <p>
+            Les prix varient énormément d'un fournisseur à l'autre, et rarement de façon
+            comparable une fois le transport et la personnalisation ajoutés.
+          </p>
+        </article>
+        <article class="card fr-card">
+          <span class="fr-card__ref">04</span>
+          <h3>La personnalisation</h3>
+          <p>
+            Mettre son logo au bon endroit, à la bonne taille, avec la bonne technique
+            d'impression — c'est un métier en soi.
+          </p>
+        </article>
+        <article class="card fr-card">
+          <span class="fr-card__ref">05</span>
+          <h3>Le fournisseur</h3>
+          <p>
+            Trouver quelqu'un de fiable, qui répond, qui comprend le besoin et qui ne disparaît
+            pas après le premier message.
+          </p>
+        </article>
+        <article class="card fr-card">
+          <span class="fr-card__ref">06</span>
+          <h3>La livraison</h3>
+          <p>
+            Les délais sont flous, les frais arrivent à la fin, et personne ne prévient quand
+            la production prend du retard.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- The solution -->
+  <section class="section fr-solution" id="solution">
+    <div class="wrap">
+      <div class="fr-section-head">
+        <p class="eyebrow">La solution</p>
+        <h2>Brandora simplifie tout ça.</h2>
+        <p class="lede">
+          Un seul interlocuteur, de votre besoin jusqu'à la réception de votre commande.
+        </p>
+      </div>
+
+      <ol class="fr-flow">
+        <li class="fr-flow__step">
+          <span class="fr-flow__n">1</span>
+          <h3>Vous nous présentez votre marque</h3>
+          <p>Votre activité, votre univers, vos clients.</p>
+        </li>
+        <li class="fr-flow__step">
+          <span class="fr-flow__n">2</span>
+          <h3>Vous choisissez ce dont vous avez besoin</h3>
+          <p>Gobelets, boîtes, sachets, stickers, cartes.</p>
+        </li>
+        <li class="fr-flow__step">
+          <span class="fr-flow__n">3</span>
+          <h3>Nous trouvons une solution adaptée</h3>
+          <p>Un produit et un fournisseur qui correspondent à votre quantité.</p>
+        </li>
+        <li class="fr-flow__step">
+          <span class="fr-flow__n">4</span>
+          <h3>Votre identité est appliquée</h3>
+          <p>Votre logo et vos couleurs, placés correctement.</p>
+        </li>
+        <li class="fr-flow__step">
+          <span class="fr-flow__n">5</span>
+          <h3>Vous recevez votre commande</h3>
+          <p>Nous coordonnons la production et l'acheminement.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!--
+    Products.
+
+    Every tile is drawn in CSS. There is no photograph here and that is
+    deliberate: Brandora does not yet hold stock, and illustrating a catalogue
+    with somebody else's product photography is the kind of shortcut that reads
+    as fraud the moment a customer asks which one they are looking at. Each tile
+    says "Visuel à venir" until a real supplier or customer image exists.
+
+    No price and no availability appear anywhere in this section, for the same
+    reason.
+  -->
+  <section class="section fr-products" id="produits">
+    <div class="wrap">
+      <div class="fr-section-head">
+        <p class="eyebrow">Les produits</p>
+        <h2>Ce que nous préparons pour vous.</h2>
+        <p class="lede">
+          Les premières catégories sur lesquelles Brandora travaille. Les visuels et les
+          conditions exactes seront publiés dès qu'ils seront confirmés avec nos fournisseurs.
+        </p>
+      </div>
+
+      <div class="fr-products__grid">
+        <article class="fr-product">
+          <div class="fr-product__visual" data-shape="box" aria-hidden="true"></div>
+          <h3>Emballages</h3>
+          <p class="fr-product__note">Visuel à venir</p>
+        </article>
+        <article class="fr-product">
+          <div class="fr-product__visual" data-shape="cup" aria-hidden="true"></div>
+          <h3>Gobelets</h3>
+          <p class="fr-product__note">Visuel à venir</p>
+        </article>
+        <article class="fr-product">
+          <div class="fr-product__visual" data-shape="carton" aria-hidden="true"></div>
+          <h3>Boîtes</h3>
+          <p class="fr-product__note">Visuel à venir</p>
+        </article>
+        <article class="fr-product">
+          <div class="fr-product__visual" data-shape="bag" aria-hidden="true"></div>
+          <h3>Sachets</h3>
+          <p class="fr-product__note">Visuel à venir</p>
+        </article>
+        <article class="fr-product">
+          <div class="fr-product__visual" data-shape="sticker" aria-hidden="true"></div>
+          <h3>Stickers</h3>
+          <p class="fr-product__note">Visuel à venir</p>
+        </article>
+        <article class="fr-product">
+          <div class="fr-product__visual" data-shape="card" aria-hidden="true"></div>
+          <h3>Cartes de remerciement</h3>
+          <p class="fr-product__note">Visuel à venir</p>
+        </article>
+        <article class="fr-product">
+          <div class="fr-product__visual" data-shape="label" aria-hidden="true"></div>
+          <h3>Supports de marque</h3>
+          <p class="fr-product__note">Visuel à venir</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Brandora -->
+  <section class="section fr-why">
+    <div class="wrap">
+      <div class="fr-section-head">
+        <p class="eyebrow">Pourquoi Brandora</p>
+        <h2>Pensé pour les petites entreprises.</h2>
+      </div>
+
+      <div class="grid fr-grid-4">
+        <article class="card fr-card">
+          <h3>Petites quantités</h3>
+          <p>Solutions adaptées aux petites entreprises.</p>
+        </article>
+        <article class="card fr-card">
+          <h3>Une identité cohérente</h3>
+          <p>Votre logo et votre univers sur vos supports.</p>
+        </article>
+        <article class="card fr-card">
+          <h3>Moins de recherche</h3>
+          <p>Nous simplifions la recherche de fournisseurs et de produits.</p>
+        </article>
+        <article class="card fr-card">
+          <h3>Un seul point de contact</h3>
+          <p>Brandora coordonne votre besoin.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Manufacturer video -->
+  <section class="section fr-video">
+    <div class="wrap">
+      <div class="fr-section-head">
+        <p class="eyebrow">Nos fournisseurs</p>
+        <h2>Nous construisons aussi notre réseau de fournisseurs.</h2>
+        <p class="lede">
+          Brandora sélectionne actuellement des partenaires de fabrication fiables pour les
+          emballages, les gobelets, les boîtes, les stickers et les supports de marque. Nous
+          les évaluons sur la qualité, la capacité à produire en petites quantités et la
+          régularité.
+        </p>
+      </div>
+
+      <figure class="fr-player" data-player data-clip="assets/video/manufacturer-video.mp4">
+        <div class="fr-player__stage">
+          <div class="fr-player__pending" data-player-pending>
+            <span class="fr-player__mark" aria-hidden="true"></span>
+            <p class="fr-player__pending-title">Vidéo en préparation</p>
+            <p class="fr-player__pending-note">
+              Une présentation de nos partenaires de fabrication sera publiée ici.
+            </p>
+          </div>
+        </div>
+        <figcaption class="fr-player__caption">
+          Notre réseau de fournisseurs, en cours de constitution.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!--
+    The waiting list. This is the page's one conversion point.
+
+    Only the email is required. Every other field is optional and the form says
+    so — a validation page that rejects someone because they have not yet named
+    their business is a validation page that measures nothing.
+  -->
+  <section class="section fr-join" id="liste">
+    <div class="wrap">
+      <div class="fr-join__inner">
+        <div class="fr-section-head fr-section-head--tight">
+          <p class="eyebrow">Liste d'attente</p>
+          <h2>Vous voulez être parmi les premiers ?</h2>
+          <p class="lede">
+            Brandora est actuellement en phase de lancement. Rejoignez la liste d'attente pour
+            être informé lorsque les premières solutions seront disponibles.
+          </p>
+        </div>
+
+        <form class="fr-form" data-fr-subscribe novalidate>
+          <div class="fr-form__row">
+            <div class="fr-field">
+              <label for="fr-firstname">Prénom</label>
+              <input class="input" id="fr-firstname" name="firstName" type="text"
+                     autocomplete="given-name" maxlength="60">
+            </div>
+            <div class="fr-field">
+              <label for="fr-lastname">Nom</label>
+              <input class="input" id="fr-lastname" name="lastName" type="text"
+                     autocomplete="family-name" maxlength="60">
+            </div>
+          </div>
+
+          <div class="fr-field">
+            <label for="fr-email">Email <span class="fr-field__req">*</span></label>
+            <input class="input" id="fr-email" name="email" type="email"
+                   autocomplete="email" required maxlength="254"
+                   placeholder="vous@exemple.fr"
+                   aria-describedby="fr-email-help">
+            <p class="fr-field__help" id="fr-email-help">
+              C'est le seul champ obligatoire — c'est ainsi que nous vous préviendrons.
+            </p>
+          </div>
+
+          <div class="fr-field">
+            <label for="fr-business">Nom de l'entreprise</label>
+            <input class="input" id="fr-business" name="business" type="text"
+                   autocomplete="organization" maxlength="160">
+          </div>
+
+          <div class="fr-form__row">
+            <div class="fr-field">
+              <label for="fr-sector">Type d'activité</label>
+              <select class="input" id="fr-sector" name="sector">
+                <option value="">Choisir…</option>
+                <option>Restaurant</option>
+                <option>Pâtisserie / Boulangerie</option>
+                <option>Café</option>
+                <option>Traiteur</option>
+                <option>Beauté</option>
+                <option>Commerce</option>
+                <option>Autre</option>
+              </select>
+            </div>
+
+            <div class="fr-field">
+              <label for="fr-interest">Produit recherché</label>
+              <select class="input" id="fr-interest" name="interest">
+                <option value="">Choisir…</option>
+                <option>Gobelets</option>
+                <option>Boîtes</option>
+                <option>Sachets</option>
+                <option>Stickers</option>
+                <option>Cartes</option>
+                <option>Packaging alimentaire</option>
+                <option>Autre</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fr-field">
+            <label for="fr-quantity">Quantité approximative</label>
+            <select class="input" id="fr-quantity" name="quantityBand">
+              <option value="">Choisir…</option>
+              <option>1–20</option>
+              <option>21–50</option>
+              <option>51–100</option>
+              <option>101–500</option>
+              <option>500+</option>
+            </select>
+          </div>
+
+          <button class="btn btn--primary fr-form__submit" type="submit" data-fr-submit>
+            Rejoindre la liste d'attente
+          </button>
+
+          <!--
+            One status region for every outcome — success, validation and
+            failure all land here, in French, and it is `role="status"` so a
+            screen reader is told without the focus moving.
+          -->
+          <p class="fr-form__status" data-fr-status role="status" hidden></p>
+
+          <p class="fr-form__legal">
+            Votre adresse sert uniquement à vous prévenir du lancement de Brandora. Pas de
+            revente, pas de partage.
+          </p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!--
+    Trust, stated honestly.
+
+    Brandora has no customers to quote and no logos to display, so this section
+    says what is actually true instead. A visitor who reads "phase de
+    validation" and joins anyway is a far better signal than one converted by an
+    invented testimonial.
+  -->
+  <section class="section fr-trust" id="confiance">
+    <div class="wrap">
+      <div class="fr-trust__panel">
+        <p class="eyebrow">En toute transparence</p>
+        <p class="fr-trust__copy">
+          Brandora est actuellement en phase de validation. Nous échangeons avec des
+          entrepreneurs et des fournisseurs pour construire une solution réellement adaptée à
+          leurs besoins.
+        </p>
+        <p class="fr-trust__note">
+          Nous ne publions ni témoignages ni chiffres tant que nous n'avons pas livré nos
+          premières commandes.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__grid">
+    <div class="site-footer__identity">
+      <a class="brand-lockup brand-lockup--footer" href="lancement.html" aria-label="Brandora — accueil">
+        <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+        <span class="brand-lockup__stack">
+          <span class="brand-lockup__word">BRANDORA</span>
+          <span class="brand-lockup__union">UNION</span>
+        </span>
+      </a>
+      <p class="site-footer__tagline">Construire. Présenter. Grandir.</p>
+    </div>
+
+    <nav class="site-footer__nav" aria-label="Pied de page">
+      <a href="#main">Accueil</a>
+      <a href="#solution">Comment ça marche</a>
+      <a href="#produits">Produits</a>
+      <a href="#fondatrice">À propos</a>
+      <a href="mailto:brandora.union@gmail.com">Contact</a>
+    </nav>
+  </div>
+
+  <div class="wrap site-footer__base">
+    <p class="site-footer__legal">© <span data-year>2026</span> Brandora</p>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/fr-launch.js"></script>
+</body>
+</html>

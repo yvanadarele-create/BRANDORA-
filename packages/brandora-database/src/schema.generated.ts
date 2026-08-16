@@ -426,6 +426,24 @@ CREATE TABLE IF NOT EXISTS subscribers (
   business   TEXT,
   interest   TEXT,
   quantity   INTEGER,
+  -- What kind of business it is, and roughly how many units, as the band the
+  -- person actually picked.
+  --
+  -- \`sector\` is separate from \`business\` because they answer different
+  -- questions: \`business\` is what the place is called, \`sector\` is what it
+  -- does, and a sourcing brief needs the second one. Grouping eleven leads by
+  -- "patisserie" is what turns a list of addresses into a decision about which
+  -- supplier to approach first.
+  --
+  -- \`quantity_band\` sits beside \`quantity\` rather than replacing it because the
+  -- two forms ask differently. The homepage asks for a number and gets one; the
+  -- French landing page offers ranges, because a founder who has not yet
+  -- decided between 40 and 60 units will abandon a form that demands one
+  -- figure. Storing "21-50" as the integer 21 would record a precision nobody
+  -- expressed, so the band is kept verbatim and \`quantity\` holds its lower
+  -- bound for sorting.
+  sector        TEXT,
+  quantity_band TEXT,
   created_at TEXT NOT NULL
 );
 

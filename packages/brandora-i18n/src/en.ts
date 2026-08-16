@@ -21,6 +21,12 @@ export const en = {
   "nav.signup": "Sign up",
   "nav.logout": "Log out",
 
+  /* The dark/light control. Its label names the mode currently showing,
+     not the one the button switches to — the button is a state, not an
+     instruction, and it is read aloud beside aria-pressed. */
+  "theme.dark": "Dark",
+  "theme.light": "Light",
+
   /* The company.
 
      "Brandora Union" is the company; "Brandora" stays the product, which is
