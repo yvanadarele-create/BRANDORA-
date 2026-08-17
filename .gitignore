@@ -10,3 +10,13 @@ data/
 .env.local
 .vercel/
 tests/dist/
+
+# Sourcing data.
+#
+# Real manufacturers' salespeople, with their personal mobile numbers. This
+# repository is public and git keeps every version, so a file committed once is
+# public for ever — deleting it later does not help. The shape is documented in
+# sourcing/README.md and the data belongs in Postgres.
+sourcing/*
+!sourcing/README.md
+!sourcing/example.json

@@ -25,7 +25,7 @@ import {
   type UserRole,
   newId,
 } from "@brandora/shared";
-import type { SqlDriver } from "./driver.js";
+import type { Row, SqlDriver } from "./driver.js";
 import {
   fromJson,
   int,
@@ -698,6 +698,30 @@ export interface Repositories {
      */
     recordOutcome(id: string, outcome: SupplierOutcome): Promise<void>;
     markVerified(id: string, at?: string): Promise<void>;
+    /**
+     * Create, or update the one already matched by (platform, externalId).
+     *
+     * Importing a sourcing file twice must not produce two Zanbonds. Matching
+     * on the marketplace's own identifier rather than on the company name,
+     * because names arrive punctuated differently every time — "Zanbond Group
+     * Co., Ltd" and "Zanbond Group Co.,Ltd" are one supplier.
+     */
+    upsert(input: SupplierInput & SupplierRelationship): Promise<SupplierRow>;
+    /** Where the conversation stands, separate from whether the supplier is usable. */
+    setRelationship(id: string, relationship: SupplierRelationship): Promise<void>;
+    remove(id: string): Promise<void>;
+  };
+
+  /**
+   * The people at a supplier.
+   *
+   * A company is not a person: Zanbond may have LEE today and Alice next month,
+   * and one contact column on the supplier row means the second either
+   * overwrites the first or duplicates the whole company.
+   */
+  supplierContacts: {
+    upsert(supplierId: string, input: SupplierContactInput): Promise<SupplierContactRow>;
+    listForSupplier(supplierId: string): Promise<SupplierContactRow[]>;
     remove(id: string): Promise<void>;
   };
 
@@ -821,6 +845,65 @@ export interface PricingPolicyRow {
   sampleCreditedToProduction: boolean;
   updatedAt?: string;
   updatedBy?: string;
+}
+
+/** Where the conversation with a supplier stands. */
+export interface SupplierRelationship {
+  relationship?: string;
+  lastContactAt?: string;
+  nextAction?: string;
+}
+
+export interface SupplierContactInput {
+  name: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  /** Where the conversation happens — a platform messenger, WhatsApp, email. */
+  channel?: string;
+  /**
+   * A contact detail that arrived without a name attached.
+   *
+   * Recorded rather than dropped, and never attributed to whoever happened to
+   * be listed first: a phone number filed against the wrong salesperson is
+   * worse than one filed against nobody.
+   */
+  unassigned?: boolean;
+  notes?: string;
+}
+
+export interface SupplierContactRow {
+  id: string;
+  supplierId: string;
+  name: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  channel?: string;
+  unassigned: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A contact row, read back. */
+function readContact(row: Row): SupplierContactRow {
+  return {
+    id: text(row["id"]),
+    supplierId: text(row["supplier_id"]),
+    name: text(row["name"]),
+    ...(optionalText(row["role"]) ? { role: text(row["role"]) } : {}),
+    ...(optionalText(row["email"]) ? { email: text(row["email"]) } : {}),
+    ...(optionalText(row["phone"]) ? { phone: text(row["phone"]) } : {}),
+    ...(optionalText(row["whatsapp"]) ? { whatsapp: text(row["whatsapp"]) } : {}),
+    ...(optionalText(row["channel"]) ? { channel: text(row["channel"]) } : {}),
+    unassigned: int(row["unassigned"]) === 1,
+    ...(optionalText(row["notes"]) ? { notes: text(row["notes"]) } : {}),
+    createdAt: text(row["created_at"]),
+    updatedAt: text(row["updated_at"]),
+  };
 }
 
 export interface SupplierInput {
@@ -1664,8 +1747,105 @@ export function createRepositories(db: SqlDriver): Repositories {
         );
       },
 
+      async upsert(input) {
+        const existing = input.externalId
+          ? await this.findByExternal(input.platform, input.externalId)
+          : null;
+
+        const relationship = {
+          ...(input.relationship ? { relationship: input.relationship } : {}),
+          ...(input.lastContactAt ? { lastContactAt: input.lastContactAt } : {}),
+          ...(input.nextAction ? { nextAction: input.nextAction } : {}),
+        };
+
+        if (existing) {
+          const patched = await this.update(existing.id, input);
+          if (Object.keys(relationship).length > 0) {
+            await this.setRelationship(existing.id, relationship);
+          }
+          return patched ?? existing;
+        }
+
+        const created = await this.create(input);
+        if (Object.keys(relationship).length > 0) {
+          await this.setRelationship(created.id, relationship);
+        }
+        return created;
+      },
+
+      async setRelationship(id, relationship) {
+        const now = nowIso();
+        // Only the fields given. A partial update from an import must not wipe
+        // a next action somebody typed into the admin screen this morning.
+        if (relationship.relationship !== undefined) {
+          await run(`UPDATE suppliers SET relationship = ?, updated_at = ? WHERE id = ?`,
+            relationship.relationship, now, id);
+        }
+        if (relationship.lastContactAt !== undefined) {
+          await run(`UPDATE suppliers SET last_contact_at = ?, updated_at = ? WHERE id = ?`,
+            relationship.lastContactAt, now, id);
+        }
+        if (relationship.nextAction !== undefined) {
+          await run(`UPDATE suppliers SET next_action = ?, updated_at = ? WHERE id = ?`,
+            relationship.nextAction, now, id);
+        }
+      },
+
       async remove(id) {
         await run(`DELETE FROM suppliers WHERE id = ?`, id);
+      },
+    },
+
+    /* --- The people at a supplier ----------------------------------------- */
+
+    supplierContacts: {
+      async upsert(supplierId, input) {
+        const now = nowIso();
+        // Matched on name within the supplier: re-importing the same file must
+        // update LEE rather than add a second LEE. Two genuinely different
+        // people with one name at one company is a collision worth accepting
+        // over a duplicate on every import.
+        const existing = await get(
+          `SELECT * FROM supplier_contacts WHERE supplier_id = ? AND name = ?`,
+          supplierId, input.name,
+        );
+
+        const id = existing ? text(existing["id"]) : newId("supplierContact");
+        if (existing) {
+          await run(
+            `UPDATE supplier_contacts
+                SET role = ?, email = ?, phone = ?, whatsapp = ?, channel = ?,
+                    unassigned = ?, notes = ?, updated_at = ?
+              WHERE id = ?`,
+            input.role ?? null, input.email ?? null, input.phone ?? null,
+            input.whatsapp ?? null, input.channel ?? null,
+            input.unassigned ? 1 : 0, input.notes ?? null, now, id,
+          );
+        } else {
+          await run(
+            `INSERT INTO supplier_contacts
+               (id, supplier_id, name, role, email, phone, whatsapp, channel, unassigned, notes, created_at, updated_at)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+            id, supplierId, input.name, input.role ?? null, input.email ?? null,
+            input.phone ?? null, input.whatsapp ?? null, input.channel ?? null,
+            input.unassigned ? 1 : 0, input.notes ?? null, now, now,
+          );
+        }
+
+        const row = await get(`SELECT * FROM supplier_contacts WHERE id = ?`, id);
+        return readContact(row!);
+      },
+
+      async listForSupplier(supplierId) {
+        const rows = await all(
+          `SELECT * FROM supplier_contacts WHERE supplier_id = ? ORDER BY unassigned, name`,
+          supplierId,
+        );
+        return rows.map(readContact);
+      },
+
+      async remove(id) {
+        await run(`DELETE FROM supplier_contacts WHERE id = ?`, id);
       },
     },
 

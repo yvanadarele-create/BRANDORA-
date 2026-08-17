@@ -1,0 +1,103 @@
+{
+  "_comment": [
+    "The shape, with placeholder contact details. This file IS committed, so it",
+    "carries no real phone numbers — the repository is public. Copy it to",
+    "sourcing/suppliers.json (git-ignored), fill in the real details, and run",
+    "scripts/import-suppliers.mjs."
+  ],
+
+  "suppliers": [
+    {
+      "supplier_id": "SUP-0001",
+      "company_name": "Example Group Co., Ltd",
+      "platform": "made-in-china",
+      "platform_company_url": "https://example.en.made-in-china.com/",
+      "country": "China",
+      "main_products": [
+        "Disposable Biodegradable Tableware",
+        "Sugarcane Bagasse Tableware",
+        "Paper Bags",
+        "Takeaway Boxes"
+      ],
+      "relationship": {
+        "status": "contacted",
+        "last_contact": "2026-08-17",
+        "next_action": "Request a sample and a customisation quotation"
+      }
+    }
+  ],
+
+  "contacts": [
+    {
+      "contact_id": "CON-0001",
+      "supplier_id": "SUP-0001",
+      "contact_name": "Example Salesperson",
+      "role": null,
+      "phone": "+00 000000000",
+      "whatsapp": null,
+      "email": null,
+      "communication_platform": "Made-in-China",
+      "notes": "Initial contact"
+    },
+    {
+      "contact_id": "CON-0002",
+      "supplier_id": "SUP-0001",
+      "contact_name": null,
+      "unassigned": true,
+      "phone": "+00 000000001",
+      "communication_platform": "Made-in-China",
+      "notes": "Number appeared on the company page with no name against it. Confirm whose it is before using it."
+    }
+  ],
+
+  "products": [
+    {
+      "product_id": "PROD-0001",
+      "name": "Personalized Eco-Conscious Birch Biodegradable Disposable Wood Spoon",
+      "category": "packaging",
+      "subcategory": "cutlery",
+      "materials": ["birch wood", "biodegradable"],
+      "customization": {
+        "custom_logo": null,
+        "custom_printing": null,
+        "custom_packaging": null
+      }
+    }
+  ],
+
+  "offers": [
+    {
+      "offer_id": "OFR-0001",
+      "product_id": "PROD-0001",
+      "supplier_id": "SUP-0001",
+      "contact_id": "CON-0001",
+      "price": {
+        "price_type": "listed",
+        "currency": "USD",
+        "unit": "piece",
+        "tiers": [
+          { "min_quantity": 10000, "max_quantity": null, "unit_price": 0.0021 }
+        ]
+      },
+      "moq": 10000,
+      "pricing_notes": "Starting price on the Made-in-China listing. Not a quotation for our specification.",
+      "source": {
+        "platform": "Made-in-China",
+        "url": null,
+        "date_checked": "2026-08-17"
+      },
+      "verification_status": "unverified"
+    },
+    {
+      "offer_id": "OFR-0002",
+      "product_id": "PROD-0001",
+      "supplier_id": "SUP-0001",
+      "contact_id": "CON-0001",
+      "price": null,
+      "moq": null,
+      "pricing_notes": "Asked for a quotation on 500 units with a printed logo. No reply yet.",
+      "source": { "platform": "Made-in-China", "url": null, "date_checked": "2026-08-17" },
+      "verification_status": "unverified"
+    }
+  ]
+}
