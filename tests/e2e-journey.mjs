@@ -116,7 +116,24 @@ const catalogue = await p.evaluate(() => ({
   products: document.querySelectorAll('[data-product], .product, .card--product, article').length,
 }));
 check('catalogue loads without an error', catalogue.error === null, catalogue.error ?? 'no error shown');
-check('catalogue shows products', catalogue.products > 0, `${catalogue.products} rendered`);
+
+/*
+ * Either products, or an empty state that says so — never a blank page and
+ * never an error.
+ *
+ * This used to assert `products > 0`, which stopped being the right assertion
+ * the moment the invented products were removed. Replacing it with nothing
+ * would have left the case untested; what actually matters is that a visitor
+ * is told something true either way. An empty catalogue that renders as an
+ * apology, or as silence, is still a bug.
+ */
+const empty = await p.evaluate(() =>
+  [...document.querySelectorAll('.notice')].map((n) => n.textContent.trim()).join(' '));
+check(
+  'catalogue shows products or says it is being prepared',
+  catalogue.products > 0 || /en cours de préparation|being prepared/i.test(empty),
+  catalogue.products > 0 ? `${catalogue.products} rendered` : empty.slice(0, 90) || 'nothing at all',
+);
 await p.screenshot({ path: `${OUT}/j-catalog.png` });
 
 /* 9. Quantity filter. */

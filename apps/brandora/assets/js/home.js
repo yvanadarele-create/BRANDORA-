@@ -79,16 +79,28 @@ async function mountCatalogue() {
   const grid = document.querySelector('[data-catalogue-grid]');
   if (!grid) return;
 
-  let products;
+  /*
+   * Three outcomes, and they are not the same thing.
+   *
+   * A catalogue that failed to load is a fault worth apologising for. A
+   * catalogue with nothing in it yet is a true statement about a company that
+   * is still confirming its first manufacturers. This used to treat the second
+   * as the first, so an honest empty shelf read as "the site is broken" — and
+   * offered a "browse it directly" link to a page that was equally empty.
+   */
+  let products = null;
+  let failed = false;
   try {
     const response = await fetch('data/catalog.json', { cache: 'no-cache' });
     if (!response.ok) throw new Error(String(response.status));
     const payload = await response.json();
-    products = Array.isArray(payload) ? payload : payload.products;
-    if (!Array.isArray(products) || products.length === 0) throw new Error('empty');
+    const list = Array.isArray(payload) ? payload : payload.products;
+    products = Array.isArray(list) ? list : [];
   } catch {
-    // Said plainly. The alternative — a hard-coded list standing in for the
-    // catalogue — is a list that keeps claiming a product after it is gone.
+    failed = true;
+  }
+
+  if (failed) {
     clear(grid);
     grid.appendChild(
       el('p', { class: 'notice notice--quiet' }, [
@@ -98,6 +110,21 @@ async function mountCatalogue() {
         el('a', { href: 'catalog.html', text: t('ui.catalog.browse-directly', 'Browse it directly') }),
         el('span', { text: '.' }),
       ]),
+    );
+    return;
+  }
+
+  if (products.length === 0) {
+    // Not an error, and not styled as one.
+    clear(grid);
+    grid.appendChild(
+      el('p', {
+        class: 'notice notice--quiet',
+        text: t(
+          'ui.catalog.preparing',
+          'Our catalogue is being prepared. We are putting together our first references.',
+        ),
+      }),
     );
     return;
   }

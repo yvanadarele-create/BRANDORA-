@@ -1,18 +1,33 @@
 /**
- * The Brandora catalogue (§25).
+ * Example products — fixtures, not merchandise.
  *
- * These are *Brandora* products, not supplier listings. That distinction is the
- * whole point of §26: the catalogue is a stable shelf a customer browses and a
- * quote references, and sourcing happens underneath it. A supplier disappearing
- * changes which offer fills an order; it does not empty the shelf.
+ * ## What these are, and why the shipped catalogue is empty
  *
- * Minimum quantities are set low on purpose. §64 makes small quantities a core
- * advantage, so nothing here starts at a thousand units — a founder testing an
- * idea with thirty cups is the customer this catalogue is for.
+ * Every product below was written by hand. The names, the descriptions, the
+ * materials and — the part that matters — the *prices* are invented. No
+ * supplier quoted 165 FCFA for a kraft cup; that number was typed into this
+ * file. Several carried `verified` customization, which the interface renders
+ * as "Confirmed: carries your logo", a sentence that claims a real supplier
+ * confirmed a real capability. None had.
  *
- * `customization.confidence` is `unknown` wherever it has not been confirmed with
- * a real supplier. §36 forbids claiming a product takes a logo on a guess, and a
- * default of "verified" would launder guesses into promises.
+ * A plausible price on a real-looking shelf is not a placeholder. It is the
+ * number a founder repeats to a customer, and the number a quote is built from.
+ * Brandora exists to connect people to manufacturers Brandora has actually
+ * verified, and shipping invented ones is the precise opposite of that.
+ *
+ * So `CATALOG` — what the application serves — is empty, and stays empty until
+ * real products from real, confirmed manufacturers are entered. The catalogue
+ * page has a state for that and says so plainly.
+ *
+ * These fixtures remain because the filtering, pricing, ranking and package
+ * logic all need products to be tested against, and a test fixture is honest
+ * about being one. They are exported under a name nobody can mistake, and the
+ * check in `scripts/check-catalog.mjs` fails the build if they ever reach the
+ * shipped catalogue again.
+ *
+ * Minimum quantities are low on purpose. §64 makes small quantities a core
+ * advantage: a founder testing an idea with thirty cups is the customer this
+ * catalogue is for, and that stays true of the real one.
  */
 
 import {
@@ -384,4 +399,18 @@ function toProduct(seed: SeedInput): BrandoraProduct {
   };
 }
 
-export const CATALOG: readonly BrandoraProduct[] = SEED.map(toProduct);
+/**
+ * Fixtures. Never served to anyone.
+ *
+ * Imported by tests, and by nothing that runs in production.
+ */
+export const EXAMPLE_CATALOG: readonly BrandoraProduct[] = SEED.map(toProduct);
+
+/**
+ * The catalogue Brandora actually serves.
+ *
+ * Empty by decision, not by oversight. Real products are entered against real
+ * manufacturers; until then the catalogue page says it is being prepared, which
+ * is true, rather than showing twenty things nobody can actually order.
+ */
+export const CATALOG: readonly BrandoraProduct[] = [];

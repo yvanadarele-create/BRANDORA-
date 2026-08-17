@@ -29,7 +29,7 @@ import {
   signValue,
   unsignValue,
 } from "@brandora/server";
-import { CATALOG } from "@brandora/catalog";
+import { EXAMPLE_CATALOG } from "@brandora/catalog";
 import { money } from "@brandora/shared";
 
 /**
@@ -201,11 +201,11 @@ describe("pricing accepts intent, never amounts", () => {
     roundingStep: 100,
   };
 
-  const product = CATALOG.find((entry) => entry.status === "active");
+  const product = EXAMPLE_CATALOG.find((entry) => entry.status === "active");
   assert.ok(product);
 
   it("ignores extra fields a caller invents", () => {
-    const honest = priceProject([{ productId: product.id, quantity: 50 }], CATALOG, settings);
+    const honest = priceProject([{ productId: product.id, quantity: 50 }], EXAMPLE_CATALOG, settings);
     const tampered = priceProject(
       [
         {
@@ -216,27 +216,27 @@ describe("pricing accepts intent, never amounts", () => {
           ...({ unitPrice: 1, total: 1, price: 1, amount: 1 } as Record<string, number>),
         },
       ],
-      CATALOG,
+      EXAMPLE_CATALOG,
       settings,
     );
     assert.equal(tampered.total.amount, honest.total.amount);
   });
 
   it("refuses an unknown product rather than dropping the line", () => {
-    assert.throws(() => priceProject([{ productId: "prd_not_real", quantity: 10 }], CATALOG, settings));
+    assert.throws(() => priceProject([{ productId: "prd_not_real", quantity: 10 }], EXAMPLE_CATALOG, settings));
   });
 
   it("refuses a negative or fractional quantity", () => {
     for (const quantity of [-5, 0, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
       assert.throws(
-        () => priceProject([{ productId: product.id, quantity }], CATALOG, settings),
+        () => priceProject([{ productId: product.id, quantity }], EXAMPLE_CATALOG, settings),
         `quantity ${quantity} was accepted`,
       );
     }
   });
 
   it("keeps the lines reconciling with the total", () => {
-    const priced = priceProject([{ productId: product.id, quantity: 60 }], CATALOG, settings);
+    const priced = priceProject([{ productId: product.id, quantity: 60 }], EXAMPLE_CATALOG, settings);
     const parts =
       priced.productsTotal.amount +
       priced.customizationTotal.amount +
