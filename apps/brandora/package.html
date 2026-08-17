@@ -1,7 +1,31 @@
 <!DOCTYPE html>
-<html lang="en" class="no-js" data-theme="dark">
+<html lang="fr" class="no-js" data-theme="dark">
 <head>
 <meta charset="utf-8">
+  <script>
+    /* Language before first paint.
+       app.js applies the dictionary, but it has to fetch 21KB first, and until it
+       lands the authored English is on screen — a French visitor watching English
+       turn into French is exactly the "mixed language" complaint. So the language
+       is decided here, synchronously, and translatable text is held invisible
+       (not removed: visibility keeps the layout, so nothing jumps) until the
+       dictionary is applied. The timeout is the safety net — a failed fetch must
+       leave a readable page, never a blank one. */
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My package — Brandora Union</title>
 <meta name="description" content="Combine products into a brand package, adjust quantities, and see the estimated total before Brandora prepares your quote.">

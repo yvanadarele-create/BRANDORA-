@@ -1,5 +1,6 @@
 export * from "./http.js";
 export * from "./pricing.js";
+export * from "./quote-pricing.js";
 export * from "./fulfilment.js";
 export * from "./assistant.js";
 export * from "./procurement.js";

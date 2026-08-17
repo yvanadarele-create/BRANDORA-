@@ -787,6 +787,40 @@ export interface Repositories {
     listAsAdmin(limit?: number): Promise<SubscriberRow[]>;
     remove(email: string): Promise<void>;
   };
+
+  /**
+   * The margins and minimums, editable without a deploy.
+   *
+   * `read` returns null when nothing has been saved, so the caller decides what
+   * the default is. A repository that invented a 27% margin because the table
+   * was empty would be picking a business decision.
+   */
+  pricingPolicy: {
+    read(): Promise<PricingPolicyRow | null>;
+    save(input: PricingPolicyRow, updatedBy?: string): Promise<void>;
+  };
+}
+
+/**
+ * The stored form of a pricing policy.
+ *
+ * Rates are fractions and money is minor units, matching the rest of the
+ * schema. Kept structural rather than importing the server's `PricingPolicy`,
+ * because the database package must not depend on the server package.
+ */
+export interface PricingPolicyRow {
+  currency: string;
+  bands: { upToCost: number | null; targetMargin: number; label: string }[];
+  repeatCustomerMargin?: number;
+  minimumMargin: number;
+  minimumOrderValue: number;
+  minimumGrossProfit: number;
+  contingencyRate: number;
+  paymentFeeRate: number;
+  roundingStep: number;
+  sampleCreditedToProduction: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface SupplierInput {
@@ -2013,6 +2047,61 @@ export function createRepositories(db: SqlDriver): Repositories {
 
       async remove(email) {
         await run(`DELETE FROM subscribers WHERE email = ?`, email.trim().toLowerCase());
+      },
+    },
+
+    /* --- Pricing policy --------------------------------------------------- */
+
+    pricingPolicy: {
+      async read() {
+        const row = await get(`SELECT * FROM pricing_policy WHERE id = 'current'`);
+        if (!row) return null;
+
+        const bands = fromJson<PricingPolicyRow["bands"]>(row["bands"], []);
+        const repeat = row["repeat_customer_margin"];
+
+        return {
+          currency: text(row["currency"]),
+          bands,
+          // A null repeat margin means "no loyalty rate", which is not the same
+          // as a loyalty rate of zero.
+          ...(typeof repeat === "number" ? { repeatCustomerMargin: repeat } : {}),
+          minimumMargin: Number(row["minimum_margin"] ?? 0),
+          minimumOrderValue: int(row["minimum_order_value"]),
+          minimumGrossProfit: int(row["minimum_gross_profit"]),
+          contingencyRate: Number(row["contingency_rate"] ?? 0),
+          paymentFeeRate: Number(row["payment_fee_rate"] ?? 0),
+          roundingStep: int(row["rounding_step"]),
+          // SQLite has no boolean; Postgres returns the integer it was given.
+          sampleCreditedToProduction: int(row["sample_credited"]) === 1,
+          updatedAt: text(row["updated_at"]),
+          ...(optionalText(row["updated_by"]) ? { updatedBy: text(row["updated_by"]) } : {}),
+        } satisfies PricingPolicyRow;
+      },
+
+      async save(input, updatedBy) {
+        // One row, replaced wholesale. A partial update would let a half-saved
+        // policy price an order — a new margin against an old minimum.
+        await run(`DELETE FROM pricing_policy WHERE id = 'current'`);
+        await run(
+          `INSERT INTO pricing_policy (
+             id, currency, bands, repeat_customer_margin, minimum_margin,
+             minimum_order_value, minimum_gross_profit, contingency_rate,
+             payment_fee_rate, rounding_step, sample_credited, updated_at, updated_by
+           ) VALUES ('current',?,?,?,?,?,?,?,?,?,?,?,?)`,
+          input.currency,
+          toJson(input.bands),
+          input.repeatCustomerMargin ?? null,
+          input.minimumMargin,
+          input.minimumOrderValue,
+          input.minimumGrossProfit,
+          input.contingencyRate,
+          input.paymentFeeRate,
+          input.roundingStep,
+          input.sampleCreditedToProduction ? 1 : 0,
+          nowIso(),
+          updatedBy ?? null,
+        );
       },
     },
   };

@@ -1535,3 +1535,25 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   .network__pair { grid-template-columns: 1fr; }
   .globe-stats { gap: var(--s5); }
 }
+
+/* --- Language, before the dictionary arrives ------------------------------- */
+
+/*
+ * Translatable text is invisible until translated, and only until then.
+ *
+ * `visibility` rather than `display`, so the box keeps its size and the page
+ * does not reflow when the words appear. The attribute is removed by app.js as
+ * soon as the dictionary is applied, and by a 1.2s timeout in the head if the
+ * fetch never lands — a page nobody can read is worse than a page in the wrong
+ * language, so the failure mode is "shows English", not "shows nothing".
+ */
+html[data-i18n-pending] [data-i18n],
+html[data-i18n-pending] [data-i18n-attr] {
+  visibility: hidden;
+}
+
+/* Motion-averse and slow devices alike: no fade, no animation. It is either
+   not yet readable or it is. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-i18n-pending] [data-i18n] { visibility: hidden; }
+}

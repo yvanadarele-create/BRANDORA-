@@ -153,6 +153,37 @@ CREATE TABLE IF NOT EXISTS products (
   UNIQUE (supplier, external_id)
 );
 
+/* --- Pricing policy -------------------------------------------------------- */
+
+-- The margins, minimums and rates an administrator sets.
+--
+-- One row, \`id = 'current'\`. It is a table rather than a set of environment
+-- variables because a margin that can only be changed by a deploy is a margin
+-- nobody tunes — and because the person who should be adjusting it is the
+-- founder, not whoever holds the Vercel password.
+--
+-- \`bands\` is JSON: a margin table has a variable number of rows and lives
+-- naturally as a list. Everything else is a column, so a wrong value is a
+-- constraint violation rather than a silent parse.
+--
+-- Rates are stored as REAL fractions (0.27 = 27%), and money in minor units of
+-- \`currency\`, the same as everywhere else in this schema.
+CREATE TABLE IF NOT EXISTS pricing_policy (
+  id                    TEXT PRIMARY KEY,
+  currency              TEXT NOT NULL,
+  bands                 TEXT NOT NULL DEFAULT '[]',
+  repeat_customer_margin REAL,
+  minimum_margin        REAL NOT NULL DEFAULT 0,
+  minimum_order_value   INTEGER NOT NULL DEFAULT 0,
+  minimum_gross_profit  INTEGER NOT NULL DEFAULT 0,
+  contingency_rate      REAL NOT NULL DEFAULT 0,
+  payment_fee_rate      REAL NOT NULL DEFAULT 0,
+  rounding_step         INTEGER NOT NULL DEFAULT 0,
+  sample_credited       INTEGER NOT NULL DEFAULT 0,
+  updated_at            TEXT NOT NULL,
+  updated_by            TEXT
+);
+
 /* --- Packages -------------------------------------------------------------- */
 
 -- The customer's working basket, one row per line.

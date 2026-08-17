@@ -75,19 +75,35 @@
   var LOCALE_KEY = 'brandora.locale';
   var SUPPORTED = ['en', 'fr', 'es'];
 
+  /**
+   * French unless the visitor has said otherwise.
+   *
+   * Brandora sells to small businesses in Côte d'Ivoire. This used to read
+   * `navigator.languages` and fall back to English, so a baker in Abidjan whose
+   * phone shipped configured in English — which most do — landed on an English
+   * page for a French product. The browser's language is a fact about the
+   * handset, not about the person holding it.
+   *
+   * An explicit choice still wins and is remembered. `?lang=en` wins over that,
+   * so a link can be shared in a particular language without the recipient's
+   * stored preference overriding it.
+   */
+  var DEFAULT_LOCALE = 'fr';
+
   function preferredLocale() {
+    try {
+      var fromUrl = new URLSearchParams(window.location.search).get('lang');
+      if (SUPPORTED.indexOf(fromUrl) !== -1) return fromUrl;
+    } catch (err) {
+      // No URLSearchParams, or no search string. Fall through.
+    }
     try {
       var stored = localStorage.getItem(LOCALE_KEY);
       if (SUPPORTED.indexOf(stored) !== -1) return stored;
     } catch (err) {
       // Ignored, as above.
     }
-    var languages = navigator.languages || [navigator.language || 'en'];
-    for (var i = 0; i < languages.length; i += 1) {
-      var base = String(languages[i]).toLowerCase().split('-')[0];
-      if (SUPPORTED.indexOf(base) !== -1) return base;
-    }
-    return 'en';
+    return DEFAULT_LOCALE;
   }
 
   var catalogue = {};
@@ -130,6 +146,10 @@
 
     var switches = document.querySelectorAll('[data-locale-switch]');
     for (var m = 0; m < switches.length; m += 1) switches[m].value = locale;
+
+    // Translated: the text may be shown. Removed here rather than only on the
+    // head script's timeout, so on a fast connection nobody waits 1.2 seconds.
+    document.documentElement.removeAttribute('data-i18n-pending');
 
     document.dispatchEvent(new CustomEvent('brandora:locale', { detail: { locale: locale, t: translate } }));
   }
