@@ -58,6 +58,57 @@ async function mountPlayer(figure) {
   figure.setAttribute('data-ready', 'true');
 }
 
+/* --- Product photographs --------------------------------------------------- */
+
+/**
+ * Replace a drawn placeholder with a real photograph, if one has been filed.
+ *
+ * Same contract as the video slots above, and for the same reason: the tile
+ * names the file it wants, this checks whether that file is actually there, and
+ * the placeholder stays when it is not. A missing photograph is an honest
+ * "Visuel à venir", never a broken image icon.
+ *
+ * The file is matched to the tile by name — `sachets.jpg` can only ever appear
+ * on the Sachets tile. That is deliberate: reusing one brown-paper photograph
+ * across boxes and bags because they look alike tells a customer they are
+ * looking at a product Brandora has, when they are looking at a different one.
+ *
+ * See assets/img/products/README.md.
+ */
+async function mountPhoto(visual) {
+  const src = visual.getAttribute('data-photo');
+  if (!src) return;
+
+  try {
+    const response = await fetch(src, { method: 'HEAD' });
+    // The content type is checked as well as the status: a catch-all route can
+    // answer 200 with HTML for a file that does not exist, and an <img> pointed
+    // at HTML is the broken-image icon this function exists to avoid.
+    if (!response.ok) return;
+    if (!(response.headers.get('content-type') || '').startsWith('image/')) return;
+  } catch {
+    return;
+  }
+
+  const img = document.createElement('img');
+  img.className = 'fr-product__photo';
+  img.src = src;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  // The tile's own heading names the product, so the photograph adds nothing
+  // for a screen reader and is marked decorative rather than given a
+  // duplicate label.
+  img.alt = '';
+  img.addEventListener('load', () => {
+    visual.setAttribute('data-has-photo', 'true');
+    const tile = visual.closest('.fr-product');
+    const note = tile && tile.querySelector('.fr-product__note');
+    // "Visuel à venir" is only true while there is no visual.
+    if (note) note.remove();
+  });
+  visual.appendChild(img);
+}
+
 /* --- The waiting list ------------------------------------------------------ */
 
 const QUANTITY_FLOOR = {
@@ -162,6 +213,10 @@ function mountForm(form) {
 
 document.querySelectorAll('[data-player]').forEach((figure) => {
   void mountPlayer(figure);
+});
+
+document.querySelectorAll('[data-photo]').forEach((visual) => {
+  void mountPhoto(visual);
 });
 
 const form = document.querySelector('[data-fr-subscribe]');

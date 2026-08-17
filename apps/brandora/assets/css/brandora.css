@@ -1857,3 +1857,28 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 @media (max-width: 26rem) {
   .page-fr .header-tools [href="#liste"] { display: none; }
 }
+
+/*
+ * A real product photograph, once one exists for a tile.
+ *
+ * `object-fit: cover` on a fixed-ratio box so a portrait studio shot and a
+ * square marketplace shot sit on the same line without one tile growing taller
+ * than its neighbours. The drawn silhouette underneath is hidden rather than
+ * removed, so a photograph that fails to decode still leaves the placeholder
+ * showing instead of an empty box.
+ */
+.page-fr .fr-product__visual[data-has-photo='true']::after { display: none; }
+.page-fr .fr-product__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 240ms var(--ease);
+}
+.page-fr .fr-product__visual[data-has-photo='true'] .fr-product__photo { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .page-fr .fr-product__photo { transition: none; }
+}

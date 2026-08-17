@@ -285,11 +285,17 @@
   <!--
     Products.
 
-    Every tile is drawn in CSS. There is no photograph here and that is
-    deliberate: Brandora does not yet hold stock, and illustrating a catalogue
-    with somebody else's product photography is the kind of shortcut that reads
-    as fraud the moment a customer asks which one they are looking at. Each tile
-    says "Visuel à venir" until a real supplier or customer image exists.
+    Every tile is drawn in CSS until a real photograph exists for it. Each one
+    names the file it is waiting for in `data-photo`, and fr-launch.js swaps the
+    drawn silhouette for the photograph once that file is actually there — the
+    same mechanism the videos use, and for the same reason: a missing image
+    should be an honest empty state, not a broken one.
+
+    Until then the tile says "Visuel à venir". Illustrating a catalogue with a
+    photograph of something Brandora cannot actually supply is the kind of
+    shortcut that reads as fraud the moment a customer asks which one they are
+    looking at, so a tile only ever shows the photograph filed under its own
+    name. See assets/img/products/README.md.
 
     No price and no availability appear anywhere in this section, for the same
     reason.
@@ -307,37 +313,37 @@
 
       <div class="fr-products__grid">
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="box" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="box" data-photo="assets/img/products/emballages.jpg" aria-hidden="true"></div>
           <h3>Emballages</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="cup" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="cup" data-photo="assets/img/products/gobelets.jpg" aria-hidden="true"></div>
           <h3>Gobelets</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="carton" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="carton" data-photo="assets/img/products/boites.jpg" aria-hidden="true"></div>
           <h3>Boîtes</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="bag" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="bag" data-photo="assets/img/products/sachets.jpg" aria-hidden="true"></div>
           <h3>Sachets</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="sticker" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="sticker" data-photo="assets/img/products/stickers.jpg" aria-hidden="true"></div>
           <h3>Stickers</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="card" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="card" data-photo="assets/img/products/cartes.jpg" aria-hidden="true"></div>
           <h3>Cartes de remerciement</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="label" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="label" data-photo="assets/img/products/supports.jpg" aria-hidden="true"></div>
           <h3>Supports de marque</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
