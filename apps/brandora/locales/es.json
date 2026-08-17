@@ -29,7 +29,7 @@
   "contact.phone": "Teléfono",
   "sourcing.eyebrow": "Lo que puedes abastecer",
   "sourcing.title": "Empaque, impresión y producto",
-  "sourcing.lede": "Todo lo de abajo está hoy en el catálogo, con precio y pedible en cantidades pequeñas.",
+  "sourcing.lede": "Lo que Brandora está buscando ahora, con fabricantes con los que hablamos directamente.",
   "sourcing.browse": "Ver todo el catálogo",
   "ask.eyebrow": "Preguntar a Brandora",
   "ask.title": "¿No sabes qué abastecer?",
@@ -335,5 +335,8 @@
   "order.pay": "Continuar al pago",
   "order.check-again": "He pagado — comprobar de nuevo",
   "quote.place-order": "Realizar este pedido",
-  "error.reason-label": "Motivo técnico"
+  "error.reason-label": "Motivo técnico",
+  "sourcing.floor.title": "Desde la fábrica",
+  "sourcing.floor.caption": "Etiquetas holográficas de seguridad, fotografiadas en el fabricante con el que trabajamos. Todavía no está en el catálogo — estamos negociando cantidades pequeñas.",
+  "sourcing.floor.alt": "Una hoja de etiquetas holográficas doradas redondas en su caja de envío"
 }

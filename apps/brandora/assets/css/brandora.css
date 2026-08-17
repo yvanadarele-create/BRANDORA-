@@ -1557,3 +1557,28 @@ html[data-i18n-pending] [data-i18n-attr] {
 @media (prefers-reduced-motion: reduce) {
   html[data-i18n-pending] [data-i18n] { visibility: hidden; }
 }
+
+/* --- A photograph from the factory ---------------------------------------- */
+
+/*
+ * Side by side on a wide screen, stacked on a narrow one — a recomposition,
+ * not a shrink. The image is capped rather than fluid because the source is a
+ * phone photograph: stretched past its own resolution it goes soft, and a soft
+ * product photo undoes the point of showing a real one.
+ */
+.floor {
+  display: grid; gap: var(--s4); align-items: center; margin: var(--s6) 0 0;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+}
+.floor__image {
+  width: 100%; max-width: 320px; height: auto; display: block;
+  border-radius: var(--radius, 12px);
+  border: 1px solid var(--border);
+}
+.floor__caption { margin: 0; max-width: 46ch; }
+.floor__caption p:last-child { margin: 0; color: var(--muted, inherit); }
+
+@media (max-width: 44rem) {
+  .floor { grid-template-columns: 1fr; }
+  .floor__image { max-width: 100%; }
+}

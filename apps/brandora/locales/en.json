@@ -29,7 +29,7 @@
   "contact.phone": "Phone",
   "sourcing.eyebrow": "What you can source",
   "sourcing.title": "Packaging, print and product",
-  "sourcing.lede": "Everything below is in the catalogue today, priced and orderable in small quantities.",
+  "sourcing.lede": "What Brandora is sourcing now, from manufacturers we are talking to directly.",
   "sourcing.browse": "Browse the full catalogue",
   "ask.eyebrow": "Ask Brandora",
   "ask.title": "Not sure what to source?",
@@ -335,5 +335,8 @@
   "order.pay": "Continue to payment",
   "order.check-again": "I have paid — check again",
   "quote.place-order": "Place this order",
-  "error.reason-label": "Technical reason"
+  "error.reason-label": "Technical reason",
+  "sourcing.floor.title": "From the factory floor",
+  "sourcing.floor.caption": "Holographic security labels, photographed at the manufacturer we are working with. Not yet in the catalogue — we are confirming quantities small enough for a bakery.",
+  "sourcing.floor.alt": "A sheet of round gold holographic security labels in their shipping carton"
 }

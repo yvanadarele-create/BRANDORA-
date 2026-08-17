@@ -47,7 +47,7 @@ export const fr: Catalogue = {
 
   "sourcing.eyebrow": "Ce que vous pouvez sourcer",
   "sourcing.title": "Emballage, impression et produit",
-  "sourcing.lede": "Tout ce qui suit est au catalogue aujourd'hui, chiffré et commandable en petites quantités.",
+  "sourcing.lede": "Ce que Brandora source actuellement, aupr\u00e8s de fabricants avec qui nous \u00e9changeons directement.",
   "sourcing.browse": "Voir tout le catalogue",
 
   "ask.eyebrow": "Demander à Brandora",
@@ -490,4 +490,10 @@ export const fr: Catalogue = {
   "quote.place-order":
     "Passer cette commande",
   "error.reason-label": "Raison technique",
+  "sourcing.floor.title":
+    "Depuis l'atelier",
+  "sourcing.floor.caption":
+    "\u00c9tiquettes holographiques de s\u00e9curit\u00e9, photographi\u00e9es chez le fabricant avec qui nous travaillons. Pas encore au catalogue \u2014 nous n\u00e9gocions des quantit\u00e9s adapt\u00e9es \u00e0 une boulangerie.",
+  "sourcing.floor.alt":
+    "Une planche d'\u00e9tiquettes holographiques dor\u00e9es rondes dans son carton d'exp\u00e9dition",
 };

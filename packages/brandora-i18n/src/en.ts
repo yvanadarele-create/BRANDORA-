@@ -47,7 +47,7 @@ export const en = {
   /* Landing */
   "sourcing.eyebrow": "What you can source",
   "sourcing.title": "Packaging, print and product",
-  "sourcing.lede": "Everything below is in the catalogue today, priced and orderable in small quantities.",
+  "sourcing.lede": "What Brandora is sourcing now, from manufacturers we are talking to directly.",
   "sourcing.browse": "Browse the full catalogue",
 
   "ask.eyebrow": "Ask Brandora",
@@ -501,6 +501,12 @@ export const en = {
   "quote.place-order":
     "Place this order",
   "error.reason-label": "Technical reason",
+  "sourcing.floor.title":
+    "From the factory floor",
+  "sourcing.floor.caption":
+    "Holographic security labels, photographed at the manufacturer we are working with. Not yet in the catalogue \u2014 we are confirming quantities small enough for a bakery.",
+  "sourcing.floor.alt":
+    "A sheet of round gold holographic security labels in their shipping carton",
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -29,7 +29,7 @@
   "contact.phone": "Téléphone",
   "sourcing.eyebrow": "Ce que vous pouvez sourcer",
   "sourcing.title": "Emballage, impression et produit",
-  "sourcing.lede": "Tout ce qui suit est au catalogue aujourd'hui, chiffré et commandable en petites quantités.",
+  "sourcing.lede": "Ce que Brandora source actuellement, auprès de fabricants avec qui nous échangeons directement.",
   "sourcing.browse": "Voir tout le catalogue",
   "ask.eyebrow": "Demander à Brandora",
   "ask.title": "Vous ne savez pas quoi sourcer ?",
@@ -335,5 +335,8 @@
   "order.pay": "Passer au paiement",
   "order.check-again": "J'ai payé — vérifier à nouveau",
   "quote.place-order": "Passer cette commande",
-  "error.reason-label": "Raison technique"
+  "error.reason-label": "Raison technique",
+  "sourcing.floor.title": "Depuis l'atelier",
+  "sourcing.floor.caption": "Étiquettes holographiques de sécurité, photographiées chez le fabricant avec qui nous travaillons. Pas encore au catalogue — nous négocions des quantités adaptées à une boulangerie.",
+  "sourcing.floor.alt": "Une planche d'étiquettes holographiques dorées rondes dans son carton d'expédition"
 }
