@@ -496,4 +496,24 @@ export const fr: Catalogue = {
     "\u00c9tiquettes holographiques de s\u00e9curit\u00e9, photographi\u00e9es chez le fabricant avec qui nous travaillons. Pas encore au catalogue \u2014 nous n\u00e9gocions des quantit\u00e9s adapt\u00e9es \u00e0 une boulangerie.",
   "sourcing.floor.alt":
     "Une planche d'\u00e9tiquettes holographiques dor\u00e9es rondes dans son carton d'exp\u00e9dition",
+  "sourcing.gallery.title":
+    "Ce que nous pouvons faire fabriquer",
+  "sourcing.gallery.note":
+    "Photos des fabricants avec qui nous travaillons \u2014 des exemples de ce qu'ils produisent. Les prix et les quantit\u00e9s minimales d\u00e9pendent de votre projet ; nous confirmons les deux avant tout devis.",
+  "sourcing.alt.cartons":
+    "\u00c9tuis pliants imprim\u00e9s, plusieurs couleurs",
+  "sourcing.alt.display":
+    "Pr\u00e9sentoirs de comptoir imprim\u00e9s et petites bo\u00eetes assorties",
+  "sourcing.alt.rigid":
+    "Coffret rigide avec fourreau imprim\u00e9 et calages",
+  "sourcing.alt.mailer":
+    "Bo\u00eete d'exp\u00e9dition imprim\u00e9e, verte",
+  "sourcing.alt.small":
+    "Petites bo\u00eetes imprim\u00e9es pour bougies",
+  "sourcing.alt.colour":
+    "Bo\u00eetes imprim\u00e9es en rose et jaune",
+  "sourcing.alt.drawer":
+    "Bo\u00eetes tiroir en trois couleurs",
+  "sourcing.alt.labels":
+    "\u00c9tiquettes holographiques dor\u00e9es dans leur carton",
 };

@@ -1558,27 +1558,33 @@ html[data-i18n-pending] [data-i18n-attr] {
   html[data-i18n-pending] [data-i18n] { visibility: hidden; }
 }
 
-/* --- A photograph from the factory ---------------------------------------- */
+/* --- Real packaging, from the factories ----------------------------------- */
 
 /*
- * Side by side on a wide screen, stacked on a narrow one — a recomposition,
- * not a shrink. The image is capped rather than fluid because the source is a
- * phone photograph: stretched past its own resolution it goes soft, and a soft
- * product photo undoes the point of showing a real one.
+ * Four across on a desktop, two on a phone — two rather than one because these
+ * are square product shots and a single column of them scrolls forever on the
+ * device most of this audience is holding.
+ *
+ * `aspect-ratio` with `object-fit: cover` keeps the grid even without letting a
+ * photograph distort: a squashed box is a box the customer will not receive.
  */
-.floor {
-  display: grid; gap: var(--s4); align-items: center; margin: var(--s6) 0 0;
-  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+.samples { margin-top: var(--s6); }
+.samples__grid {
+  list-style: none; margin: var(--s4) 0 0; padding: 0;
+  display: grid; gap: var(--s3);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.floor__image {
-  width: 100%; max-width: 320px; height: auto; display: block;
-  border-radius: var(--radius, 12px);
+.samples__tile { margin: 0; }
+.samples__tile img {
+  width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover;
+  display: block; border-radius: var(--radius, 12px);
   border: 1px solid var(--border);
+  background: var(--surface, #f7f8f7);
 }
-.floor__caption { margin: 0; max-width: 46ch; }
-.floor__caption p:last-child { margin: 0; color: var(--muted, inherit); }
+.samples__note {
+  margin: var(--s4) 0 0; max-width: 62ch;
+  font-size: 0.9rem; color: var(--muted, inherit);
+}
 
-@media (max-width: 44rem) {
-  .floor { grid-template-columns: 1fr; }
-  .floor__image { max-width: 100%; }
-}
+@media (max-width: 60rem) { .samples__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .samples__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

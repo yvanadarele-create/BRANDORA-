@@ -338,5 +338,15 @@
   "error.reason-label": "Raison technique",
   "sourcing.floor.title": "Depuis l'atelier",
   "sourcing.floor.caption": "Étiquettes holographiques de sécurité, photographiées chez le fabricant avec qui nous travaillons. Pas encore au catalogue — nous négocions des quantités adaptées à une boulangerie.",
-  "sourcing.floor.alt": "Une planche d'étiquettes holographiques dorées rondes dans son carton d'expédition"
+  "sourcing.floor.alt": "Une planche d'étiquettes holographiques dorées rondes dans son carton d'expédition",
+  "sourcing.gallery.title": "Ce que nous pouvons faire fabriquer",
+  "sourcing.gallery.note": "Photos des fabricants avec qui nous travaillons — des exemples de ce qu'ils produisent. Les prix et les quantités minimales dépendent de votre projet ; nous confirmons les deux avant tout devis.",
+  "sourcing.alt.cartons": "Étuis pliants imprimés, plusieurs couleurs",
+  "sourcing.alt.display": "Présentoirs de comptoir imprimés et petites boîtes assorties",
+  "sourcing.alt.rigid": "Coffret rigide avec fourreau imprimé et calages",
+  "sourcing.alt.mailer": "Boîte d'expédition imprimée, verte",
+  "sourcing.alt.small": "Petites boîtes imprimées pour bougies",
+  "sourcing.alt.colour": "Boîtes imprimées en rose et jaune",
+  "sourcing.alt.drawer": "Boîtes tiroir en trois couleurs",
+  "sourcing.alt.labels": "Étiquettes holographiques dorées dans leur carton"
 }

@@ -507,6 +507,26 @@ export const en = {
     "Holographic security labels, photographed at the manufacturer we are working with. Not yet in the catalogue \u2014 we are confirming quantities small enough for a bakery.",
   "sourcing.floor.alt":
     "A sheet of round gold holographic security labels in their shipping carton",
+  "sourcing.gallery.title":
+    "What we can have made",
+  "sourcing.gallery.note":
+    "Photographs from the manufacturers we are working with \u2014 examples of what they produce. Prices and minimum quantities depend on your design, and we confirm both before quoting.",
+  "sourcing.alt.cartons":
+    "Printed folding cartons in several colours",
+  "sourcing.alt.display":
+    "Printed counter display boxes with matching small boxes",
+  "sourcing.alt.rigid":
+    "A rigid gift box with a printed sleeve and inserts",
+  "sourcing.alt.mailer":
+    "A printed mailer box in green",
+  "sourcing.alt.small":
+    "Small printed boxes for candles",
+  "sourcing.alt.colour":
+    "Printed boxes in pink and yellow",
+  "sourcing.alt.drawer":
+    "Drawer boxes in three colours",
+  "sourcing.alt.labels":
+    "Gold holographic security labels in their carton",
 } as const;
 
 export type MessageKey = keyof typeof en;

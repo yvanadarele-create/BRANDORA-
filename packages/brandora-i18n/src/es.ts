@@ -488,4 +488,24 @@ export const es: Catalogue = {
     "Etiquetas hologr\u00e1ficas de seguridad, fotografiadas en el fabricante con el que trabajamos. Todav\u00eda no est\u00e1 en el cat\u00e1logo \u2014 estamos negociando cantidades peque\u00f1as.",
   "sourcing.floor.alt":
     "Una hoja de etiquetas hologr\u00e1ficas doradas redondas en su caja de env\u00edo",
+  "sourcing.gallery.title":
+    "Lo que podemos mandar fabricar",
+  "sourcing.gallery.note":
+    "Fotos de los fabricantes con los que trabajamos \u2014 ejemplos de lo que producen. Los precios y las cantidades m\u00ednimas dependen de tu proyecto; confirmamos ambos antes de presupuestar.",
+  "sourcing.alt.cartons":
+    "Estuches plegables impresos en varios colores",
+  "sourcing.alt.display":
+    "Expositores de mostrador impresos y cajas peque\u00f1as a juego",
+  "sourcing.alt.rigid":
+    "Caja r\u00edgida de regalo con funda impresa e inserciones",
+  "sourcing.alt.mailer":
+    "Caja de env\u00edo impresa en verde",
+  "sourcing.alt.small":
+    "Cajas peque\u00f1as impresas para velas",
+  "sourcing.alt.colour":
+    "Cajas impresas en rosa y amarillo",
+  "sourcing.alt.drawer":
+    "Cajas caj\u00f3n en tres colores",
+  "sourcing.alt.labels":
+    "Etiquetas hologr\u00e1ficas doradas en su caja",
 };

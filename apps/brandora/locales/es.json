@@ -338,5 +338,15 @@
   "error.reason-label": "Motivo técnico",
   "sourcing.floor.title": "Desde la fábrica",
   "sourcing.floor.caption": "Etiquetas holográficas de seguridad, fotografiadas en el fabricante con el que trabajamos. Todavía no está en el catálogo — estamos negociando cantidades pequeñas.",
-  "sourcing.floor.alt": "Una hoja de etiquetas holográficas doradas redondas en su caja de envío"
+  "sourcing.floor.alt": "Una hoja de etiquetas holográficas doradas redondas en su caja de envío",
+  "sourcing.gallery.title": "Lo que podemos mandar fabricar",
+  "sourcing.gallery.note": "Fotos de los fabricantes con los que trabajamos — ejemplos de lo que producen. Los precios y las cantidades mínimas dependen de tu proyecto; confirmamos ambos antes de presupuestar.",
+  "sourcing.alt.cartons": "Estuches plegables impresos en varios colores",
+  "sourcing.alt.display": "Expositores de mostrador impresos y cajas pequeñas a juego",
+  "sourcing.alt.rigid": "Caja rígida de regalo con funda impresa e inserciones",
+  "sourcing.alt.mailer": "Caja de envío impresa en verde",
+  "sourcing.alt.small": "Cajas pequeñas impresas para velas",
+  "sourcing.alt.colour": "Cajas impresas en rosa y amarillo",
+  "sourcing.alt.drawer": "Cajas cajón en tres colores",
+  "sourcing.alt.labels": "Etiquetas holográficas doradas en su caja"
 }
