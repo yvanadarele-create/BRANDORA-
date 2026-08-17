@@ -17,6 +17,7 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../apps/brandora");
@@ -200,6 +201,24 @@ for (const file of walk(join(root, "assets/js"))) {
           `this is a ReferenceError that stops the whole script`,
       );
     }
+  }
+}
+
+/* --- Translation coverage --------------------------------------------------- */
+
+/*
+ * Both halves, in the build, from now on.
+ *
+ * These ran as separate commands and were reported as passing while a French
+ * visitor still read English — because only the script half had been measured
+ * and the markup half had never been looked at. A check that has to be
+ * remembered is a check that gets forgotten.
+ */
+for (const checker of ["check-i18n.mjs", "check-i18n-html.mjs"]) {
+  const result = spawnSync(process.execPath, [join(here, checker)], { encoding: "utf8" });
+  const output = `${result.stdout ?? ""}`.trim();
+  if (!/^No untranslatable English/.test(output)) {
+    problems.push(`${checker}: ${output.split("\n")[0]} — run \`node scripts/${checker} --list\``);
   }
 }
 

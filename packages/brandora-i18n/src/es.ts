@@ -399,4 +399,87 @@ export const es: Catalogue = {
   "join.failed":
     "No se ha enviado. Int\u00e9ntalo de nuevo o escribe a brandora.union@gmail.com.",
   "error.not-found": "No hemos encontrado eso.",
+  "nav.skip":
+    "Ir al contenido",
+  "founder.p1":
+    "Cre\u00e9 Brandora Union porque vi un vac\u00edo que no pod\u00eda ignorar.",
+  "founder.p2":
+    "Por toda \u00c1frica hay emprendedores incre\u00edbles construyendo marcas ambiciosas y creando productos realmente buenos. Pero con demasiada frecuencia, la presentaci\u00f3n f\u00edsica de esos productos no refleja la calidad de lo que hay dentro.",
+  "founder.p3":
+    "Comprend\u00ed que el envase no es solo un envase. Suele ser la primera conversaci\u00f3n que un cliente tiene con una marca. Antes de probar, llevar, usar o experimentar un producto, lo ven. La forma, los materiales, los detalles, los colores \u2014 todo ello crea una impresi\u00f3n inmediata de lo que hay dentro.",
+  "founder.pull1":
+    "Un envase bonito y bien pensado hace que un producto se sienta intencionado, fiable y digno de descubrir.",
+  "founder.p4":
+    "Sin embargo, para muchas marcas africanas, acceder a envases personalizados de calidad y a socios de fabricaci\u00f3n fiables sigue siendo dif\u00edcil, caro o innecesariamente complicado.",
+  "founder.p5":
+    "Quise cambiar eso.",
+  "founder.p6":
+    "Cre\u00e9 Brandora Union para que a los emprendedores africanos les resulte m\u00e1s f\u00e1cil construir marcas tan excepcionales como los productos que crean \u2014 conect\u00e1ndolos con los productos, los envases, los fabricantes y, con el tiempo, toda la infraestructura necesaria para llevar sus ideas al mundo f\u00edsico.",
+  "founder.p7":
+    "\u00c1frica tiene las ideas. \u00c1frica tiene el talento. Creo que nuestras marcas merecen una infraestructura a la altura.",
+  "founder.pull2":
+    "Y es en Costa de Marfil donde empiezo.",
+  "assistant.lede":
+    "Pregunta sobre productos, envases, cantidades o por d\u00f3nde empezar. Las respuestas salen de tu marca y del cat\u00e1logo real.",
+  "assistant.q1":
+    "\u00bfQu\u00e9 productos encajan con mi marca?",
+  "assistant.q2":
+    "\u00bfQu\u00e9 envase deber\u00eda usar?",
+  "assistant.q3":
+    "\u00bfCon qu\u00e9 deber\u00eda empezar?",
+  "assistant.q4":
+    "Crear un lote de lanzamiento",
+  "assistant.label":
+    "Tu pregunta",
+  "assistant.placeholder":
+    "Productos, envases, cantidades\u2026",
+  "assistant.footnote":
+    "Brandora responde a partir del cat\u00e1logo que puede pedir de verdad. Te dir\u00e1 cu\u00e1ndo no encaja nada en lugar de sugerir algo que no existe.",
+  "brand.section.brand":
+    "La marca",
+  "brand.palette.note":
+    "Derivada de tus respuestas y comprobada en contraste antes de mostr\u00e1rtela.",
+  "brand.section.mark":
+    "El logotipo",
+  "brand.mark.note":
+    "Una direcci\u00f3n, escrita para entregarla a un dise\u00f1ador o a un modelo de imagen.",
+  "brand.section.world":
+    "En el mundo real",
+  "brand.world.note":
+    "Tus colores y tus letras en los objetos que el cliente sostiene de verdad.",
+  "brand.cta.products":
+    "Elegir tus productos",
+  "brand.cta.guidelines":
+    "Descargar el manual de marca",
+  "brand.empty.title":
+    "Aqu\u00ed todav\u00eda no hay marca",
+  "brand.empty.body":
+    "Responde a la entrevista y Brandora construir\u00e1 una.",
+  "brand.loading":
+    "Cargando tu marca\u2026",
+  "catalog.lede":
+    "Dinos cu\u00e1ntos necesitas. Brandora solo te ofrece lo que puedes pedir de verdad en esa cantidad.",
+  "catalog.quantity.label":
+    "\u00bfCu\u00e1ntos necesitas?",
+  "catalog.near.title":
+    "Disponibles, pero no en esta cantidad",
+  "catalog.near.note":
+    "Estos necesitan un pedido mayor. El m\u00ednimo se indica en cada uno.",
+  "home.catalog.loading":
+    "Cargando el cat\u00e1logo\u2026",
+  "interview.dont-know":
+    "No lo s\u00e9 \u2014 ay\u00fadame",
+  "package.recs.note":
+    "Ordenados seg\u00fan lo que nos contaste, no por precio. Todos se pueden pedir en la cantidad que has fijado.",
+  "order.title":
+    "Tu pedido",
+  "order.what":
+    "Lo que has pedido",
+  "order.pay":
+    "Continuar al pago",
+  "order.check-again":
+    "He pagado \u2014 comprobar de nuevo",
+  "quote.place-order":
+    "Realizar este pedido",
+  "error.reason-label": "Motivo t\u00e9cnico",
 };

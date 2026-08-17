@@ -135,6 +135,56 @@ if (catalog.status === 200) {
   }
 }
 
+/* 5. Does brand generation actually work? */
+
+if (login.status === 200) {
+  const project = await call('POST', '/api/projects', { name: 'Live check brand' });
+  const projectId = project.json?.project?.id;
+
+  if (projectId) {
+    await call('PUT', `/api/projects/${projectId}/interview`, {
+      answers: [
+        { field: 'business', value: 'Jus de fruits frais pressés à Abidjan' },
+        { field: 'product', value: 'Jus en bouteille' },
+        { field: 'audience', value: 'Jeunes de 13 à 19 ans' },
+        // These two are choice fields; the values must be ones the interview
+        // offers, not free text, or the request is rejected before it ever
+        // reaches the model and the check would blame the wrong thing.
+        { field: 'positioning', value: 'affordable' },
+        { field: 'personality', value: ['playful', 'bold'] },
+        { field: 'differentiation', value: 'Fruits locaux, pressés le matin' },
+        { field: 'style', value: 'Coloré et moderne' },
+      ],
+    });
+
+    const generated = await call('POST', `/api/projects/${projectId}/generate`, {});
+    report('5. BRAND GENERATION (the step that fails after the colour palette)',
+      'POST', `/api/projects/${projectId}/generate`, generated);
+
+    if (generated.status === 201) {
+      console.log(`\n   generated brand name: ${generated.json?.strategy?.name ?? '(none)'}`);
+    } else {
+      const reason = generated.json?.reason;
+      const EXPLAIN = {
+        'ai-not-configured': 'ANTHROPIC_API_KEY is not set on the deployment.',
+        'ai-key-rejected': 'ANTHROPIC_API_KEY is set but the provider rejected it — wrong, revoked, or from a different account.',
+        'ai-model-not-permitted': 'The key is valid but has no access to the model. Check ANTHROPIC_MODEL.',
+        'ai-rate-limited': 'The provider rate limited Brandora. This one clears on its own.',
+        'ai-timeout': 'The provider did not answer in time. If this is constant rather than occasional, raise maxDuration in vercel.json.',
+        'ai-unreachable': 'Brandora could not reach the provider at all — a network or DNS problem on the deployment.',
+        'ai-http-402': 'Payment required: the account behind ANTHROPIC_API_KEY has no credit left.',
+        'ai-http-400': 'The provider rejected the request itself — most often an ANTHROPIC_MODEL that does not exist.',
+        'ai-http-529': 'The provider is overloaded. Try again shortly.',
+      };
+      findings.push(
+        reason
+          ? `BRAND GENERATION FAILS — ${reason}. ${EXPLAIN[reason] ?? 'See the deployment logs for the detail.'}`
+          : `BRAND GENERATION FAILS with ${generated.status} and no reason code. Check the deployment logs.`,
+      );
+    }
+  }
+}
+
 /* --- What to do about it -------------------------------------------------- */
 
 console.log(`\n${'═'.repeat(72)}\nDIAGNOSIS\n${'═'.repeat(72)}`);

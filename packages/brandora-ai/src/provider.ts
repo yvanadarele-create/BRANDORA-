@@ -183,6 +183,7 @@ export class AnthropicStrategyProvider implements StrategyProvider {
         "brand.generation-failed",
         "ANTHROPIC_API_KEY is missing, revoked or invalid — check the deployment's environment settings",
         500,
+        { reason: "ai-key-rejected" },
       );
     }
     if (err instanceof Anthropic.PermissionDeniedError) {
@@ -190,6 +191,7 @@ export class AnthropicStrategyProvider implements StrategyProvider {
         "brand.generation-failed",
         "the API key lacks access to this model",
         500,
+        { reason: "ai-model-not-permitted" },
       );
     }
     if (err instanceof Anthropic.RateLimitError) {
@@ -197,19 +199,28 @@ export class AnthropicStrategyProvider implements StrategyProvider {
         "rate.limited",
         "the AI provider rate limited Brandora; the SDK already retried",
         429,
+        { reason: "ai-rate-limited" },
       );
     }
     if (err instanceof Anthropic.APIConnectionTimeoutError) {
-      return new BrandoraError("brand.generation-failed", "generation timed out", 504);
+      return new BrandoraError("brand.generation-failed", "generation timed out", 504, {
+        reason: "ai-timeout",
+      });
     }
     if (err instanceof Anthropic.APIConnectionError) {
-      return new BrandoraError("brand.generation-failed", "could not reach the AI provider", 502);
+      return new BrandoraError("brand.generation-failed", "could not reach the AI provider", 502, {
+        reason: "ai-unreachable",
+      });
     }
     if (err instanceof Anthropic.APIError) {
       return new BrandoraError(
         "brand.generation-failed",
         `AI provider returned ${err.status ?? "an error"} (${err.name})`,
         502,
+        // The HTTP status is not a secret and is the single most useful thing
+        // here: 400 is a bad request from us, 402 is a spent balance, 529 is
+        // the provider being overloaded. Three different people fix those.
+        { reason: `ai-http-${err.status ?? "unknown"}` },
       );
     }
     return toBrandoraError(err, "brand.generation-failed");
@@ -260,6 +271,7 @@ export class UnconfiguredStrategyProvider implements StrategyProvider {
       "brand.generation-failed",
       "no AI provider is configured — set ANTHROPIC_API_KEY in the deployment environment",
       503,
+      { reason: "ai-not-configured" },
     );
   }
 }

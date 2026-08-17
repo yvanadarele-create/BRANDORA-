@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
   <div class="wrap site-header__inner">
@@ -78,7 +78,7 @@
 
     <section class="section" aria-labelledby="essence">
       <div class="wrap book-grid">
-        <div class="book-grid__label"><h2 id="essence">The brand</h2></div>
+        <div class="book-grid__label"><h2 data-i18n="brand.section.brand" id="essence">The brand</h2></div>
         <div class="book-grid__body">
           <p class="book-lead" data-brand-description></p>
           <dl class="book-defs">
@@ -95,7 +95,7 @@
       <div class="wrap book-grid">
         <div class="book-grid__label">
           <h2 id="palette">Colour</h2>
-          <p class="product__meta">Derived from your answers, then checked for contrast before you saw it.</p>
+          <p data-i18n="brand.palette.note" class="product__meta">Derived from your answers, then checked for contrast before you saw it.</p>
         </div>
         <div class="book-grid__body">
           <ul class="palette-strip" data-brand-palette></ul>
@@ -130,8 +130,8 @@
     <section class="section" aria-labelledby="mark">
       <div class="wrap book-grid">
         <div class="book-grid__label">
-          <h2 id="mark">The mark</h2>
-          <p class="product__meta">A direction, written to be handed to a designer or an image model.</p>
+          <h2 data-i18n="brand.section.mark" id="mark">The mark</h2>
+          <p data-i18n="brand.mark.note" class="product__meta">A direction, written to be handed to a designer or an image model.</p>
         </div>
         <div class="book-grid__body">
           <div class="mark-row">
@@ -146,8 +146,8 @@
     <section class="section" aria-labelledby="applications">
       <div class="wrap book-grid">
         <div class="book-grid__label">
-          <h2 id="applications">In the world</h2>
-          <p class="product__meta">Your colours and letterforms on the things a customer actually holds.</p>
+          <h2 data-i18n="brand.section.world" id="applications">In the world</h2>
+          <p data-i18n="brand.world.note" class="product__meta">Your colours and letterforms on the things a customer actually holds.</p>
         </div>
         <div class="book-grid__body">
           <div class="applications" data-applications></div>
@@ -158,8 +158,8 @@
     <section class="section">
       <div class="wrap">
         <div class="book-actions">
-          <a class="btn btn--primary" href="catalog.html" data-continue>Choose your products</a>
-          <a class="btn btn--ghost" href="#" data-download-guidelines>Download brand guidelines</a>
+          <a data-i18n="brand.cta.products" class="btn btn--primary" href="catalog.html" data-continue>Choose your products</a>
+          <a data-i18n="brand.cta.guidelines" class="btn btn--ghost" href="#" data-download-guidelines>Download brand guidelines</a>
           <a class="btn btn--quiet" href="dashboard.html" data-i18n="nav.dashboard">Dashboard</a>
         </div>
       </div>
@@ -169,14 +169,14 @@
 
   <section class="section" data-empty hidden>
     <div class="wrap wrap--narrow">
-      <h1>No brand here yet</h1>
-      <p class="lede" data-empty-message>Answer the interview and Brandora will build one.</p>
+      <h1 data-i18n="brand.empty.title">No brand here yet</h1>
+      <p data-i18n="brand.empty.body" class="lede" data-empty-message>Answer the interview and Brandora will build one.</p>
       <p><a class="btn btn--primary" href="create.html" data-i18n="hero.cta.primary">Create My Brand</a></p>
     </div>
   </section>
 
   <section class="section" data-loading>
-    <div class="wrap wrap--narrow"><p class="lede">Loading your brand…</p></div>
+    <div class="wrap wrap--narrow"><p data-i18n="brand.loading" class="lede">Loading your brand…</p></div>
   </section>
 
 </main>

@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
   <div class="wrap site-header__inner">
@@ -59,14 +59,14 @@
   <section class="section">
     <div class="wrap wrap--narrow">
       <p class="eyebrow" data-i18n="nav.orders">Order</p>
-      <h1 data-order-reference>Your order</h1>
+      <h1 data-i18n="order.title" data-order-reference>Your order</h1>
 
       <p class="notice" data-error hidden role="alert"></p>
       <p class="notice notice--accent" data-payment-instruction hidden></p>
 
       <dl class="book-defs" data-order-summary></dl>
 
-      <h2 style="margin-top:2.5rem">What you ordered</h2>
+      <h2 data-i18n="order.what" style="margin-top:2.5rem">What you ordered</h2>
       <div class="scroll-x">
         <table class="totals" data-order-lines>
           <caption class="visually-hidden">Order lines</caption>
@@ -79,8 +79,8 @@
       <ol class="timeline" data-order-events></ol>
 
       <div class="hero__actions">
-        <a class="btn btn--primary" data-pay-link hidden href="#">Continue to payment</a>
-        <button class="btn btn--ghost" type="button" data-refresh hidden>I have paid — check again</button>
+        <a data-i18n="order.pay" class="btn btn--primary" data-pay-link hidden href="#">Continue to payment</a>
+        <button data-i18n="order.check-again" class="btn btn--ghost" type="button" data-refresh hidden>I have paid — check again</button>
         <a class="btn btn--quiet" href="dashboard.html" data-i18n="nav.dashboard">Dashboard</a>
       </div>
     </div>
