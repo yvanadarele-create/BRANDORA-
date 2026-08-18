@@ -144,6 +144,37 @@ CREATE TABLE IF NOT EXISTS products (
   UNIQUE (supplier, external_id)
 );
 
+/* --- Pricing policy -------------------------------------------------------- */
+
+-- The margins, minimums and rates an administrator sets.
+--
+-- One row, `id = 'current'`. It is a table rather than a set of environment
+-- variables because a margin that can only be changed by a deploy is a margin
+-- nobody tunes — and because the person who should be adjusting it is the
+-- founder, not whoever holds the Vercel password.
+--
+-- `bands` is JSON: a margin table has a variable number of rows and lives
+-- naturally as a list. Everything else is a column, so a wrong value is a
+-- constraint violation rather than a silent parse.
+--
+-- Rates are stored as REAL fractions (0.27 = 27%), and money in minor units of
+-- `currency`, the same as everywhere else in this schema.
+CREATE TABLE IF NOT EXISTS pricing_policy (
+  id                    TEXT PRIMARY KEY,
+  currency              TEXT NOT NULL,
+  bands                 TEXT NOT NULL DEFAULT '[]',
+  repeat_customer_margin REAL,
+  minimum_margin        REAL NOT NULL DEFAULT 0,
+  minimum_order_value   INTEGER NOT NULL DEFAULT 0,
+  minimum_gross_profit  INTEGER NOT NULL DEFAULT 0,
+  contingency_rate      REAL NOT NULL DEFAULT 0,
+  payment_fee_rate      REAL NOT NULL DEFAULT 0,
+  rounding_step         INTEGER NOT NULL DEFAULT 0,
+  sample_credited       INTEGER NOT NULL DEFAULT 0,
+  updated_at            TEXT NOT NULL,
+  updated_by            TEXT
+);
+
 /* --- Packages -------------------------------------------------------------- */
 
 -- The customer's working basket, one row per line.
@@ -174,7 +205,7 @@ CREATE INDEX IF NOT EXISTS idx_package_items_project ON package_items(project_id
 CREATE TABLE IF NOT EXISTS suppliers (
   id                 TEXT PRIMARY KEY,
   name               TEXT NOT NULL,
-  platform           TEXT NOT NULL CHECK (platform IN ('aliexpress','alibaba','local','direct')),
+  platform           TEXT NOT NULL CHECK (platform IN ('aliexpress','alibaba','made-in-china','local','direct')),
   external_id        TEXT,
   external_url       TEXT,
   country            TEXT,
@@ -201,6 +232,16 @@ CREATE TABLE IF NOT EXISTS suppliers (
   disputes           INTEGER NOT NULL DEFAULT 0,
   status             TEXT NOT NULL DEFAULT 'active'
                        CHECK (status IN ('active','paused','blocked','unverified')),
+  -- Where the *conversation* stands, which is not the same as whether the
+  -- supplier is usable. A factory can be perfectly good and still be someone
+  -- nobody has written to yet, and sourcing is mostly the business of knowing
+  -- which of those two things is true for each of forty companies.
+  relationship       TEXT NOT NULL DEFAULT 'new'
+                       CHECK (relationship IN ('new','contacted','responded','awaiting-information',
+                                               'sample-requested','sample-received','negotiating',
+                                               'verified','approved','rejected','inactive')),
+  last_contact_at    TEXT,
+  next_action        TEXT,
   risk_flag          TEXT,
   notes              TEXT,
   verified_at        TEXT,
@@ -210,6 +251,38 @@ CREATE TABLE IF NOT EXISTS suppliers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_suppliers_status ON suppliers(status);
+CREATE INDEX IF NOT EXISTS idx_suppliers_relationship ON suppliers(relationship);
+
+-- The people at a supplier.
+--
+-- Separate from `suppliers` because a company is not a person: Zanbond may have
+-- LEE, and then Alice, and then whoever replaces them. Holding one contact on
+-- the company row means a second salesperson either overwrites the first or
+-- duplicates the whole company.
+--
+-- The columns on `suppliers` (contact_name, contact_email, contact_phone) stay
+-- for now so nothing that reads them breaks; they are the primary contact, and
+-- this table is the full list.
+CREATE TABLE IF NOT EXISTS supplier_contacts (
+  id           TEXT PRIMARY KEY,
+  supplier_id  TEXT NOT NULL REFERENCES suppliers(id) ON DELETE CASCADE,
+  name         TEXT NOT NULL,
+  role         TEXT,
+  email        TEXT,
+  phone        TEXT,
+  whatsapp     TEXT,
+  -- Where the conversation actually happens. A number that only works inside
+  -- Made-in-China's messenger is not a phone number you can call.
+  channel      TEXT,
+  -- Set when a contact detail arrived without a name attached to it, so it can
+  -- be recorded without being guessed onto the wrong person.
+  unassigned   INTEGER NOT NULL DEFAULT 0,
+  notes        TEXT,
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_supplier_contacts_supplier ON supplier_contacts(supplier_id);
 
 -- What a supplier offers for a Brandora product, at what quantity.
 --
@@ -234,6 +307,21 @@ CREATE TABLE IF NOT EXISTS supplier_offers (
   production_days    INTEGER,
   shipping_cost      INTEGER,
   customization      TEXT NOT NULL DEFAULT '[]',
+  -- Which person quoted it, when it was a person rather than a listing.
+  contact_id         TEXT REFERENCES supplier_contacts(id) ON DELETE SET NULL,
+  -- The single most important distinction in this table.
+  --
+  -- A number on a Made-in-China listing is advertising: it is the best case, at
+  -- the largest tier, before customisation, and no one has agreed to it.
+  -- A number a salesperson sent you for your specification is a quote. Pricing
+  -- an order from the first as though it were the second is how a margin
+  -- disappears between the spreadsheet and the invoice.
+  price_type         TEXT NOT NULL DEFAULT 'listed'
+                       CHECK (price_type IN ('listed','quoted','negotiated')),
+  source_url         TEXT,
+  verification_status TEXT NOT NULL DEFAULT 'unverified'
+                       CHECK (verification_status IN ('unverified','confirmed','stale','rejected')),
+  notes              TEXT,
   -- §75: a price nobody has confirmed since March is not a price.
   last_checked_at    TEXT NOT NULL,
   created_at         TEXT NOT NULL,

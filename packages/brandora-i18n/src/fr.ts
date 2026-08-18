@@ -52,7 +52,7 @@ export const fr: Catalogue = {
 
   "sourcing.eyebrow": "Ce que vous pouvez sourcer",
   "sourcing.title": "Emballage, impression et produit",
-  "sourcing.lede": "Tout ce qui suit est au catalogue aujourd'hui, chiffré et commandable en petites quantités.",
+  "sourcing.lede": "Ce que Brandora source actuellement, aupr\u00e8s de fabricants avec qui nous \u00e9changeons directement.",
   "sourcing.browse": "Voir tout le catalogue",
 
   "ask.eyebrow": "Demander à Brandora",
@@ -412,4 +412,113 @@ export const fr: Catalogue = {
   "join.failed":
     "L'envoi n'a pas abouti. R\u00e9essayez ou \u00e9crivez \u00e0 brandora.union@gmail.com.",
   "error.not-found": "Nous n'avons pas trouv\u00e9 cela.",
+  "nav.skip":
+    "Aller au contenu",
+  "founder.p1":
+    "J'ai cr\u00e9\u00e9 Brandora Union parce que j'ai remarqu\u00e9 un manque que je ne pouvais pas ignorer.",
+  "founder.p2":
+    "Partout en Afrique, des entrepreneurs formidables construisent des marques ambitieuses et cr\u00e9ent des produits vraiment excellents. Mais trop souvent, la pr\u00e9sentation physique de ces produits ne refl\u00e8te pas la qualit\u00e9 de ce qu'il y a \u00e0 l'int\u00e9rieur.",
+  "founder.p3":
+    "J'ai compris qu'un emballage n'est pas qu'un emballage. C'est souvent la premi\u00e8re conversation qu'un client a avec une marque. Avant de go\u00fbter, de porter, d'utiliser ou de vivre un produit, on le voit. La forme, les mati\u00e8res, les d\u00e9tails, les couleurs \u2014 tout cela cr\u00e9e une impression imm\u00e9diate de ce qu'il y a \u00e0 l'int\u00e9rieur.",
+  "founder.pull1":
+    "Un emballage beau et pens\u00e9 donne au produit un air intentionnel, digne de confiance, et qui m\u00e9rite d'\u00eatre d\u00e9couvert.",
+  "founder.p4":
+    "Pourtant, pour beaucoup de marques africaines, acc\u00e9der \u00e0 des emballages personnalis\u00e9s de qualit\u00e9 et \u00e0 des partenaires de fabrication fiables reste difficile, co\u00fbteux ou inutilement compliqu\u00e9.",
+  "founder.p5":
+    "J'ai voulu changer cela.",
+  "founder.p6":
+    "J'ai cr\u00e9\u00e9 Brandora Union pour que les entrepreneurs africains puissent plus facilement construire des marques aussi exceptionnelles que les produits qu'ils cr\u00e9ent \u2014 en les mettant en relation avec les bons produits, les bons emballages, les bons fabricants, et \u00e0 terme toute l'infrastructure n\u00e9cessaire pour faire exister leurs id\u00e9es dans le monde physique.",
+  "founder.p7":
+    "L'Afrique a les id\u00e9es. L'Afrique a le talent. Je crois que nos marques m\u00e9ritent une infrastructure \u00e0 la hauteur.",
+  "founder.pull2":
+    "Et c'est en C\u00f4te d'Ivoire que je commence.",
+  "assistant.lede":
+    "Posez vos questions sur les produits, les emballages, les quantit\u00e9s ou par quoi commencer. Les r\u00e9ponses viennent de votre marque et du catalogue r\u00e9el.",
+  "assistant.q1":
+    "Quels produits conviennent \u00e0 ma marque ?",
+  "assistant.q2":
+    "Quel emballage utiliser ?",
+  "assistant.q3":
+    "Par quoi commencer ?",
+  "assistant.q4":
+    "Composer un lot de lancement",
+  "assistant.label":
+    "Votre question",
+  "assistant.placeholder":
+    "Produits, emballages, quantit\u00e9s\u2026",
+  "assistant.footnote":
+    "Brandora r\u00e9pond \u00e0 partir du catalogue qu'elle peut r\u00e9ellement commander. Elle vous dira quand rien ne convient plut\u00f4t que de proposer quelque chose qui n'existe pas.",
+  "brand.section.brand":
+    "La marque",
+  "brand.palette.note":
+    "D\u00e9riv\u00e9e de vos r\u00e9ponses, puis v\u00e9rifi\u00e9e en contraste avant de vous \u00eatre montr\u00e9e.",
+  "brand.section.mark":
+    "Le logo",
+  "brand.mark.note":
+    "Une direction, \u00e9crite pour \u00eatre confi\u00e9e \u00e0 un graphiste ou \u00e0 un mod\u00e8le d'image.",
+  "brand.section.world":
+    "Dans le monde r\u00e9el",
+  "brand.world.note":
+    "Vos couleurs et vos lettres sur les objets que le client tient vraiment.",
+  "brand.cta.products":
+    "Choisir vos produits",
+  "brand.cta.guidelines":
+    "T\u00e9l\u00e9charger la charte de marque",
+  "brand.empty.title":
+    "Aucune marque ici pour l'instant",
+  "brand.empty.body":
+    "R\u00e9pondez \u00e0 l'entretien et Brandora en construira une.",
+  "brand.loading":
+    "Chargement de votre marque\u2026",
+  "catalog.lede":
+    "Dites-nous combien il vous en faut. Brandora ne vous propose que ce que vous pouvez r\u00e9ellement commander \u00e0 cette quantit\u00e9.",
+  "catalog.quantity.label":
+    "Combien vous en faut-il ?",
+  "catalog.near.title":
+    "Disponibles, mais pas \u00e0 cette quantit\u00e9",
+  "catalog.near.note":
+    "Ceux-ci demandent une commande plus importante. Le minimum est indiqu\u00e9 sur chacun.",
+  "home.catalog.loading":
+    "Chargement du catalogue\u2026",
+  "interview.dont-know":
+    "Je ne sais pas \u2014 aidez-moi",
+  "package.recs.note":
+    "Class\u00e9s selon ce que vous nous avez dit, pas par prix. Chacun peut \u00eatre command\u00e9 \u00e0 la quantit\u00e9 que vous avez choisie.",
+  "order.title":
+    "Votre commande",
+  "order.what":
+    "Ce que vous avez command\u00e9",
+  "order.pay":
+    "Passer au paiement",
+  "order.check-again":
+    "J'ai pay\u00e9 \u2014 v\u00e9rifier \u00e0 nouveau",
+  "quote.place-order":
+    "Passer cette commande",
+  "error.reason-label": "Raison technique",
+  "sourcing.floor.title":
+    "Depuis l'atelier",
+  "sourcing.floor.caption":
+    "\u00c9tiquettes holographiques de s\u00e9curit\u00e9, photographi\u00e9es chez le fabricant avec qui nous travaillons. Pas encore au catalogue \u2014 nous n\u00e9gocions des quantit\u00e9s adapt\u00e9es \u00e0 une boulangerie.",
+  "sourcing.floor.alt":
+    "Une planche d'\u00e9tiquettes holographiques dor\u00e9es rondes dans son carton d'exp\u00e9dition",
+  "sourcing.gallery.title":
+    "Ce que nous pouvons faire fabriquer",
+  "sourcing.gallery.note":
+    "Photos des fabricants avec qui nous travaillons \u2014 des exemples de ce qu'ils produisent. Les prix et les quantit\u00e9s minimales d\u00e9pendent de votre projet ; nous confirmons les deux avant tout devis.",
+  "sourcing.alt.cartons":
+    "\u00c9tuis pliants imprim\u00e9s, plusieurs couleurs",
+  "sourcing.alt.display":
+    "Pr\u00e9sentoirs de comptoir imprim\u00e9s et petites bo\u00eetes assorties",
+  "sourcing.alt.rigid":
+    "Coffret rigide avec fourreau imprim\u00e9 et calages",
+  "sourcing.alt.mailer":
+    "Bo\u00eete d'exp\u00e9dition imprim\u00e9e, verte",
+  "sourcing.alt.small":
+    "Petites bo\u00eetes imprim\u00e9es pour bougies",
+  "sourcing.alt.colour":
+    "Bo\u00eetes imprim\u00e9es en rose et jaune",
+  "sourcing.alt.drawer":
+    "Bo\u00eetes tiroir en trois couleurs",
+  "sourcing.alt.labels":
+    "\u00c9tiquettes holographiques dor\u00e9es dans leur carton",
 };

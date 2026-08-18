@@ -9,13 +9,16 @@
     "node": "22.x"
   },
   "scripts": {
-    "build": "pnpm --filter @brandora/shared --filter @brandora/config --filter @brandora/i18n --filter @brandora/brand-engine --filter @brandora/catalog --filter @brandora/sourcing --filter @brandora/quotes --filter @brandora/database --filter @brandora/auth --filter @brandora/ai --filter @brandora/server build && node scripts/check-site.mjs",
+    "build": "pnpm --filter @brandora/shared --filter @brandora/config --filter @brandora/i18n --filter @brandora/brand-engine --filter @brandora/catalog --filter @brandora/sourcing --filter @brandora/quotes --filter @brandora/database --filter @brandora/auth --filter @brandora/ai --filter @brandora/server build && node scripts/check-site.mjs && node scripts/check-catalog.mjs && node scripts/check-skills.mjs",
     "typecheck": "turbo run typecheck",
     "test": "pnpm --filter @brandora/tests test",
     "dev": "node packages/brandora-server/dist/bin/serve.js",
     "lint": "turbo run lint",
     "migrate": "node scripts/migrate.mjs",
-    "check:i18n": "node scripts/check-i18n.mjs"
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check:live": "node scripts/check-live.mjs",
+    "check:catalog": "node scripts/check-catalog.mjs",
+    "check:skills": "node scripts/check-skills.mjs"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

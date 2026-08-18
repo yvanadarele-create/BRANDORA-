@@ -20,6 +20,7 @@ import { after, before, describe, it } from "node:test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 
+import { EXAMPLE_CATALOG } from "@brandora/catalog";
 import {
   type NotificationTransport,
   type OutboundMessage,
@@ -130,6 +131,9 @@ async function start(env: Record<string, string> = ENV): Promise<Harness> {
   const notifications = new RecordingTransport();
   const app = await createApp({
     db: openSqlite(":memory:"),
+    // The shipped catalogue is empty by decision, so a test that needs
+    // products supplies its own. See packages/brandora-catalog/src/seed.ts.
+    catalog: EXAMPLE_CATALOG,
     env,
     strategy: new StubStrategyProvider(),
     payments,

@@ -55,23 +55,45 @@ export class BrandoraError extends Error {
   readonly status: number;
   /** Admin-only. Never serialise this toward a browser. */
   readonly technicalDetail: string;
+  /**
+   * A one-word category of what went wrong, safe to send to anyone.
+   *
+   * Not the detail — `ai-auth`, not "ANTHROPIC_API_KEY is invalid". The
+   * difference matters twice over. To a customer both are equally useless, so
+   * nothing is lost. To the person who deployed this, "the brand generator's
+   * credentials were rejected" and "the brand generator timed out" are days
+   * apart in what they do next, and until now both arrived as the same
+   * sentence with the reason visible only in a server log they had no idea to
+   * open.
+   *
+   * Nothing here names a variable, a value, a host or a stack frame. What it
+   * concedes to an attacker is that Brandora uses a model provider and that
+   * its key is currently misconfigured — which is not something they can act
+   * on, and is already obvious from the feature not working.
+   */
+  readonly reason: string | undefined;
 
   constructor(
     customerMessageKey: CustomerMessageKey,
     technicalDetail: string,
     status = 500,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; reason?: string },
   ) {
     super(CUSTOMER_MESSAGES[customerMessageKey], options);
     this.name = "BrandoraError";
     this.customerMessageKey = customerMessageKey;
     this.status = status;
     this.technicalDetail = redact(technicalDetail);
+    this.reason = options?.reason;
   }
 
   /** Exactly what may cross the wire to a customer. */
-  toCustomerJSON(): { error: CustomerMessageKey; message: string } {
-    return { error: this.customerMessageKey, message: CUSTOMER_MESSAGES[this.customerMessageKey] };
+  toCustomerJSON(): { error: CustomerMessageKey; message: string; reason?: string } {
+    return {
+      error: this.customerMessageKey,
+      message: CUSTOMER_MESSAGES[this.customerMessageKey],
+      ...(this.reason ? { reason: this.reason } : {}),
+    };
   }
 
   /** The admin view, already redacted. */

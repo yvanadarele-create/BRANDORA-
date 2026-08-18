@@ -54,6 +54,7 @@ import {
 } from "@brandora/brand-engine";
 import { generateBrandWithRetry, regenerateField } from "@brandora/ai";
 import { CATALOG, filterProducts } from "@brandora/catalog";
+import { defaultPolicy, policyToRow } from "./quote-pricing.js";
 import {
   type QualityCheckRow,
   type Repositories,
@@ -2053,6 +2054,97 @@ export function createRouter(deps: ServerDeps): Router {
       count: await repos.subscribers.count(),
       subscribers: await repos.subscribers.listAsAdmin(500),
     });
+  });
+
+  /* --- Pricing policy ---------------------------------------------------- */
+
+  /**
+   * The margins and minimums, as an administrator sees them.
+   *
+   * Admin-only, because a target margin is what Brandora keeps and a customer
+   * who can read it can negotiate against it.
+   */
+  router.get("/api/admin/pricing", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const stored = await repos.pricingPolicy.read();
+    return json(200, {
+      policy: stored ?? policyToRow(defaultPolicy(deps.pricing.currency)),
+      // So the screen can say "these are the starting values, not yours yet".
+      isDefault: stored === null,
+    });
+  });
+
+  router.put("/api/admin/pricing", async (ctx) => {
+    const admin = await requireAdmin(ctx, session);
+    const body = ctx.body;
+
+    const rate = (key: string, max = 1): number => {
+      const value = Number(body[key]);
+      if (!Number.isFinite(value) || value < 0 || value > max) {
+        throw new ValidationError(key, `must be a rate between 0 and ${max}`);
+      }
+      return value;
+    };
+    const amount = (key: string): number => {
+      const value = Number(body[key]);
+      if (!Number.isFinite(value) || value < 0) throw new ValidationError(key, "must be zero or more");
+      return Math.floor(value);
+    };
+
+    const rawBands = Array.isArray(body["bands"]) ? body["bands"] : [];
+    if (rawBands.length === 0) throw new ValidationError("bands", "at least one margin band is required");
+
+    const bands = rawBands.map((entry, index) => {
+      const record = entry as Record<string, unknown>;
+      const margin = Number(record["targetMargin"]);
+      if (!Number.isFinite(margin) || margin < 0 || margin >= 1) {
+        throw new ValidationError(`bands[${index}].targetMargin`, "must be between 0 and 1");
+      }
+      const ceiling = record["upToCost"];
+      return {
+        // null is the open-ended top band, and must survive as null rather than
+        // becoming 0 — which would make it match nothing.
+        upToCost: ceiling === null || ceiling === undefined ? null : Math.floor(Number(ceiling)),
+        targetMargin: margin,
+        label: String(record["label"] ?? `band ${index + 1}`).slice(0, 60),
+      };
+    });
+
+    // Sorted here rather than trusted from the form: `bandFor` walks the list
+    // in order and returns the first ceiling the cost fits under, so an
+    // out-of-order table would quietly price large orders at the small rate.
+    bands.sort((a, b) => (a.upToCost === null ? 1 : b.upToCost === null ? -1 : a.upToCost - b.upToCost));
+
+    const repeatRaw = body["repeatCustomerMargin"];
+    const policy = {
+      currency: deps.pricing.currency,
+      bands,
+      ...(repeatRaw === null || repeatRaw === undefined
+        ? {}
+        : { repeatCustomerMargin: rate("repeatCustomerMargin", 0.99) }),
+      minimumMargin: rate("minimumMargin", 0.99),
+      minimumOrderValue: amount("minimumOrderValue"),
+      minimumGrossProfit: amount("minimumGrossProfit"),
+      contingencyRate: rate("contingencyRate", 0.5),
+      paymentFeeRate: rate("paymentFeeRate", 0.5),
+      roundingStep: amount("roundingStep"),
+      sampleCreditedToProduction: body["sampleCreditedToProduction"] === true,
+    };
+
+    // Refuse a policy that cannot price anything, before it is stored rather
+    // than when the next customer asks for a quote.
+    for (const band of bands) {
+      if (band.targetMargin + policy.paymentFeeRate >= 1) {
+        throw new ValidationError(
+          "bands",
+          `band "${band.label}" at ${band.targetMargin} plus a ${policy.paymentFeeRate} payment fee leaves nothing to price against`,
+        );
+      }
+    }
+
+    await repos.pricingPolicy.save(policy, admin.id);
+    deps.logger.error(`pricing policy updated by ${admin.id}`);
+    return json(200, { policy, isDefault: false });
   });
 
   router.get("/api/admin/integrations", async (ctx) => {

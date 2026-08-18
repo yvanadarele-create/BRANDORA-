@@ -1,7 +1,31 @@
 <!DOCTYPE html>
-<html lang="en" class="no-js" data-theme="dark">
+<html lang="fr" class="no-js" data-theme="dark">
 <head>
 <meta charset="utf-8">
+  <script>
+    /* Language before first paint.
+       app.js applies the dictionary, but it has to fetch 21KB first, and until it
+       lands the authored English is on screen — a French visitor watching English
+       turn into French is exactly the "mixed language" complaint. So the language
+       is decided here, synchronously, and translatable text is held invisible
+       (not removed: visibility keeps the layout, so nothing jumps) until the
+       dictionary is applied. The timeout is the safety net — a failed fetch must
+       leave a readable page, never a blank one. */
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Brandora Union — Where brands take form.</title>
 <meta name="description" content="Brandora Union — where brands take form. Infrastructure for building physical brands: identity, products, manufacturers, production, quality and logistics, with a quote you can order from.">
@@ -19,7 +43,7 @@
 </head>
 <body>
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
   <div class="wrap site-header__inner">
@@ -133,7 +157,67 @@
       <p class="lede" data-i18n="sourcing.lede">Everything below is in the catalogue today, priced and orderable in small quantities.</p>
 
       <div class="catalogue-grid" data-catalogue-grid data-reveal data-stagger>
-        <p class="notice notice--quiet" data-catalogue-empty>Loading the catalogue…</p>
+        <p data-i18n="home.catalog.loading" class="notice notice--quiet" data-catalogue-empty>Loading the catalogue…</p>
+      </div>
+
+      <!--
+        Real photographs of real packaging, from the manufacturers Brandora is
+        actually talking to.
+
+        Chosen on three tests, from a contact sheet of everything in the
+        supplier catalogues: it is packaging a small food business would order,
+        it carries no supplier logo, and it carries no other company's brand.
+        The ones left out were left out for a reason.
+
+        Captioned as examples of what these factories produce — not as a
+        catalogue, not with prices, because neither has been confirmed for any
+        particular customer's design.
+      -->
+      <div class="samples">
+        <p class="eyebrow" data-i18n="sourcing.gallery.title">What we can have made</p>
+        <ul class="samples__grid" data-reveal data-stagger>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/boxes-folding-cartons.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="Printed folding cartons in several colours" data-i18n-attr="alt:sourcing.alt.cartons">
+        </li>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/boxes-display.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="Printed counter display boxes with matching small boxes" data-i18n-attr="alt:sourcing.alt.display">
+        </li>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/boxes-rigid-gift.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="A rigid gift box with a printed sleeve and inserts" data-i18n-attr="alt:sourcing.alt.rigid">
+        </li>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/boxes-mailer.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="A printed mailer box in green" data-i18n-attr="alt:sourcing.alt.mailer">
+        </li>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/boxes-small-printed.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="Small printed boxes for candles" data-i18n-attr="alt:sourcing.alt.small">
+        </li>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/boxes-printed-colour.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="Printed boxes in pink and yellow" data-i18n-attr="alt:sourcing.alt.colour">
+        </li>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/boxes-drawer.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="Drawer boxes in three colours" data-i18n-attr="alt:sourcing.alt.drawer">
+        </li>
+        <li class="samples__tile">
+          <img src="assets/img/sourcing/holographic-labels.webp" width="800" height="800"
+               loading="lazy" decoding="async"
+               alt="Gold holographic security labels in their carton" data-i18n-attr="alt:sourcing.alt.labels">
+        </li>
+        </ul>
+        <p class="samples__note" data-i18n="sourcing.gallery.note">Photographs from the manufacturers we are working with — examples of what they produce. Prices and minimum quantities depend on your design, and we confirm both before quoting.</p>
       </div>
 
       <p class="section__more">
@@ -264,15 +348,15 @@
         <p class="founder__role" data-i18n="founder.role">Founder, Brandora Union — Abidjan, Côte d'Ivoire</p>
 
         <div class="founder__story">
-          <p>I built Brandora Union because I noticed a gap I couldn't ignore.</p>
-          <p>Across Africa, there are incredible entrepreneurs building ambitious brands and creating genuinely great products. But too often, the physical presentation of those products doesn't reflect the quality of what's inside.</p>
-          <p>I realized that packaging is not just packaging. It is often the first conversation a customer has with a brand. Before they taste, wear, use, or experience a product, they see it. The shape, the materials, the details, the colors — all of it creates an immediate feeling about what's inside.</p>
-          <p class="founder__pull">A beautiful, thoughtful package can make a product feel intentional, trustworthy, and worth discovering.</p>
-          <p>Yet for many African brands, accessing high-quality, customized packaging and reliable manufacturing partners can still be difficult, expensive, or unnecessarily complicated.</p>
-          <p>I wanted to change that.</p>
-          <p>I created Brandora Union to make it easier for African entrepreneurs to build brands that look and feel as exceptional as the products they create — by connecting them with the right products, packaging, manufacturers, and eventually the entire infrastructure needed to bring their ideas into the physical world.</p>
-          <p>Africa has the ideas. Africa has the talent. I believe our brands should have the infrastructure to match.</p>
-          <p class="founder__pull">And Côte d'Ivoire is where I'm starting.</p>
+          <p data-i18n="founder.p1">I built Brandora Union because I noticed a gap I couldn't ignore.</p>
+          <p data-i18n="founder.p2">Across Africa, there are incredible entrepreneurs building ambitious brands and creating genuinely great products. But too often, the physical presentation of those products doesn't reflect the quality of what's inside.</p>
+          <p data-i18n="founder.p3">I realized that packaging is not just packaging. It is often the first conversation a customer has with a brand. Before they taste, wear, use, or experience a product, they see it. The shape, the materials, the details, the colors — all of it creates an immediate feeling about what's inside.</p>
+          <p data-i18n="founder.pull1" class="founder__pull">A beautiful, thoughtful package can make a product feel intentional, trustworthy, and worth discovering.</p>
+          <p data-i18n="founder.p4">Yet for many African brands, accessing high-quality, customized packaging and reliable manufacturing partners can still be difficult, expensive, or unnecessarily complicated.</p>
+          <p data-i18n="founder.p5">I wanted to change that.</p>
+          <p data-i18n="founder.p6">I created Brandora Union to make it easier for African entrepreneurs to build brands that look and feel as exceptional as the products they create — by connecting them with the right products, packaging, manufacturers, and eventually the entire infrastructure needed to bring their ideas into the physical world.</p>
+          <p data-i18n="founder.p7">Africa has the ideas. Africa has the talent. I believe our brands should have the infrastructure to match.</p>
+          <p data-i18n="founder.pull2" class="founder__pull">And Côte d'Ivoire is where I'm starting.</p>
         </div>
       </div>
     </div>

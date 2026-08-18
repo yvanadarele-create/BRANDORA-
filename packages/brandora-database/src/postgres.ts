@@ -93,6 +93,45 @@ const ADDITIVE_COLUMNS: readonly string[] = [
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS quantity INTEGER;",
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS sector TEXT;",
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS quantity_band TEXT;",
+
+  // Where the conversation with a supplier stands.
+  "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS relationship TEXT NOT NULL DEFAULT 'new';",
+  "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS last_contact_at TEXT;",
+  "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS next_action TEXT;",
+
+  // Listed, quoted or negotiated — and who said it.
+  "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS contact_id TEXT;",
+  "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS price_type TEXT NOT NULL DEFAULT 'listed';",
+  "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS source_url TEXT;",
+  "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'unverified';",
+  "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS notes TEXT;",
+];
+
+/**
+ * Constraints that need *widening* on a database that already exists.
+ *
+ * `CREATE TABLE IF NOT EXISTS` skips the table, so a CHECK list that gained a
+ * value in the schema file never reaches a live database — and the symptom is
+ * an insert rejected in production against a schema that looks correct in the
+ * repository. Adding `made-in-china` to the platform list is exactly that case.
+ *
+ * Only ever widening. Each of these accepts strictly more than it did before,
+ * so no row that is currently valid can become invalid — which is what makes it
+ * safe to run unattended on every cold start. A constraint that *narrows* is a
+ * real migration with rows to fix first, and does not belong here.
+ */
+const WIDENED_CONSTRAINTS: readonly string[] = [
+  "ALTER TABLE suppliers DROP CONSTRAINT IF EXISTS suppliers_platform_check;",
+  `ALTER TABLE suppliers ADD CONSTRAINT suppliers_platform_check
+     CHECK (platform IN ('aliexpress','alibaba','made-in-china','local','direct'));`,
+  "ALTER TABLE suppliers DROP CONSTRAINT IF EXISTS suppliers_relationship_check;",
+  `ALTER TABLE suppliers ADD CONSTRAINT suppliers_relationship_check
+     CHECK (relationship IN ('new','contacted','responded','awaiting-information',
+                             'sample-requested','sample-received','negotiating',
+                             'verified','approved','rejected','inactive'));`,
+  "ALTER TABLE supplier_offers DROP CONSTRAINT IF EXISTS supplier_offers_price_type_check;",
+  `ALTER TABLE supplier_offers ADD CONSTRAINT supplier_offers_price_type_check
+     CHECK (price_type IN ('listed','quoted','negotiated'));`,
 ];
 
 export interface PostgresOptions {
@@ -207,12 +246,34 @@ export class PostgresDriver implements SqlDriver {
     }
   }
 
-  /** Apply the schema. Every statement is `IF NOT EXISTS`, so this is idempotent. */
+  /**
+   * Apply the schema. Every statement is `IF NOT EXISTS`, so this is idempotent.
+   *
+   * The order is three phases, and it matters. Running the schema file top to
+   * bottom and then the ALTERs looks right and is wrong: on a database where a
+   * table already exists, `CREATE TABLE IF NOT EXISTS` is skipped, so a column
+   * added to the schema file arrives only via `ADDITIVE_COLUMNS` — but the
+   * index on that column sits in the schema file and runs first. It then fails
+   * with `column "relationship" does not exist`, on exactly the live databases
+   * this code exists to protect, and never on a fresh one where the tests run.
+   *
+   * So: tables, then columns, then everything that depends on a column being
+   * there.
+   */
   async migrate(): Promise<void> {
-    for (const statement of schemaStatements()) {
+    const statements = schemaStatements();
+    const dependsOnColumns = (sql: string): boolean => /^\s*CREATE\s+(UNIQUE\s+)?INDEX/i.test(sql);
+
+    for (const statement of statements.filter((sql) => !dependsOnColumns(sql))) {
       await this.run(statement);
     }
     for (const statement of ADDITIVE_COLUMNS) {
+      await this.run(statement);
+    }
+    for (const statement of statements.filter(dependsOnColumns)) {
+      await this.run(statement);
+    }
+    for (const statement of WIDENED_CONSTRAINTS) {
       await this.run(statement);
     }
   }

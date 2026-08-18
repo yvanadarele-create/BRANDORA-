@@ -1,7 +1,31 @@
 <!DOCTYPE html>
-<html lang="en" class="no-js" data-theme="dark">
+<html lang="fr" class="no-js" data-theme="dark">
 <head>
 <meta charset="utf-8">
+  <script>
+    /* Language before first paint.
+       app.js applies the dictionary, but it has to fetch 21KB first, and until it
+       lands the authored English is on screen — a French visitor watching English
+       turn into French is exactly the "mixed language" complaint. So the language
+       is decided here, synchronously, and translatable text is held invisible
+       (not removed: visibility keeps the layout, so nothing jumps) until the
+       dictionary is applied. The timeout is the safety net — a failed fetch must
+       leave a readable page, never a blank one. */
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ask Brandora — Brandora Union</title>
 <meta name="description" content="Ask Brandora about products, packaging and quantities for your brand.">
@@ -14,7 +38,7 @@
 </head>
 <body>
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
   <div class="wrap site-header__inner">
@@ -60,7 +84,7 @@
     <div class="wrap wrap--narrow">
       <p class="eyebrow" data-i18n="nav.assistant">Ask Brandora</p>
       <h1 data-assistant-title>Ask Brandora</h1>
-      <p class="lede" data-assistant-lede>Ask about products, packaging, quantities or what to launch first. Answers come from your brand and the real catalogue.</p>
+      <p class="lede" data-assistant-lede data-i18n="assistant.lede">Ask about products, packaging, quantities or what to launch first. Answers come from your brand and the real catalogue.</p>
 
       <p class="notice" data-error hidden role="alert"></p>
 
@@ -70,26 +94,24 @@
         used a tool like this does not know what it can do.
       -->
       <ul class="chips" data-suggestions>
-        <li><button class="chip" type="button" data-ask="What products fit my brand?">What products fit my brand?</button></li>
-        <li><button class="chip" type="button" data-ask="What packaging should I use?">What packaging should I use?</button></li>
+        <li><button data-i18n="assistant.q1" class="chip" type="button" data-ask="What products fit my brand?">What products fit my brand?</button></li>
+        <li><button data-i18n="assistant.q2" class="chip" type="button" data-ask="What packaging should I use?">What packaging should I use?</button></li>
         <li><button class="chip" type="button" data-ask="Find me 30 premium cups.">Find me 30 premium cups</button></li>
-        <li><button class="chip" type="button" data-ask="What should I launch first?">What should I launch first?</button></li>
-        <li><button class="chip" type="button" data-ask="Build a launch package for my brand.">Build a launch package</button></li>
+        <li><button data-i18n="assistant.q3" class="chip" type="button" data-ask="What should I launch first?">What should I launch first?</button></li>
+        <li><button data-i18n="assistant.q4" class="chip" type="button" data-ask="Build a launch package for my brand.">Build a launch package</button></li>
       </ul>
 
       <div class="thread" data-thread aria-live="polite"></div>
 
       <form class="ask" data-ask-form>
-        <label class="visually-hidden" for="question">Your question</label>
+        <label data-i18n="assistant.label" class="visually-hidden" for="question">Your question</label>
         <textarea class="input" id="question" name="question" rows="2"
-                  placeholder="Ask about products, packaging, quantities…" required></textarea>
+                  placeholder="Ask about products, packaging, quantities…"
+                  data-i18n-attr="placeholder:assistant.placeholder" required></textarea>
         <button class="btn btn--primary" type="submit" data-submit data-i18n="assistant.send">Ask</button>
       </form>
 
-      <p class="product__meta" data-assistant-note>
-        Brandora answers from the catalogue it can actually order from. It will
-        tell you when nothing fits rather than suggest something that does not exist.
-      </p>
+      <p class="product__meta" data-assistant-note data-i18n="assistant.footnote">Brandora answers from the catalogue it can actually order from. It will tell you when nothing fits rather than suggest something that does not exist.</p>
 
       <noscript>
         <div class="notice">The assistant needs JavaScript. You can still

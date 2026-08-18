@@ -53,7 +53,7 @@ export const en = {
   /* Landing */
   "sourcing.eyebrow": "What you can source",
   "sourcing.title": "Packaging, print and product",
-  "sourcing.lede": "Everything below is in the catalogue today, priced and orderable in small quantities.",
+  "sourcing.lede": "What Brandora is sourcing now, from manufacturers we are talking to directly.",
   "sourcing.browse": "Browse the full catalogue",
 
   "ask.eyebrow": "Ask Brandora",
@@ -424,6 +424,115 @@ export const en = {
   "join.failed":
     "That did not go through. Try again, or email brandora.union@gmail.com.",
   "error.not-found": "We couldn't find that.",
+  "nav.skip":
+    "Skip to content",
+  "founder.p1":
+    "I built Brandora Union because I noticed a gap I couldn't ignore.",
+  "founder.p2":
+    "Across Africa, there are incredible entrepreneurs building ambitious brands and creating genuinely great products. But too often, the physical presentation of those products doesn't reflect the quality of what's inside.",
+  "founder.p3":
+    "I realized that packaging is not just packaging. It is often the first conversation a customer has with a brand. Before they taste, wear, use, or experience a product, they see it. The shape, the materials, the details, the colors \u2014 all of it creates an immediate feeling about what's inside.",
+  "founder.pull1":
+    "A beautiful, thoughtful package can make a product feel intentional, trustworthy, and worth discovering.",
+  "founder.p4":
+    "Yet for many African brands, accessing high-quality, customized packaging and reliable manufacturing partners can still be difficult, expensive, or unnecessarily complicated.",
+  "founder.p5":
+    "I wanted to change that.",
+  "founder.p6":
+    "I created Brandora Union to make it easier for African entrepreneurs to build brands that look and feel as exceptional as the products they create \u2014 by connecting them with the right products, packaging, manufacturers, and eventually the entire infrastructure needed to bring their ideas into the physical world.",
+  "founder.p7":
+    "Africa has the ideas. Africa has the talent. I believe our brands should have the infrastructure to match.",
+  "founder.pull2":
+    "And C\u00f4te d'Ivoire is where I'm starting.",
+  "assistant.lede":
+    "Ask about products, packaging, quantities or what to launch first. Answers come from your brand and the real catalogue.",
+  "assistant.q1":
+    "What products fit my brand?",
+  "assistant.q2":
+    "What packaging should I use?",
+  "assistant.q3":
+    "What should I launch first?",
+  "assistant.q4":
+    "Build a launch package",
+  "assistant.label":
+    "Your question",
+  "assistant.placeholder":
+    "Ask about products, packaging, quantities\u2026",
+  "assistant.footnote":
+    "Brandora answers from the catalogue it can actually order from. It will tell you when nothing fits rather than suggest something that does not exist.",
+  "brand.section.brand":
+    "The brand",
+  "brand.palette.note":
+    "Derived from your answers, then checked for contrast before you saw it.",
+  "brand.section.mark":
+    "The mark",
+  "brand.mark.note":
+    "A direction, written to be handed to a designer or an image model.",
+  "brand.section.world":
+    "In the world",
+  "brand.world.note":
+    "Your colours and letterforms on the things a customer actually holds.",
+  "brand.cta.products":
+    "Choose your products",
+  "brand.cta.guidelines":
+    "Download brand guidelines",
+  "brand.empty.title":
+    "No brand here yet",
+  "brand.empty.body":
+    "Answer the interview and Brandora will build one.",
+  "brand.loading":
+    "Loading your brand\u2026",
+  "catalog.lede":
+    "Tell us how many you need. Brandora only offers you what you can actually order at that quantity.",
+  "catalog.quantity.label":
+    "How many do you need?",
+  "catalog.near.title":
+    "Available, but not at this quantity",
+  "catalog.near.note":
+    "These need a larger order. The minimum is shown on each.",
+  "home.catalog.loading":
+    "Loading the catalogue\u2026",
+  "interview.dont-know":
+    "I don't know \u2014 help me",
+  "package.recs.note":
+    "Ranked for what you told us, not sorted by price. Every one of these can be ordered at the quantity you set.",
+  "order.title":
+    "Your order",
+  "order.what":
+    "What you ordered",
+  "order.pay":
+    "Continue to payment",
+  "order.check-again":
+    "I have paid \u2014 check again",
+  "quote.place-order":
+    "Place this order",
+  "error.reason-label": "Technical reason",
+  "sourcing.floor.title":
+    "From the factory floor",
+  "sourcing.floor.caption":
+    "Holographic security labels, photographed at the manufacturer we are working with. Not yet in the catalogue \u2014 we are confirming quantities small enough for a bakery.",
+  "sourcing.floor.alt":
+    "A sheet of round gold holographic security labels in their shipping carton",
+  "sourcing.gallery.title":
+    "What we can have made",
+  "sourcing.gallery.note":
+    "Photographs from the manufacturers we are working with \u2014 examples of what they produce. Prices and minimum quantities depend on your design, and we confirm both before quoting.",
+  "sourcing.alt.cartons":
+    "Printed folding cartons in several colours",
+  "sourcing.alt.display":
+    "Printed counter display boxes with matching small boxes",
+  "sourcing.alt.rigid":
+    "A rigid gift box with a printed sleeve and inserts",
+  "sourcing.alt.mailer":
+    "A printed mailer box in green",
+  "sourcing.alt.small":
+    "Small printed boxes for candles",
+  "sourcing.alt.colour":
+    "Printed boxes in pink and yellow",
+  "sourcing.alt.drawer":
+    "Drawer boxes in three colours",
+  "sourcing.alt.labels":
+    "Gold holographic security labels in their carton",
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -18,6 +18,7 @@ import type { AddressInfo } from "node:net";
 
 import { createApp } from "@brandora/server";
 import type { PaymentProvider, PaymentIntent, VerificationResult } from "@brandora/server";
+import { EXAMPLE_CATALOG } from "@brandora/catalog";
 import { openSqlite } from "@brandora/database";
 import { type Money, money } from "@brandora/shared";
 import type { StrategyProvider } from "@brandora/brand-engine";
@@ -120,6 +121,9 @@ async function start(): Promise<Harness> {
   const payments = new StubPaymentProvider();
   const app = await createApp({
     db: openSqlite(":memory:"),
+    // The shipped catalogue is empty by decision, so a test that needs
+    // products supplies its own. See packages/brandora-catalog/src/seed.ts.
+    catalog: EXAMPLE_CATALOG,
     env: ENV,
     strategy,
     payments,
@@ -1124,6 +1128,7 @@ describe("brandora api", () => {
     it("throttles repeated login attempts from one address", async () => {
       const app = await createApp({
         db: openSqlite(":memory:"),
+        catalog: EXAMPLE_CATALOG,
         env: ENV,
         strategy: new StubStrategyProvider(),
         payments: new StubPaymentProvider(),
@@ -1171,6 +1176,9 @@ describe("brandora api without credentials", () => {
   it("refuses to generate a brand rather than inventing one", async () => {
     const app = await createApp({
       db: openSqlite(":memory:"),
+    // The shipped catalogue is empty by decision, so a test that needs
+    // products supplies its own. See packages/brandora-catalog/src/seed.ts.
+    catalog: EXAMPLE_CATALOG,
       env: ENV,
       secureCookies: false,
       logger: { error: () => {} },
@@ -1206,6 +1214,9 @@ describe("brandora api without credentials", () => {
   it("places a real order with no payment provider, and never marks it paid", async () => {
     const app = await createApp({
       db: openSqlite(":memory:"),
+    // The shipped catalogue is empty by decision, so a test that needs
+    // products supplies its own. See packages/brandora-catalog/src/seed.ts.
+    catalog: EXAMPLE_CATALOG,
       env: ENV,
       strategy: new StubStrategyProvider(),
       secureCookies: false,

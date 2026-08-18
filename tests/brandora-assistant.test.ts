@@ -18,7 +18,7 @@ import {
   readQuantity,
   stripCitations,
 } from "@brandora/server";
-import { CATALOG } from "@brandora/catalog";
+import { EXAMPLE_CATALOG } from "@brandora/catalog";
 import type { StrategyProvider } from "@brandora/brand-engine";
 
 const BRAND = {
@@ -45,7 +45,7 @@ class ScriptedProvider implements StrategyProvider {
 }
 
 const askWith = (reply: string, question = "What products fit my brand?") =>
-  ask({ question, brand: BRAND, catalog: CATALOG, provider: new ScriptedProvider(reply) });
+  ask({ question, brand: BRAND, catalog: EXAMPLE_CATALOG, provider: new ScriptedProvider(reply) });
 
 /* --- Reading the question --------------------------------------------------- */
 
@@ -73,7 +73,7 @@ describe("reading a quantity out of a question", () => {
 describe("the prompt the model is given", () => {
   it("carries the brand and only real catalogue rows", async () => {
     const provider = new ScriptedProvider("Anything.");
-    await ask({ question: "What fits my brand?", brand: BRAND, catalog: CATALOG, provider });
+    await ask({ question: "What fits my brand?", brand: BRAND, catalog: EXAMPLE_CATALOG, provider });
 
     const prompt = provider.lastPrompt;
     assert.ok(prompt);
@@ -84,7 +84,7 @@ describe("the prompt the model is given", () => {
     const offered = [...prompt.user.matchAll(/\[(prd_[a-z0-9_]+)\]/gi)].map((m) => m[1]);
     assert.ok(offered.length > 0, "no products were offered to the model");
     for (const id of offered) {
-      assert.ok(CATALOG.some((product) => product.id === id), `${id} is not a real product`);
+      assert.ok(EXAMPLE_CATALOG.some((product) => product.id === id), `${id} is not a real product`);
     }
   });
 
@@ -98,7 +98,7 @@ describe("the prompt the model is given", () => {
 
   it("states each product's real price, minimum and branding confidence", async () => {
     const provider = new ScriptedProvider("ok");
-    await ask({ question: "cups?", brand: BRAND, catalog: CATALOG, provider });
+    await ask({ question: "cups?", brand: BRAND, catalog: EXAMPLE_CATALOG, provider });
     const line = provider.lastPrompt?.user.split("\n").find((l) => l.startsWith("[prd_"));
     assert.ok(line);
     assert.match(line, /per unit/);
@@ -125,7 +125,7 @@ describe("citations", () => {
 
 describe("the assistant cannot put an invented product in front of a customer", () => {
   it("resolves cited products from the catalogue, not from the prose", async () => {
-    const real = CATALOG.find((p) => p.id === "prd_cup_kraft_250");
+    const real = EXAMPLE_CATALOG.find((p) => p.id === "prd_cup_kraft_250");
     assert.ok(real);
 
     // The model quotes a price four times the real one.
@@ -175,14 +175,14 @@ describe("the assistant cannot put an invented product in front of a customer", 
 
   it("labels every product with whether it can be ordered at the stated quantity", async () => {
     const provider = new ScriptedProvider("ok");
-    await ask({ question: "I need 30 cups", brand: BRAND, catalog: CATALOG, provider });
+    await ask({ question: "I need 30 cups", brand: BRAND, catalog: EXAMPLE_CATALOG, provider });
 
     const lines = (provider.lastPrompt?.user ?? "").split("\n").filter((l) => l.startsWith("[prd_"));
     assert.ok(lines.length > 0);
 
     for (const line of lines) {
       const id = /\[(prd_[a-z0-9_]+)\]/.exec(line)?.[1];
-      const product = CATALOG.find((entry) => entry.id === id);
+      const product = EXAMPLE_CATALOG.find((entry) => entry.id === id);
       assert.ok(product, `${id} is not a real product`);
 
       // §35: a product that cannot be ordered at thirty is not hidden — it is

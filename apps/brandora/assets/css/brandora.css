@@ -1882,3 +1882,55 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .page-fr .fr-product__photo { transition: none; }
 }
+/* --- Language, before the dictionary arrives ------------------------------- */
+
+/*
+ * Translatable text is invisible until translated, and only until then.
+ *
+ * `visibility` rather than `display`, so the box keeps its size and the page
+ * does not reflow when the words appear. The attribute is removed by app.js as
+ * soon as the dictionary is applied, and by a 1.2s timeout in the head if the
+ * fetch never lands — a page nobody can read is worse than a page in the wrong
+ * language, so the failure mode is "shows English", not "shows nothing".
+ */
+html[data-i18n-pending] [data-i18n],
+html[data-i18n-pending] [data-i18n-attr] {
+  visibility: hidden;
+}
+
+/* Motion-averse and slow devices alike: no fade, no animation. It is either
+   not yet readable or it is. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-i18n-pending] [data-i18n] { visibility: hidden; }
+}
+
+/* --- Real packaging, from the factories ----------------------------------- */
+
+/*
+ * Four across on a desktop, two on a phone — two rather than one because these
+ * are square product shots and a single column of them scrolls forever on the
+ * device most of this audience is holding.
+ *
+ * `aspect-ratio` with `object-fit: cover` keeps the grid even without letting a
+ * photograph distort: a squashed box is a box the customer will not receive.
+ */
+.samples { margin-top: var(--s6); }
+.samples__grid {
+  list-style: none; margin: var(--s4) 0 0; padding: 0;
+  display: grid; gap: var(--s3);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.samples__tile { margin: 0; }
+.samples__tile img {
+  width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover;
+  display: block; border-radius: var(--radius, 12px);
+  border: 1px solid var(--border);
+  background: var(--surface, #f7f8f7);
+}
+.samples__note {
+  margin: var(--s4) 0 0; max-width: 62ch;
+  font-size: 0.9rem; color: var(--muted, inherit);
+}
+
+@media (max-width: 60rem) { .samples__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .samples__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

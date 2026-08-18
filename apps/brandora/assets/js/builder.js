@@ -338,13 +338,37 @@ function setGenerating(on, message) {
   }
 }
 
+/**
+ * Show the failure, and — when the server named one — the operational cause.
+ *
+ * "We couldn't finish your brand just now" is the right sentence for a
+ * customer and a useless one for whoever has to fix it, and for a founder
+ * testing their own site those are the same person. The reason goes on a
+ * second line, visually quieter, because it is addressed to the second reader.
+ */
 function reportError(err) {
-  const node = el.result.querySelector('[data-error]');
-  if (!node) return;
-  node.textContent = err instanceof ApiError ? err.message : 'Something went wrong. Please try again.';
-  node.hidden = false;
-  node.setAttribute('tabindex', '-1');
-  node.focus();
+  const target = el.result.querySelector('[data-error]');
+  if (!target) return;
+
+  clear(target);
+  target.appendChild(
+    node('p', { text: err instanceof ApiError ? err.readable : t('error.unknown', 'Something went wrong. Please try again.') }),
+  );
+
+  if (err instanceof ApiError && err.reason) {
+    target.appendChild(
+      node('p', {
+        class: 'product__meta',
+        // Not translated: it is a diagnostic token, and the same token has to
+        // be searchable whatever language the site is being read in.
+        text: `${t('error.reason-label', 'Technical reason')}: ${err.reason}`,
+      }),
+    );
+  }
+
+  target.hidden = false;
+  target.setAttribute('tabindex', '-1');
+  target.focus();
 }
 
 /* --- Generating -------------------------------------------------------------- */

@@ -13,6 +13,7 @@ const PREFIXES = {
   product: "prd",
   variant: "var",
   supplier: "sup",
+  supplierContact: "scon",
   supplierProduct: "sprd",
   package: "pkg",
   packageItem: "pki",

@@ -30,7 +30,7 @@ import {
   publicBaseUrl,
 } from "@brandora/config";
 import { type Repositories, type SqlDriver, createRepositories, openDatabase } from "@brandora/database";
-import { money } from "@brandora/shared";
+import { type BrandoraProduct, money } from "@brandora/shared";
 
 import { type ServerLogger, consoleLogger, handle } from "./http.js";
 import { type PaymentProvider, resolvePaymentProvider } from "./payments.js";
@@ -51,6 +51,15 @@ export interface AppOptions {
   env?: Record<string, string | undefined>;
   now?: () => Date;
   rateLimits?: ServerDeps["rateLimits"];
+  /**
+   * The products the catalogue serves.
+   *
+   * Defaults to `CATALOG`, which ships empty on purpose — see
+   * packages/brandora-catalog/src/seed.ts. Tests that need products to filter,
+   * price or rank pass their own fixtures here rather than relying on the
+   * application to carry invented ones for them.
+   */
+  catalog?: readonly BrandoraProduct[];
   /** Secure cookies. Defaults to on unless the base URL is plain http. */
   secureCookies?: boolean;
 }
@@ -107,6 +116,7 @@ export async function createApp(options: AppOptions = {}): Promise<BrandoraApp> 
     env,
     ...(options.now ? { now: options.now } : {}),
     ...(options.rateLimits ? { rateLimits: options.rateLimits } : {}),
+    ...(options.catalog ? { catalog: options.catalog } : {}),
   };
 
   const router = createRouter(deps);

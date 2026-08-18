@@ -16,11 +16,19 @@
 const PROJECT_KEY = 'brandora.project';
 
 export class ApiError extends Error {
-  constructor(status, key, message) {
+  constructor(status, key, message, reason) {
     super(message || '');
     this.name = 'ApiError';
     this.status = status;
     this.key = key;
+    /**
+     * A short category the server sends when a failure has an operational
+     * cause — `ai-key-rejected`, `ai-timeout`, `ai-http-402`. Never shown as
+     * the message; shown *underneath* it, so the person who deployed this can
+     * see why without reading a server log, and a customer can ignore a line
+     * that plainly is not addressed to them.
+     */
+    this.reason = reason;
   }
 
   get isUnauthenticated() {
@@ -87,6 +95,7 @@ async function request(method, path, body) {
       response.status,
       structured ? envelope.code || 'unknown' : envelope || 'unknown',
       structured ? envelope.message : payload.message,
+      structured ? envelope.reason : payload.reason,
     );
   }
   return payload;
