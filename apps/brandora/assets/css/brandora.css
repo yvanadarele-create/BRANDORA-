@@ -1934,3 +1934,43 @@ html[data-i18n-pending] [data-i18n-attr] {
 
 @media (max-width: 60rem) { .samples__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 40rem) { .samples__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/*
+ * The sourcing gallery on the launch page.
+ *
+ * A plain responsive grid rather than a carousel. A visitor deciding whether to
+ * trust a company they have never heard of wants to see everything at once, and
+ * a carousel hides seven photographs behind an interaction most people on a
+ * phone never make.
+ */
+.page-fr .fr-gallery {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 46rem) { .page-fr .fr-gallery { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 68rem) { .page-fr .fr-gallery { grid-template-columns: repeat(4, 1fr); } }
+
+.page-fr .fr-gallery__item {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+.page-fr .fr-gallery__item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  /* The photographs are lit for white studio backdrops. On the near-black field
+     a plain edge would glow; a hairline inside the frame settles them down. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.page-fr .fr-gallery__item figcaption {
+  padding: var(--s3) var(--s4);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}

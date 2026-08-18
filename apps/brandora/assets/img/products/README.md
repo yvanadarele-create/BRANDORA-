@@ -9,6 +9,12 @@ photograph only when one answers with an image.
 
 Exactly these, lowercase, `.jpg`:
 
+Three tiles are already filled from `assets/img/sourcing/` — the cleaned
+supplier photographs prepared by `scripts/prepare-product-photos.py`. Prefer
+that directory: those images are cropped square, redacted of third-party
+wordmarks and a third of the size. Add a file here only for a category the
+sourcing set does not cover.
+
 | File | Tile on the page |
 | --- | --- |
 | `emballages.jpg` | Emballages |

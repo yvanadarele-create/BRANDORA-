@@ -313,37 +313,37 @@
 
       <div class="fr-products__grid">
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="box" data-photo="assets/img/products/emballages.jpg" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="box" data-photo="assets/img/sourcing/boxes-folding-cartons.webp" aria-hidden="true"></div>
           <h3>Emballages</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="cup" data-photo="assets/img/products/gobelets.jpg" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="cup" aria-hidden="true"></div>
           <h3>Gobelets</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="carton" data-photo="assets/img/products/boites.jpg" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="carton" data-photo="assets/img/sourcing/boxes-rigid-gift.webp" aria-hidden="true"></div>
           <h3>Boîtes</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="bag" data-photo="assets/img/products/sachets.jpg" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="bag" aria-hidden="true"></div>
           <h3>Sachets</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="sticker" data-photo="assets/img/products/stickers.jpg" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="sticker" data-photo="assets/img/sourcing/holographic-labels.webp" aria-hidden="true"></div>
           <h3>Stickers</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="card" data-photo="assets/img/products/cartes.jpg" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="card" aria-hidden="true"></div>
           <h3>Cartes de remerciement</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
         <article class="fr-product">
-          <div class="fr-product__visual" data-shape="label" data-photo="assets/img/products/supports.jpg" aria-hidden="true"></div>
+          <div class="fr-product__visual" data-shape="label" aria-hidden="true"></div>
           <h3>Supports de marque</h3>
           <p class="fr-product__note">Visuel à venir</p>
         </article>
@@ -380,34 +380,68 @@
     </div>
   </section>
 
-  <!-- Manufacturer video -->
-  <section class="section fr-video">
+
+  <!--
+    What the factories we are talking to actually produce.
+
+    These are the suppliers' own photographs, cropped by
+    scripts/prepare-product-photos.py — which removes the desk, the hand and the
+    packing carton, and redacts the third-party wordmarks printed on the sample
+    runs. Not one pixel of a product is regenerated: the sizes, the colours and
+    the materials are what the camera recorded, because a holographic film's
+    colour *is* the product and a "cleaned up" version would be a photograph of
+    something the customer never receives.
+
+    Captions say what the item is and nothing else. No price, no lead time, no
+    minimum quantity — those are supplier terms still under negotiation, and a
+    figure only reaches a customer through a real quote.
+  -->
+  <section class="section fr-gallery-section" id="fabrication">
     <div class="wrap">
       <div class="fr-section-head">
-        <p class="eyebrow">Nos fournisseurs</p>
-        <h2>Nous construisons aussi notre réseau de fournisseurs.</h2>
+        <p class="eyebrow">Ce que nous sourçons</p>
+        <h2>Des emballages que nous avons vus, touchés et négociés.</h2>
         <p class="lede">
-          Brandora sélectionne actuellement des partenaires de fabrication fiables pour les
-          emballages, les gobelets, les boîtes, les stickers et les supports de marque. Nous
-          les évaluons sur la qualité, la capacité à produire en petites quantités et la
-          régularité.
+          Un aperçu de la production de nos partenaires actuels. Les modèles, les
+          finitions et les quantités disponibles pour Brandora seront confirmés au
+          fur et à mesure de nos accords.
         </p>
       </div>
 
-      <figure class="fr-player" data-player data-clip="assets/video/manufacturer-video.mp4">
-        <div class="fr-player__stage">
-          <div class="fr-player__pending" data-player-pending>
-            <span class="fr-player__mark" aria-hidden="true"></span>
-            <p class="fr-player__pending-title">Vidéo en préparation</p>
-            <p class="fr-player__pending-note">
-              Une présentation de nos partenaires de fabrication sera publiée ici.
-            </p>
-          </div>
-        </div>
-        <figcaption class="fr-player__caption">
-          Notre réseau de fournisseurs, en cours de constitution.
-        </figcaption>
-      </figure>
+      <div class="fr-gallery">
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/boxes-folding-cartons.webp" alt="Étuis pliants, impression couleur" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Étuis pliants, impression couleur</figcaption>
+        </figure>
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/boxes-rigid-gift.webp" alt="Boîte rigide aimantée" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Boîte rigide aimantée</figcaption>
+        </figure>
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/boxes-drawer.webp" alt="Boîte tiroir" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Boîte tiroir</figcaption>
+        </figure>
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/boxes-display.webp" alt="Boîte présentoir" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Boîte présentoir</figcaption>
+        </figure>
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/boxes-mailer.webp" alt="Boîte d'expédition" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Boîte d'expédition</figcaption>
+        </figure>
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/boxes-printed-colour.webp" alt="Boîte imprimée couleur" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Boîte imprimée couleur</figcaption>
+        </figure>
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/boxes-small-printed.webp" alt="Petite boîte imprimée" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Petite boîte imprimée</figcaption>
+        </figure>
+        <figure class="fr-gallery__item">
+          <img src="assets/img/sourcing/holographic-labels.webp" alt="Étiquettes holographiques" loading="lazy" decoding="async" width="700" height="700">
+          <figcaption>Étiquettes holographiques</figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
