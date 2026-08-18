@@ -28,12 +28,26 @@
   </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catalogue — Brandora Union</title>
-<meta name="description" content="Packaging, brand materials, tableware and merchandise — from ten units, with customisation confirmed rather than assumed.">
+<meta name="description" content="Emballages, matériaux de marque, arts de la table et produits dérivés — dès dix unités, avec une personnalisation confirmée plutôt que supposée.">
+<link rel="canonical" href="https://brandoraunion.online/catalog.html">
+<meta name="robots" content="index, follow">
 <meta name="theme-color" content="#050507">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="site.webmanifest">
 <link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/brandora.css">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brandora Union">
+<meta property="og:title" content="Catalogue — Brandora Union">
+<meta property="og:description" content="Emballages, matériaux de marque, arts de la table et produits dérivés — dès dix unités, avec une personnalisation confirmée plutôt que supposée.">
+<meta property="og:url" content="https://brandoraunion.online/catalog.html">
+<meta property="og:image" content="https://brandoraunion.online/assets/img/founder-1100.jpg">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Catalogue — Brandora Union">
+<meta name="twitter:description" content="Emballages, matériaux de marque, arts de la table et produits dérivés — dès dix unités, avec une personnalisation confirmée plutôt que supposée.">
+<meta name="twitter:image" content="https://brandoraunion.online/assets/img/founder-1100.jpg">
 </head>
 <body>
 
@@ -91,9 +105,9 @@
           <input type="number" id="quantity" min="1" step="1" value="30" data-quantity inputmode="numeric">
         </div>
         <div class="field" style="margin:0">
-          <label for="category">Category</label>
+          <label data-i18n="catalog.category.label" for="category">Category</label>
           <select id="category" data-category>
-            <option value="">All</option>
+            <option value="" data-i18n="catalog.category.all">All</option>
             <option value="packaging" data-i18n="catalog.category.packaging">Packaging</option>
             <option value="brand-materials" data-i18n="catalog.category.brand-materials">Brand materials</option>
             <option value="tableware" data-i18n="catalog.category.tableware">Tableware</option>
@@ -101,8 +115,8 @@
           </select>
         </div>
         <div class="field" style="margin:0">
-          <label for="search">Search</label>
-          <input type="text" id="search" data-search placeholder="cups, stickers, boxes…">
+          <label data-i18n="catalog.search.label" for="search">Search</label>
+          <input type="text" id="search" data-search placeholder="cups, stickers, boxes…" data-i18n-attr="placeholder:catalog.search.placeholder">
         </div>
         <div class="field" style="margin:0;align-self:end">
           <label for="customizable" style="display:flex;gap:0.5rem;align-items:center">
@@ -157,6 +171,7 @@
 
 <script src="assets/js/app.js" defer></script>
 <script type="module" src="assets/js/booking.js"></script>
+<script type="module" src="assets/js/assistant-widget.js"></script>
 <script type="module" src="assets/js/catalog.js"></script>
 </body>
 </html>

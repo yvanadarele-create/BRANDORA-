@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Only the pages a search engine should actually index.
+
+  Brandora is mostly an authenticated tool once someone has an account — the
+  dashboard, the brand book, orders, quotes, the admin and procurement screens
+  all carry <meta name="robots" content="noindex, nofollow"> and are
+  deliberately left out of this file. Listing a page here that the page
+  itself asks not to be indexed is the same contradiction a duplicate robots
+  tag would be; scripts/check-seo.mjs fails the build if the two ever
+  disagree.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://brandoraunion.online/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://brandoraunion.online/create.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://brandoraunion.online/catalog.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

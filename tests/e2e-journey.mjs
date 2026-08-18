@@ -14,7 +14,7 @@ import pw from '/opt/node22/lib/node_modules/playwright/index.js';
  * journey against a deployment — the assertions do not care which, because
  * they are about what a customer sees:
  *
- *   BRANDORA_BASE=https://brandora-rho.vercel.app node tests/e2e-journey.mjs /tmp/shots
+ *   BRANDORA_BASE=https://brandoraunion.online node tests/e2e-journey.mjs /tmp/shots
  *
  * Note that this creates a real account on whatever it points at. Against
  * production that is a real row in your database, with a journey-*@example.com

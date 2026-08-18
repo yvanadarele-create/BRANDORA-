@@ -1,0 +1,23 @@
+# Brandora Union.
+#
+# Everything an account is needed for is disallowed here AND carries its own
+# <meta name="robots" content="noindex, nofollow"> — belt and suspenders,
+# because a crawler that ignores this file still reads the page's own tag.
+# scripts/check-seo.mjs keeps the two lists from drifting apart.
+
+User-agent: *
+Disallow: /admin.html
+Disallow: /assistant.html
+Disallow: /brand.html
+Disallow: /dashboard.html
+Disallow: /login.html
+Disallow: /order.html
+Disallow: /package.html
+Disallow: /procurement.html
+Disallow: /quote.html
+Disallow: /signup.html
+Disallow: /suppliers.html
+Disallow: /testimonials.html
+Disallow: /api/
+
+Sitemap: https://brandoraunion.online/sitemap.xml

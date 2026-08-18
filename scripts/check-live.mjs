@@ -12,7 +12,7 @@
  * in its response; nothing was reading that response out loud.
  *
  * Run:
- *   node scripts/check-live.mjs https://brandora-rho.vercel.app
+ *   node scripts/check-live.mjs https://brandoraunion.online
  *   node scripts/check-live.mjs                    (defaults to localhost:4600)
  *
  * It creates one throwaway account, `live-check-<timestamp>@example.com`. That

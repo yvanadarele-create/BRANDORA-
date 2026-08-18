@@ -97,17 +97,23 @@ needs the headroom.
 ### Verifying it worked
 
 ```
-curl https://brandora-rho.vercel.app/api/health     # {"status":"ok", …}
-curl https://brandora-rho.vercel.app/api/settings   # {"currency":"XOF", …}
-curl -I https://brandora-rho.vercel.app/            # 200, text/html
+curl https://brandoraunion.online/api/health     # {"status":"ok", …}
+curl https://brandoraunion.online/api/settings   # {"currency":"XOF", …}
+curl -I https://brandoraunion.online/            # 200, text/html
 ```
 
 `/api/health` answering is the real signal: it means the function booted, which
 means the secret and the database are both readable. A 200 on `/` alone only
 proves the static files shipped.
 
-`*.vercel.app` is unreachable from the environment this was built in, so the
-production deployment itself is **NOT VERIFIED LIVE**.
+The production domain is `brandoraunion.online` (moved from the earlier
+`brandora-rho.vercel.app` Vercel subdomain). This environment's outbound
+network policy denies both hosts — `curl` to either returns a 403 from the
+egress proxy, not from the site — so the live deployment is **NOT VERIFIED
+LIVE** from here. DNS for `brandoraunion.online` resolves to a Vercel edge IP,
+which is consistent with the domain having been attached in the Vercel
+dashboard, but that is an inference, not a verification: run the three curls
+above from a machine with normal internet access to actually confirm it.
 
 ---
 
@@ -216,7 +222,7 @@ paste the value, tick **Production**, **Preview** and **Development**, **Save**.
 | --- | --- | --- |
 | `BRANDORA_DATABASE_URL` | your **pooled** Postgres string | Data does not persist between invocations |
 | `BRANDORA_AUTH_SECRET` | a fresh 32-byte base64 string | **The server refuses to start** |
-| `BRANDORA_PUBLIC_BASE_URL` | `https://<your-domain>` | Payment returns land on the wrong host |
+| `BRANDORA_PUBLIC_BASE_URL` | `https://brandoraunion.online` | Payment returns land on the wrong host |
 | `ANTHROPIC_API_KEY` | your key | Brand generation fails with a clear message. It does not invent a brand |
 | `PAYSTACK_SECRET_KEY` | your key | Orders are placed and wait for an admin to confirm an arranged payment |
 | `BRANDORA_CALENDLY_URL` | `https://calendly.com/yvanadarele/30min` | The "Book a call" controls hide themselves |
