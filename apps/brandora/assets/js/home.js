@@ -215,6 +215,65 @@ function mountSubscribe() {
   });
 }
 
+/**
+ * The footer's own subscribe form.
+ *
+ * Deliberately the short version of mountSubscribe() above — one field,
+ * because a footer is not where someone stops to answer four questions. It
+ * posts to the same /api/subscribe route and gets the same courtesy-only
+ * client-side check; the server does not know or care which form a
+ * subscription came from beyond the `source` it is tagged with.
+ */
+function mountFooterSubscribe() {
+  const form = document.querySelector('[data-footer-subscribe-form]');
+  if (!form) return;
+
+  const input = form.querySelector('#footer-subscribe-email');
+  const submit = form.querySelector('[data-footer-subscribe-submit]');
+  const status = form.querySelector('[data-footer-subscribe-status]');
+
+  const say = (message, kind) => {
+    status.hidden = false;
+    status.textContent = message;
+    status.className = `footer-subscribe__status footer-subscribe__status--${kind}`;
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const email = (input.value ?? '').trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      say(t('join.bad-email', 'That does not look like an email address.'), 'error');
+      input.focus();
+      return;
+    }
+
+    submit.disabled = true;
+    const original = submit.textContent;
+    submit.textContent = t('join.sending', 'Sending…');
+
+    try {
+      await api.post('/api/subscribe', {
+        email,
+        locale: document.documentElement.getAttribute('lang') || 'en',
+        source: 'footer',
+      });
+      form.reset();
+      say(t('join.ok', "You're on the list. We'll be in touch as this grows."), 'ok');
+    } catch (err) {
+      say(
+        err instanceof ApiError && err.status === 429
+          ? t('join.too-many', 'Too many attempts from here. Try again a little later.')
+          : t('join.failed', 'That did not go through. Try again, or email brandora.union@gmail.com.'),
+        'error',
+      );
+    } finally {
+      submit.disabled = false;
+      submit.textContent = original;
+    }
+  });
+}
+
 /* --- The year in the footer -------------------------------------------------- */
 
 function mountYear() {
@@ -226,6 +285,7 @@ function mountYear() {
 
 mountYear();
 mountSubscribe();
+mountFooterSubscribe();
 void mountCatalogue();
 // The category tiles carry counts and "from N units" — both built in script.
 onLocaleChange(() => void mountCatalogue());

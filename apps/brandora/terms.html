@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+  <script>
+    /* Language before first paint.
+       app.js applies the dictionary, but it has to fetch 21KB first, and until it
+       lands the authored English is on screen — a French visitor watching English
+       turn into French is exactly the "mixed language" complaint. So the language
+       is decided here, synchronously, and translatable text is held invisible
+       (not removed: visibility keeps the layout, so nothing jumps) until the
+       dictionary is applied. The timeout is the safety net — a failed fetch must
+       leave a readable page, never a blank one. */
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conditions d'utilisation — Brandora Union</title>
+<meta name="description" content="Les conditions qui s'appliquent lorsque vous utilisez Brandora Union pour créer une marque, demander un devis ou passer commande.">
+<link rel="canonical" href="https://brandoraunion.online/terms.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brandora Union">
+<meta property="og:title" content="Conditions d'utilisation — Brandora Union">
+<meta property="og:description" content="Les conditions qui s'appliquent lorsque vous utilisez Brandora Union pour créer une marque, demander un devis ou passer commande.">
+<meta property="og:url" content="https://brandoraunion.online/terms.html">
+<meta property="og:locale" content="fr_FR">
+</head>
+<body>
+
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html" aria-label="Brandora Union — home">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__stack">
+        <span class="brand-lockup__word">BRANDORA</span>
+        <span class="brand-lockup__union">UNION</span>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="assistant.html" data-when-signed-in hidden data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="procurement.html" data-when-admin hidden>Sourcing</a>
+      <a href="testimonials.html" data-when-admin hidden>Testimonials</a>
+    </nav>
+
+    <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="wrap wrap--narrow legal">
+      <p class="eyebrow" data-i18n="legal.eyebrow">Mentions légales</p>
+      <h1 data-i18n="legal.terms.title">Conditions d'utilisation</h1>
+      <p class="lede" data-i18n="legal.terms.updated">Dernière mise à jour en août 2026.</p>
+
+      <p data-i18n="legal.terms.intro">
+        Voici les conditions d'utilisation de brandoraunion.online, exploité
+        par Brandora Union depuis Abidjan, Côte d'Ivoire. Créer un compte,
+        demander un devis ou passer une commande signifie que vous les
+        acceptez.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.service">Le service</h2>
+      <p data-i18n="legal.terms.p.service-1">
+        Brandora génère une marque — un nom, un positionnement, une palette et
+        une identité — à partir de vos réponses, et vous aide à la
+        transformer en produits physiques de notre catalogue. Certains
+        produits ont un prix fixe à une quantité donnée ; d'autres sont
+        marqués « prix sur demande » parce que le coût dépend d'un tarif de
+        fret que nous n'avons pas encore obtenu, et nous ne vous montrerons
+        jamais un chiffre inventé à sa place.
+      </p>
+      <p data-i18n="legal.terms.p.service-2">
+        Il n'existe pas encore de place de marché pour les fabricants sur
+        Brandora. Cliquer sur la photo d'un produit pour demander un devis
+        envoie votre demande par e-mail ; nous vous recontactons directement
+        plutôt que via un portail automatisé.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.accounts">Comptes</h2>
+      <p data-i18n="legal.terms.p.accounts">
+        Vous êtes responsable de l'exactitude des informations de votre
+        compte et de la confidentialité de votre mot de passe. Vous devez
+        être en capacité de conclure un contrat pour en créer un.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.orders">Commandes, tarifs et paiement</h2>
+      <p data-i18n="legal.terms.p.orders-1">
+        Les prix sont affichés en francs CFA ouest-africains (XOF) et
+        incluent la marge de sourcing et de coordination de Brandora. Un
+        devis est valable pour la durée indiquée dessus ; passé ce délai, les
+        prix peuvent avoir changé et un nouveau devis est nécessaire.
+      </p>
+      <p data-i18n="legal.terms.p.orders-2">
+        Le paiement est traité par Paystack. Nous ne voyons ni ne conservons
+        jamais les données de votre carte. Une commande est confirmée une
+        fois le paiement vérifié comme reçu.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.delivery">Livraison</h2>
+      <p data-i18n="legal.terms.p.delivery">
+        Les frais de livraison affichés au paiement sont notre propre frais
+        de livraison locale, pas un tarif transporteur — nous ne publions une
+        date de livraison qu'une fois qu'elle a réellement été confirmée pour
+        votre commande.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.cancellation">Annulations</h2>
+      <p data-i18n="legal.terms.p.cancellation">
+        Comme la plupart des commandes sont fabriquées pour vous plutôt que
+        stockées, les conditions d'annulation dépendent de l'avancement de la
+        production au moment où vous demandez — contactez-nous dès que
+        possible, et nous vous dirons précisément où en sont les choses.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.ip">Propriété intellectuelle</h2>
+      <p data-i18n="legal.terms.p.ip">
+        La marque, le nom et l'identité que Brandora génère pour vous vous
+        appartiennent une fois votre commande payée. Brandora Union conserve
+        la propriété du logiciel, du catalogue et du site lui-même.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.liability">Responsabilité</h2>
+      <p data-i18n="legal.terms.p.liability">
+        Nous nous efforçons de fournir des informations de prix, de
+        disponibilité et de livraison exactes, mais Brandora n'est pas
+        responsable des pertes indirectes résultant de retards ou d'erreurs
+        hors de notre contrôle raisonnable, y compris de la part de nos
+        fournisseurs ou de notre prestataire de paiement.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.law">Droit applicable</h2>
+      <p data-i18n="legal.terms.p.law">
+        Ces conditions sont régies par le droit de Côte d'Ivoire.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.changes">Modifications de ces conditions</h2>
+      <p data-i18n="legal.terms.p.changes">
+        Si nous modifions ces conditions de façon significative, nous
+        mettrons à jour la date en haut de cette page.
+      </p>
+
+      <h2 data-i18n="legal.terms.h.contact">Contact</h2>
+      <p>
+        Brandora Union, Abidjan, Côte d'Ivoire —
+        <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+        · <a href="tel:0556140994">0556140994</a>.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__identity">
+    <p class="site-footer__name">Brandora&nbsp;Union</p>
+    <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
+    <p class="site-footer__contact">
+      <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+      <span aria-hidden="true">·</span>
+      <a href="tel:0556140994">0556140994</a>
+    </p>
+  </div>
+  <div class="wrap site-footer__row">
+    <a href="create.html" data-i18n="nav.create">Create my brand</a>
+    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="privacy.html" data-i18n="footer.privacy">Privacy policy</a>
+    <a href="terms.html" data-i18n="footer.terms">Terms of service</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
+<script type="module" src="assets/js/assistant-widget.js"></script>
+</body>
+</html>

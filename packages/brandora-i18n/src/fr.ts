@@ -86,6 +86,11 @@ export const fr: Catalogue = {
   "footer.about": "À propos",
   "footer.contact": "Contact",
   "footer.place": "Abidjan, Côte d'Ivoire",
+  "footer.privacy": "Politique de confidentialité",
+  "footer.terms": "Conditions d'utilisation",
+  "footer.newsletter.heading": "Restez informé",
+  "footer.newsletter.label": "Votre e-mail",
+  "footer.newsletter.cta": "S'abonner",
 
   "network.stat.makers": "Fabricants",
   "network.stat.countries": "Pays",
@@ -669,4 +674,83 @@ export const fr: Catalogue = {
     "\u00c9tiquette",
   "brand.world.caveat":
     "Vos couleurs et vos lettres sur les mati\u00e8res r\u00e9elles que Brandora source. Une indication, pas un bon \u00e0 tirer \u2014 c'est le fabricant qui le produit une fois vos fichiers re\u00e7us.",
+
+  "legal.eyebrow": "Mentions l\u00e9gales",
+
+  "legal.privacy.title": "Politique de confidentialit\u00e9",
+  "legal.privacy.updated": "Derni\u00e8re mise \u00e0 jour en ao\u00fbt 2026.",
+  "legal.privacy.intro":
+    "Brandora Union (\u00ab Brandora \u00bb, \u00ab nous \u00bb) cr\u00e9e des marques et fait fabriquer les produits qui les portent pour de petites entreprises, depuis Abidjan, C\u00f4te d'Ivoire. Cette page d\u00e9crit ce que nous collectons sur brandoraunion.online, pourquoi, et ce que vous pouvez nous demander \u00e0 ce sujet.",
+  "legal.privacy.h.collect": "Ce que nous collectons",
+  "legal.privacy.p.collect-1":
+    "\u00c0 la cr\u00e9ation de votre compte : votre nom, votre adresse e-mail et votre mot de passe, ainsi que \u2014 seulement si vous choisissez de les donner \u2014 votre pays et votre num\u00e9ro de t\u00e9l\u00e9phone.",
+  "legal.privacy.p.collect-2":
+    "Quand vous utilisez le cr\u00e9ateur de marque : vos r\u00e9ponses aux questions de l'entretien (votre activit\u00e9, votre produit, votre public, votre positionnement), et la marque, l'identit\u00e9 et le pack que Brandora en g\u00e9n\u00e8re.",
+  "legal.privacy.p.collect-3":
+    "Quand vous demandez un devis, passez une commande, ou t\u00e9l\u00e9versez un logo pour un fabricant : les informations que vous saisissez dans ce formulaire, et le fichier lui-m\u00eame.",
+  "legal.privacy.p.collect-4":
+    "Si vous vous connectez avec Google, nous recevons le nom, l'adresse e-mail et la photo de profil que Google partage \u00e0 cette fin \u2014 rien d'autre de votre compte Google.",
+  "legal.privacy.h.use": "Pourquoi nous l'utilisons",
+  "legal.privacy.p.use":
+    "Pour faire fonctionner votre compte, g\u00e9n\u00e9rer votre marque, calculer et honorer vos commandes, r\u00e9pondre \u00e0 vos demandes de devis, et vous r\u00e9pondre quand vous nous contactez. Nous ne vendons pas vos donn\u00e9es et ne les utilisons pas pour vous montrer de la publicit\u00e9.",
+  "legal.privacy.h.share": "Avec qui nous les partageons",
+  "legal.privacy.p.share-1":
+    "Un petit nombre de prestataires traitent des donn\u00e9es pour notre compte, uniquement dans le but indiqu\u00e9 : Anthropic g\u00e9n\u00e8re votre strat\u00e9gie de marque et votre identit\u00e9 \u00e0 partir de vos r\u00e9ponses \u00e0 l'entretien ; Resend d\u00e9livre nos e-mails transactionnels (compte, commandes, devis) ; Paystack traite les paiements \u2014 Brandora ne voit ni ne conserve jamais les donn\u00e9es de votre carte ; et, si vous les utilisez, Google pour la connexion et Calendly pour r\u00e9server un appel appliquent leur propre politique de confidentialit\u00e9 pour cette interaction.",
+  "legal.privacy.p.share-2":
+    "Nous ne partageons vos donn\u00e9es avec personne d'autre, et nous n'utilisons aucun traceur publicitaire ni analytique sur ce site.",
+  "legal.privacy.h.cookies": "Cookies et stockage local",
+  "legal.privacy.p.cookies":
+    "Un seul cookie vous garde connect\u00e9 \u2014 il identifie votre session et rien d'autre, et aucun script de cette page ne peut le lire. Votre langue, votre pr\u00e9f\u00e9rence clair ou sombre, et la marque sur laquelle vous travailliez sont conserv\u00e9es dans le stockage de votre propre navigateur, sur votre appareil, pour que revenir sur le site ne les efface pas.",
+  "legal.privacy.h.retention": "Combien de temps nous les gardons",
+  "legal.privacy.p.retention-1":
+    "Nous gardons vos donn\u00e9es tant que votre compte est actif. Nous n'avons pas encore de moyen en libre-service d'exporter ou de supprimer votre compte \u2014 \u00e9crivez \u00e0",
+  "legal.privacy.p.retention-2":
+    "et nous nous en occuperons directement.",
+  "legal.privacy.h.rights": "Vos droits",
+  "legal.privacy.p.rights":
+    "Vous pouvez nous demander ce que nous d\u00e9tenons sur vous, nous demander de le corriger, ou nous demander de le supprimer, \u00e0 la m\u00eame adresse. Nous donnerons suite \u00e0 une demande de suppression, sauf si nous devons conserver quelque chose \u2014 l'historique d'une commande pay\u00e9e, par exemple \u2014 pour des raisons comptables ou l\u00e9gales.",
+  "legal.privacy.h.children": "Enfants",
+  "legal.privacy.p.children":
+    "Brandora est un service destin\u00e9 aux entreprises et ne s'adresse pas aux enfants. Nous ne collectons pas sciemment de donn\u00e9es de personnes de moins de 16 ans.",
+  "legal.privacy.h.changes": "Modifications de cette politique",
+  "legal.privacy.p.changes":
+    "Si cette politique change de fa\u00e7on significative, nous mettrons \u00e0 jour la date en haut de cette page et, pour un changement important, nous vous pr\u00e9viendrons par e-mail.",
+  "legal.privacy.h.contact": "Contact",
+
+  "legal.terms.title": "Conditions d'utilisation",
+  "legal.terms.updated": "Derni\u00e8re mise \u00e0 jour en ao\u00fbt 2026.",
+  "legal.terms.intro":
+    "Voici les conditions d'utilisation de brandoraunion.online, exploit\u00e9 par Brandora Union depuis Abidjan, C\u00f4te d'Ivoire. Cr\u00e9er un compte, demander un devis ou passer une commande signifie que vous les acceptez.",
+  "legal.terms.h.service": "Le service",
+  "legal.terms.p.service-1":
+    "Brandora g\u00e9n\u00e8re une marque \u2014 un nom, un positionnement, une palette et une identit\u00e9 \u2014 \u00e0 partir de vos r\u00e9ponses, et vous aide \u00e0 la transformer en produits physiques de notre catalogue. Certains produits ont un prix fixe \u00e0 une quantit\u00e9 donn\u00e9e ; d'autres sont marqu\u00e9s \u00ab prix sur demande \u00bb parce que le co\u00fbt d\u00e9pend d'un tarif de fret que nous n'avons pas encore obtenu, et nous ne vous montrerons jamais un chiffre invent\u00e9 \u00e0 sa place.",
+  "legal.terms.p.service-2":
+    "Il n'existe pas encore de place de march\u00e9 pour les fabricants sur Brandora. Cliquer sur la photo d'un produit pour demander un devis envoie votre demande par e-mail ; nous vous recontactons directement plut\u00f4t que via un portail automatis\u00e9.",
+  "legal.terms.h.accounts": "Comptes",
+  "legal.terms.p.accounts":
+    "Vous \u00eates responsable de l'exactitude des informations de votre compte et de la confidentialit\u00e9 de votre mot de passe. Vous devez \u00eatre en capacit\u00e9 de conclure un contrat pour en cr\u00e9er un.",
+  "legal.terms.h.orders": "Commandes, tarifs et paiement",
+  "legal.terms.p.orders-1":
+    "Les prix sont affich\u00e9s en francs CFA ouest-africains (XOF) et incluent la marge de sourcing et de coordination de Brandora. Un devis est valable pour la dur\u00e9e indiqu\u00e9e dessus ; pass\u00e9 ce d\u00e9lai, les prix peuvent avoir chang\u00e9 et un nouveau devis est n\u00e9cessaire.",
+  "legal.terms.p.orders-2":
+    "Le paiement est trait\u00e9 par Paystack. Nous ne voyons ni ne conservons jamais les donn\u00e9es de votre carte. Une commande est confirm\u00e9e une fois le paiement v\u00e9rifi\u00e9 comme re\u00e7u.",
+  "legal.terms.h.delivery": "Livraison",
+  "legal.terms.p.delivery":
+    "Les frais de livraison affich\u00e9s au paiement sont notre propre frais de livraison locale, pas un tarif transporteur \u2014 nous ne publions une date de livraison qu'une fois qu'elle a r\u00e9ellement \u00e9t\u00e9 confirm\u00e9e pour votre commande.",
+  "legal.terms.h.cancellation": "Annulations",
+  "legal.terms.p.cancellation":
+    "Comme la plupart des commandes sont fabriqu\u00e9es pour vous plut\u00f4t que stock\u00e9es, les conditions d'annulation d\u00e9pendent de l'avancement de la production au moment o\u00f9 vous demandez \u2014 contactez-nous d\u00e8s que possible, et nous vous dirons pr\u00e9cis\u00e9ment o\u00f9 en sont les choses.",
+  "legal.terms.h.ip": "Propri\u00e9t\u00e9 intellectuelle",
+  "legal.terms.p.ip":
+    "La marque, le nom et l'identit\u00e9 que Brandora g\u00e9n\u00e8re pour vous vous appartiennent une fois votre commande pay\u00e9e. Brandora Union conserve la propri\u00e9t\u00e9 du logiciel, du catalogue et du site lui-m\u00eame.",
+  "legal.terms.h.liability": "Responsabilit\u00e9",
+  "legal.terms.p.liability":
+    "Nous nous effor\u00e7ons de fournir des informations de prix, de disponibilit\u00e9 et de livraison exactes, mais Brandora n'est pas responsable des pertes indirectes r\u00e9sultant de retards ou d'erreurs hors de notre contr\u00f4le raisonnable, y compris de la part de nos fournisseurs ou de notre prestataire de paiement.",
+  "legal.terms.h.law": "Droit applicable",
+  "legal.terms.p.law":
+    "Ces conditions sont r\u00e9gies par le droit de C\u00f4te d'Ivoire.",
+  "legal.terms.h.changes": "Modifications de ces conditions",
+  "legal.terms.p.changes":
+    "Si nous modifions ces conditions de fa\u00e7on significative, nous mettrons \u00e0 jour la date en haut de cette page.",
+  "legal.terms.h.contact": "Contact",
 };

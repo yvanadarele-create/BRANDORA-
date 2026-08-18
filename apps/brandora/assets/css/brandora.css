@@ -635,6 +635,11 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 
 .scroll-x { overflow-x: auto; }
 
+/* --- Legal pages (privacy, terms) ------------------------------------------ */
+
+.legal h2 { margin-top: var(--s7); font-size: 1.2rem; }
+.legal .lede { color: var(--ink-faint); }
+
 /* --- Notices -------------------------------------------------------------- */
 
 .notice {
@@ -1479,8 +1484,19 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   color: var(--ink-faint); margin: 0 0 var(--s2);
 }
 .site-footer__place { color: var(--ink-faint); font-size: 0.85rem; margin: var(--s2) 0 0; }
+
+.site-footer__newsletter {
+  margin-top: var(--s6); padding-top: var(--s5);
+  border-top: 1px solid var(--border);
+}
+.footer-subscribe { display: flex; gap: var(--s2); flex-wrap: wrap; max-width: 26rem; }
+.footer-subscribe .input { flex: 1; min-width: 12rem; }
+.footer-subscribe__status { width: 100%; margin: var(--s2) 0 0; font-size: 0.85rem; }
+.footer-subscribe__status--ok { color: var(--accent); }
+.footer-subscribe__status--error { color: var(--warn); }
+
 .site-footer__base {
-  margin-top: var(--s6); padding-top: var(--s4);
+  margin-top: var(--s5); padding-top: var(--s4);
   border-top: 1px solid var(--border);
 }
 .site-footer__legal { margin: 0; color: var(--ink-faint); font-size: 0.82rem; }

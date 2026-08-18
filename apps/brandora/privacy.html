@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+  <script>
+    /* Language before first paint.
+       app.js applies the dictionary, but it has to fetch 21KB first, and until it
+       lands the authored English is on screen — a French visitor watching English
+       turn into French is exactly the "mixed language" complaint. So the language
+       is decided here, synchronously, and translatable text is held invisible
+       (not removed: visibility keeps the layout, so nothing jumps) until the
+       dictionary is applied. The timeout is the safety net — a failed fetch must
+       leave a readable page, never a blank one. */
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Politique de confidentialité — Brandora Union</title>
+<meta name="description" content="Ce que Brandora Union collecte, pourquoi, avec qui c'est partagé, et comment nous contacter au sujet de vos données.">
+<link rel="canonical" href="https://brandoraunion.online/privacy.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brandora Union">
+<meta property="og:title" content="Politique de confidentialité — Brandora Union">
+<meta property="og:description" content="Ce que Brandora Union collecte, pourquoi, avec qui c'est partagé, et comment nous contacter au sujet de vos données.">
+<meta property="og:url" content="https://brandoraunion.online/privacy.html">
+<meta property="og:locale" content="fr_FR">
+</head>
+<body>
+
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html" aria-label="Brandora Union — home">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__stack">
+        <span class="brand-lockup__word">BRANDORA</span>
+        <span class="brand-lockup__union">UNION</span>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="assistant.html" data-when-signed-in hidden data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="procurement.html" data-when-admin hidden>Sourcing</a>
+      <a href="testimonials.html" data-when-admin hidden>Testimonials</a>
+    </nav>
+
+    <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="wrap wrap--narrow legal">
+      <p class="eyebrow" data-i18n="legal.eyebrow">Mentions légales</p>
+      <h1 data-i18n="legal.privacy.title">Politique de confidentialité</h1>
+      <p class="lede" data-i18n="legal.privacy.updated">Dernière mise à jour en août 2026.</p>
+
+      <p data-i18n="legal.privacy.intro">
+        Brandora Union (« Brandora », « nous ») crée des marques et fait
+        fabriquer les produits qui les portent pour de petites entreprises,
+        depuis Abidjan, Côte d'Ivoire. Cette page décrit ce que nous
+        collectons sur brandoraunion.online, pourquoi, et ce que vous pouvez
+        nous demander à ce sujet.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.collect">Ce que nous collectons</h2>
+      <p data-i18n="legal.privacy.p.collect-1">
+        À la création de votre compte : votre nom, votre adresse e-mail et
+        votre mot de passe, ainsi que — seulement si vous choisissez de les
+        donner — votre pays et votre numéro de téléphone.
+      </p>
+      <p data-i18n="legal.privacy.p.collect-2">
+        Quand vous utilisez le créateur de marque : vos réponses aux questions
+        de l'entretien (votre activité, votre produit, votre public, votre
+        positionnement), et la marque, l'identité et le pack que Brandora en
+        génère.
+      </p>
+      <p data-i18n="legal.privacy.p.collect-3">
+        Quand vous demandez un devis, passez une commande, ou téléversez un
+        logo pour un fabricant : les informations que vous saisissez dans ce
+        formulaire, et le fichier lui-même.
+      </p>
+      <p data-i18n="legal.privacy.p.collect-4">
+        Si vous vous connectez avec Google, nous recevons le nom, l'adresse
+        e-mail et la photo de profil que Google partage à cette fin — rien
+        d'autre de votre compte Google.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.use">Pourquoi nous l'utilisons</h2>
+      <p data-i18n="legal.privacy.p.use">
+        Pour faire fonctionner votre compte, générer votre marque, calculer et
+        honorer vos commandes, répondre à vos demandes de devis, et vous
+        répondre quand vous nous contactez. Nous ne vendons pas vos données et
+        ne les utilisons pas pour vous montrer de la publicité.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.share">Avec qui nous les partageons</h2>
+      <p data-i18n="legal.privacy.p.share-1">
+        Un petit nombre de prestataires traitent des données pour notre
+        compte, uniquement dans le but indiqué : Anthropic génère votre
+        stratégie de marque et votre identité à partir de vos réponses à
+        l'entretien ; Resend délivre nos e-mails transactionnels (compte,
+        commandes, devis) ; Paystack traite les paiements — Brandora ne voit
+        ni ne conserve jamais les données de votre carte ; et, si vous les
+        utilisez, Google pour la connexion et Calendly pour réserver un appel
+        appliquent leur propre politique de confidentialité pour cette
+        interaction.
+      </p>
+      <p data-i18n="legal.privacy.p.share-2">
+        Nous ne partageons vos données avec personne d'autre, et nous
+        n'utilisons aucun traceur publicitaire ni analytique sur ce site.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.cookies">Cookies et stockage local</h2>
+      <p data-i18n="legal.privacy.p.cookies">
+        Un seul cookie vous garde connecté — il identifie votre session et
+        rien d'autre, et aucun script de cette page ne peut le lire. Votre
+        langue, votre préférence clair ou sombre, et la marque sur laquelle
+        vous travailliez sont conservées dans le stockage de votre propre
+        navigateur, sur votre appareil, pour que revenir sur le site ne les
+        efface pas.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.retention">Combien de temps nous les gardons</h2>
+      <p>
+        <span data-i18n="legal.privacy.p.retention-1">Nous gardons vos données tant que votre compte est actif. Nous
+        n'avons pas encore de moyen en libre-service d'exporter ou de
+        supprimer votre compte — écrivez à</span>
+        <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+        <span data-i18n="legal.privacy.p.retention-2">et nous nous en occuperons directement.</span>
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.rights">Vos droits</h2>
+      <p data-i18n="legal.privacy.p.rights">
+        Vous pouvez nous demander ce que nous détenons sur vous, nous demander
+        de le corriger, ou nous demander de le supprimer, à la même adresse.
+        Nous donnerons suite à une demande de suppression, sauf si nous devons
+        conserver quelque chose — l'historique d'une commande payée, par
+        exemple — pour des raisons comptables ou légales.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.children">Enfants</h2>
+      <p data-i18n="legal.privacy.p.children">
+        Brandora est un service destiné aux entreprises et ne s'adresse pas
+        aux enfants. Nous ne collectons pas sciemment de données de personnes
+        de moins de 16 ans.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.changes">Modifications de cette politique</h2>
+      <p data-i18n="legal.privacy.p.changes">
+        Si cette politique change de façon significative, nous mettrons à
+        jour la date en haut de cette page et, pour un changement important,
+        nous vous préviendrons par e-mail.
+      </p>
+
+      <h2 data-i18n="legal.privacy.h.contact">Contact</h2>
+      <p>
+        Brandora Union, Abidjan, Côte d'Ivoire —
+        <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+        · <a href="tel:0556140994">0556140994</a>.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__identity">
+    <p class="site-footer__name">Brandora&nbsp;Union</p>
+    <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
+    <p class="site-footer__contact">
+      <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+      <span aria-hidden="true">·</span>
+      <a href="tel:0556140994">0556140994</a>
+    </p>
+  </div>
+  <div class="wrap site-footer__row">
+    <a href="create.html" data-i18n="nav.create">Create my brand</a>
+    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="privacy.html" data-i18n="footer.privacy">Privacy policy</a>
+    <a href="terms.html" data-i18n="footer.terms">Terms of service</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
+<script type="module" src="assets/js/assistant-widget.js"></script>
+</body>
+</html>

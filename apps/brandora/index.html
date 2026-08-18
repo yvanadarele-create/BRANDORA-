@@ -667,16 +667,26 @@
       <a href="#network" data-i18n="footer.network">Manufacturers</a>
       <a href="#founder" data-i18n="footer.about">About</a>
       <a href="mailto:brandora.union@gmail.com" data-i18n="footer.contact">Contact</a>
+      <a href="privacy.html" data-i18n="footer.privacy">Privacy policy</a>
+      <a href="terms.html" data-i18n="footer.terms">Terms of service</a>
     </nav>
+  </div>
+
+  <div class="wrap site-footer__newsletter">
+    <p class="site-footer__heading" data-i18n="footer.newsletter.heading">Stay in the loop</p>
+    <form class="footer-subscribe" data-footer-subscribe-form novalidate>
+      <label class="visually-hidden" for="footer-subscribe-email" data-i18n="footer.newsletter.label">Your email</label>
+      <input class="input" id="footer-subscribe-email" name="email" type="email" required
+             maxlength="254" placeholder="you@example.com" data-i18n-attr="placeholder:join.placeholder"
+             autocomplete="email">
+      <button class="btn btn--small btn--primary" type="submit" data-footer-subscribe-submit data-i18n="footer.newsletter.cta">Subscribe</button>
+      <p class="footer-subscribe__status" data-footer-subscribe-status role="status" hidden></p>
+    </form>
   </div>
 
   <div class="wrap site-footer__base">
     <p class="site-footer__legal">© <span data-year>2026</span> Brandora Union</p>
-    <!--
-      No social links until there are accounts to link to, and no privacy or
-      terms link until those pages exist. A footer link that goes nowhere is
-      worse than an absent one.
-    -->
+    <!-- No social links until there are accounts to link to. -->
   </div>
 </footer>
 
