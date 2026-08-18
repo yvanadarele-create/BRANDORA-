@@ -568,6 +568,30 @@ export const fr: Catalogue = {
     "Six formes de couverts en bois pos\xe9es sur de l'ardoise, avec un sachet papier",
   "sourcing.alt.spoon":
     "Une cuill\xe8re jetable blanche",
+  "sourcing.alt.cupsSet":
+    "Un gobelet \xe0 boisson glac\xe9e, son couvercle bomb\xe9 et une paille",
+  "sourcing.alt.cupChart":
+    "Le tableau des tailles d'un fournisseur pour des pots transparents, de 30 \xe0 300ml",
+  "sourcing.alt.bagsColour":
+    "Sacs \xe0 poign\xe9e d\xe9coup\xe9e en cinq couleurs",
+  "sourcing.alt.cupDomeNavy":
+    "Un gobelet transparent \xe0 couvercle bomb\xe9",
+  "sourcing.alt.boxKraftSmall":
+    "Une petite bo\xeete kraft, ferm\xe9e puis ouverte",
+  "sourcing.alt.boxKraftStacked":
+    "Deux bo\xeetes kraft empil\xe9es",
+  "sourcing.alt.boxShippingPink":
+    "Une bo\xeete d'exp\xe9dition rose ouverte sur son calage en papier froiss\xe9",
+  "sourcing.alt.trayBagasse":
+    "Un plateau en fibre \xe0 compartiments, avec son couvercle",
+  "sourcing.alt.boxKraftWindow":
+    "Une bo\xeete kraft \xe0 fen\xeatre transparente, ferm\xe9e puis ouverte",
+  "sourcing.alt.bagsKraftHandles":
+    "Sacs kraft \xe0 poign\xe9es cord\xe9es, plusieurs tailles",
+  "sourcing.alt.pouchStandup":
+    "Pochettes kraft autoportantes \xe0 fen\xeatre transparente",
+  "sourcing.alt.bagsBakeryHand":
+    "Trois tailles de sac boulangerie \xe0 fen\xeatre, l'un tenu \xe0 la main",
   "sourcing.alt.labels":
     "\u00c9tiquettes holographiques dor\u00e9es dans leur carton",
   "brand.app.carton":

@@ -304,3 +304,132 @@ print(
     "                       having, so they go into the sourcing data as specifications —\n"
     "                       a table is not a product photograph.\n"
 )
+
+
+# ---------------------------------------------------------------------------
+# Third batch, added 18 Aug 2026 (evening) — twenty photos this time, and for
+# the first time more than half do not survive the same three tests the first
+# two batches were held to: a small food business would order it, no supplier
+# logo, no other company's brand.
+#
+# Two are outright design templates rather than photographs of a physical
+# product — an Etsy-style thank-you-card mockup with literal placeholder text
+# ("@SOCIALHANDLE", "WWW.YOURWEBSITENAME.COM") baked into the graphic, which
+# is not a thing Brandora could have a factory print; publishing it as a
+# product example would be showing a screenshot of someone else's listing
+# photo, not a manufactured card.
+#
+# Two carry a real third party's identity printed on the product itself,
+# exactly the BIHAKU/Marabu/MAX Italian problem from the first batch: a
+# "thank you" card signed "@nailglamour_9", and a set of five stickers each
+# printed with a different real small business's name and logo (Dona Leoa,
+# Amanda Trufas, LR, Beaded Bags). Neither has a crop that removes the
+# branding without removing the product.
+#
+# Two are dense multi-product collage shots — a catalogue page's "everything
+# we make" composite rather than a photograph of one product — and are left
+# out not because anything is wrong with them but because a collage doesn't
+# become an honest single product tile no matter how it's cropped.
+BATCH_THREE = [
+    (
+        "WhatsApp Image 2026-08-18 at 8.06.15 PM.jpeg",
+        "cups-lids-straws-set.webp",
+        True,
+        "Iced-coffee cup, dome lid and straw as a set, white ground.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.06.16 PM (1).jpeg",
+        "cup-size-chart.webp",
+        False,
+        "The supplier's own sizing chart, 30ml to 300ml, dimensions in cm — a finished "
+        "reference graphic, not a photograph to crop.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.06.16 PM (2).jpeg",
+        "bags-colour-diecut.webp",
+        True,
+        "Die-cut handle bags in five colours, white ground.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.39 PM (1).jpeg",
+        "cup-dome-navy.webp",
+        True,
+        "Cup with dome lid, navy ground — the assembled product the size chart describes in parts.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.17 PM (1).jpeg",
+        "box-kraft-small.webp",
+        True,
+        "Small kraft box, closed and open, tan ground.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.17 PM (3).jpeg",
+        "box-kraft-stacked.webp",
+        True,
+        "Two kraft boxes stacked, cream ground.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.17 PM.jpeg",
+        "box-shipping-pink.webp",
+        True,
+        "A coloured shipping box open on its shredded-paper filler.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.18 PM (1).jpeg",
+        "tray-bagasse-divided.webp",
+        True,
+        "A compartmented fibre food tray with its lid.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.18 PM.jpeg",
+        "box-kraft-window.webp",
+        True,
+        "Kraft box with a clear window, closed and open.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.19 PM.jpeg",
+        "bags-kraft-handles.webp",
+        True,
+        "Kraft bags with rope handles, several sizes together.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.21 PM (2).jpeg",
+        "pouch-kraft-window-standup.webp",
+        True,
+        "Stand-up kraft pouches with a clear window, zip top.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 8.11.21 PM.jpeg",
+        "bags-kraft-bakery-hand.webp",
+        True,
+        "Three sizes of window bakery bag, one held by hand for scale — croissants and cookies visible through the window.",
+    ),
+]
+
+print("\nThird batch:\n")
+for source, name, cropped, _why in BATCH_THREE:
+    path = ROOT / source
+    if not path.exists():
+        print(f"  ! {source} is not in the repository — skipped")
+        continue
+    image = Image.open(path).convert("RGB")
+    if cropped:
+        image = autocrop(image)
+    square(image, name)
+
+print(
+    "\nNot published from this batch, and why:\n"
+    "  8.06.16 PM (3).jpeg   a \"thank you\" card signed with a real Instagram handle,\n"
+    "                        @nailglamour_9 — someone else's business, not Brandora's to show.\n"
+    "  8.06.17 PM.jpeg       a thank-you-card design template with literal placeholder text\n"
+    "                        (\"@SOCIALHANDLE\", \"WWW.YOURWEBSITENAME.COM\") — a listing photo\n"
+    "                        for a digital template, not a photograph of a printed product.\n"
+    "  8.11.21 PM (3).jpeg   five stickers, each printed with a different real small\n"
+    "                        business's name and logo (Dona Leoa, Amanda Trufas, LR,\n"
+    "                        Beaded Bags) — no crop removes the branding without removing\n"
+    "                        the product.\n"
+    "  8.11.18 PM (2).jpeg   a dense multi-product collage, not a photograph of one product.\n"
+    "  8.11.20 PM (1).jpeg   the same — a collage, not a single product.\n"
+    "  8.11.20 PM.jpeg       kraft bag lineup, kept out only for being near-identical to\n"
+    "                        bags-kraft-handles.webp above — no new information published twice.\n"
+)

@@ -560,6 +560,30 @@ export const es: Catalogue = {
     "Seis formas de cubiertos de madera sobre pizarra, con una funda de papel",
   "sourcing.alt.spoon":
     "Una cuchara desechable blanca",
+  "sourcing.alt.cupsSet":
+    "Un vaso para bebida fr\xeda, su tapa abovedada y una pajita",
+  "sourcing.alt.cupChart":
+    "La tabla de tama\xf1os de un proveedor para vasos de porci\xf3n transparentes, de 30 a 300ml",
+  "sourcing.alt.bagsColour":
+    "Bolsas con asa troquelada en cinco colores",
+  "sourcing.alt.cupDomeNavy":
+    "Un vaso transparente con tapa abovedada",
+  "sourcing.alt.boxKraftSmall":
+    "Una caja kraft peque\xf1a, cerrada y luego abierta",
+  "sourcing.alt.boxKraftStacked":
+    "Dos cajas kraft apiladas",
+  "sourcing.alt.boxShippingPink":
+    "Una caja de env\xedo rosa abierta sobre su relleno de papel triturado",
+  "sourcing.alt.trayBagasse":
+    "Una bandeja de fibra con compartimentos y su tapa",
+  "sourcing.alt.boxKraftWindow":
+    "Una caja kraft con ventana transparente, cerrada y luego abierta",
+  "sourcing.alt.bagsKraftHandles":
+    "Bolsas kraft con asas de cuerda, varios tama\xf1os",
+  "sourcing.alt.pouchStandup":
+    "Bolsas kraft autoportantes con ventana transparente",
+  "sourcing.alt.bagsBakeryHand":
+    "Tres tama\xf1os de bolsa de panader\xeda con ventana, una sostenida a mano",
   "sourcing.alt.labels":
     "Etiquetas hologr\u00e1ficas doradas en su caja",
   "brand.app.carton":
