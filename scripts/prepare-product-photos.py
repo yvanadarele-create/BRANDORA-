@@ -115,3 +115,192 @@ print(
     "  4.26.59 PM (2).jpeg  the supplier's marketing sheet, five other companies' brands on it\n"
     "  image.png            a screenshot of a Made-in-China listing page\n"
 )
+
+
+# ---------------------------------------------------------------------------
+# Second batch, added 18 Aug 2026
+# ---------------------------------------------------------------------------
+#
+# Twelve photographs and a supplier spec sheet. Ten become catalogue images.
+# Two do not, for the same reason as the first batch: one carries another
+# company's wordmark printed on the product, and one is a price/spec table
+# rather than a photograph — a table belongs in the sourcing data, not on a
+# product tile.
+#
+# The crops are found, not typed. The first batch taught that lesson expensively
+# (see the note at the top of this file), so `autocrop` reads the four edges of
+# the frame to learn what the background is — a grey wall, a red cloth, a black
+# studio sweep — and keeps everything that is not that. Reframe the photo, add
+# another, and the crop still lands on the product.
+
+
+def autocrop(image, tolerance=34, margin=0.045):
+    """Find the product by subtracting the background the photographer used.
+
+    The background is whatever the frame's outer border is made of, which is
+    a safer assumption than 'the background is white': three of these were shot
+    on red towelling and two on a black sweep. Everything far enough from that
+    colour is product.
+    """
+    small = image.resize((image.width // 4 or 1, image.height // 4 or 1), Image.BILINEAR)
+    pixels = small.load()
+    width, height = small.size
+
+    border = []
+    for x in range(width):
+        border.append(pixels[x, 0])
+        border.append(pixels[x, height - 1])
+    for y in range(height):
+        border.append(pixels[0, y])
+        border.append(pixels[width - 1, y])
+    ground = tuple(sum(channel) // len(border) for channel in zip(*border))
+
+    left, top, right, bottom = width, height, 0, 0
+    found = False
+    for y in range(height):
+        for x in range(width):
+            pixel = pixels[x, y]
+            distance = sum(abs(pixel[i] - ground[i]) for i in range(3))
+            if distance > tolerance * 3:
+                found = True
+                left, top = min(left, x), min(top, y)
+                right, bottom = max(right, x), max(bottom, y)
+
+    if not found:
+        return image
+
+    # A second ground. Three of these were shot on a desk against a wall, so the
+    # frame has a wall *and* a floor in it, and the floor is as far from the
+    # averaged background as the product is — the box came out with a strip of
+    # parquet under it. A band is scenery rather than product when it runs the
+    # whole width and is a flat colour in itself, so bands like that are peeled
+    # off the top and bottom until the first row that actually varies.
+    def scenery(row):
+        colours = [pixels[x, row] for x in range(left, right + 1)]
+        if len(colours) < 3:
+            return False
+        deviating = sum(
+            1
+            for colour in colours
+            if sum(abs(colour[i] - ground[i]) for i in range(3)) > tolerance * 3
+        )
+        if deviating < len(colours) * 0.9:
+            return False
+        means = [sum(c[i] for c in colours) / len(colours) for i in range(3)]
+        spread = max(
+            sum((c[i] - means[i]) ** 2 for c in colours) / len(colours) for i in range(3)
+        )
+        return spread < 90
+
+    while top < bottom and scenery(top):
+        top += 1
+    while bottom > top and scenery(bottom):
+        bottom -= 1
+
+    pad_x, pad_y = int(width * margin), int(height * margin)
+    box = (
+        max(0, (left - pad_x)) * 4,
+        max(0, (top - pad_y)) * 4,
+        min(width, (right + pad_x + 1)) * 4,
+        min(height, (bottom + pad_y + 1)) * 4,
+    )
+    return image.crop(box)
+
+
+# One frame needs a number typed into it, and it is worth being explicit about
+# why rather than quietly adding a magic constant. In `1.00.22 PM.jpeg` the desk
+# ends on a diagonal across the lower right corner, so the parquet behind it is
+# neither a full-width band (the scenery rule misses it) nor far enough from the
+# desk to read as a separate ground. There is no rule that separates a diagonal
+# edge from the product above it; a stated trim is more honest than a rule that
+# pretends to have found one.
+TRIM_BOTTOM = {"WhatsApp Image 2026-08-18 at 1.00.22 PM.jpeg": 0.11}
+
+
+BATCH_TWO = [
+    # (source, output, find the crop?, why it is publishable)
+    (
+        "WhatsApp Image 2026-08-18 at 1.00.22 PM (1).jpeg",
+        "bakery-gable-box.webp",
+        True,
+        "Gable-top cake box, closed, plain white board. Nobody's mark on it.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.00.22 PM.jpeg",
+        "bakery-gable-box-open.webp",
+        True,
+        "The same box open from above, handle panels folded out.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.00.23 PM.jpeg",
+        "bakery-carrier-box.webp",
+        True,
+        "Carrier box with a cut handle, shot side-on.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.04.08 PM (1).jpeg",
+        "bakery-carrier-in-hand.webp",
+        True,
+        "Carried by the handle — the one shot in the set that gives it a size.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.04.08 PM.jpeg",
+        "bakery-carrier-open.webp",
+        True,
+        "Flaps open, showing the interior and the board thickness.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.30.34 PM.jpeg",
+        "cup-lids.webp",
+        False,
+        "Nine lid profiles on black. Already a studio plate; cropping it would cut the grid.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.28.09 PM.jpeg",
+        "cup-pet-dimensions.webp",
+        True,
+        "PET cup with its dimensions printed on the frame: 92/93mm rim, 56mm tall, 55mm base.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.43.54 PM.jpeg",
+        "icecream-cups.webp",
+        False,
+        "Paper ice-cream cups. The leaf is the factory's own sample print, not a customer's brand.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 1.57.56 PM.jpeg",
+        "wooden-cutlery.webp",
+        False,
+        "Six wooden cutlery shapes on slate — the texture is the ground, so the crop is left alone.",
+    ),
+    (
+        "WhatsApp Image 2026-08-18 at 2.04.46 PM.jpeg",
+        "wooden-spoon.webp",
+        True,
+        "One spoon on white.",
+    ),
+]
+
+print("\nSecond batch:\n")
+for source, name, cropped, _why in BATCH_TWO:
+    path = ROOT / source
+    if not path.exists():
+        print(f"  ! {source} is not in the repository — skipped")
+        continue
+    image = Image.open(path).convert("RGB")
+    trim = TRIM_BOTTOM.get(source)
+    if trim:
+        image = image.crop((0, 0, image.width, int(image.height * (1 - trim))))
+    if cropped:
+        image = autocrop(image)
+    square(image, name)
+
+print(
+    "\nNot published from this batch, and why:\n"
+    "  1.28.09 PM (1).jpeg  UU Coffee's wordmark is printed on the cups. It is on the\n"
+    "                       product, so it cannot be cropped out, and publishing it would\n"
+    "                       read as work Brandora did for them.\n"
+    "  1.47.46 PM.jpeg      the factory's cutlery spec sheet. Its sizes are real and worth\n"
+    "                       having, so they go into the sourcing data as specifications —\n"
+    "                       a table is not a product photograph.\n"
+)

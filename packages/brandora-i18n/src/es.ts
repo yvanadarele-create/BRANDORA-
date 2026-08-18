@@ -506,6 +506,26 @@ export const es: Catalogue = {
     "Cajas impresas en rosa y amarillo",
   "sourcing.alt.drawer":
     "Cajas caj\u00f3n en tres colores",
+  "sourcing.alt.gable":
+    "Caja de pasteler\xeda blanca con asa, cerrada",
+  "sourcing.alt.gableOpen":
+    "La misma caja vista desde arriba, con los paneles del asa abiertos",
+  "sourcing.alt.carrier":
+    "Caja de transporte con asa troquelada, vista de lado",
+  "sourcing.alt.carrierHand":
+    "Una mano llevando la caja por el asa",
+  "sourcing.alt.carrierOpen":
+    "La caja de transporte con las solapas abiertas",
+  "sourcing.alt.lids":
+    "Nueve perfiles de tapas transparentes para vasos",
+  "sourcing.alt.cupDims":
+    "Vaso PET transparente con sus medidas: 92 a 93 mm de boca, 56 mm de alto, 55 mm de base",
+  "sourcing.alt.iceCups":
+    "Vasos de papel para helado impresos con un motivo de hoja",
+  "sourcing.alt.cutlery":
+    "Seis formas de cubiertos de madera sobre pizarra, con una funda de papel",
+  "sourcing.alt.spoon":
+    "Una cuchara desechable blanca",
   "sourcing.alt.labels":
     "Etiquetas hologr\u00e1ficas doradas en su caja",
   "brand.app.carton":

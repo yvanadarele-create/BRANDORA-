@@ -514,6 +514,26 @@ export const fr: Catalogue = {
     "Bo\u00eetes imprim\u00e9es en rose et jaune",
   "sourcing.alt.drawer":
     "Bo\u00eetes tiroir en trois couleurs",
+  "sourcing.alt.gable":
+    "Bo\xeete \xe0 g\xe2teau blanche \xe0 poign\xe9e, ferm\xe9e",
+  "sourcing.alt.gableOpen":
+    "La m\xeame bo\xeete vue de dessus, panneaux de poign\xe9e ouverts",
+  "sourcing.alt.carrier":
+    "Bo\xeete de transport \xe0 poign\xe9e d\xe9coup\xe9e, vue de c\xf4t\xe9",
+  "sourcing.alt.carrierHand":
+    "Une main qui porte la bo\xeete par sa poign\xe9e",
+  "sourcing.alt.carrierOpen":
+    "La bo\xeete de transport, rabats ouverts",
+  "sourcing.alt.lids":
+    "Neuf profils de couvercles transparents pour gobelets",
+  "sourcing.alt.cupDims":
+    "Gobelet PET transparent avec ses dimensions : 92 \xe0 93 mm au bord, 56 mm de haut, 55 mm au fond",
+  "sourcing.alt.iceCups":
+    "Pots \xe0 glace en carton imprim\xe9s d'un motif de feuille",
+  "sourcing.alt.cutlery":
+    "Six formes de couverts en bois pos\xe9es sur de l'ardoise, avec un sachet papier",
+  "sourcing.alt.spoon":
+    "Une cuill\xe8re jetable blanche",
   "sourcing.alt.labels":
     "\u00c9tiquettes holographiques dor\u00e9es dans leur carton",
   "brand.app.carton":

@@ -525,6 +525,26 @@ export const en = {
     "Printed boxes in pink and yellow",
   "sourcing.alt.drawer":
     "Drawer boxes in three colours",
+  "sourcing.alt.gable":
+    "A white gable-top cake box with a carrying handle",
+  "sourcing.alt.gableOpen":
+    "The same cake box seen from above with its handle panels open",
+  "sourcing.alt.carrier":
+    "A carrier box with a cut-out handle, seen from the side",
+  "sourcing.alt.carrierHand":
+    "A hand carrying the box by its handle",
+  "sourcing.alt.carrierOpen":
+    "The carrier box with its flaps open",
+  "sourcing.alt.lids":
+    "Nine clear lid profiles for drink cups",
+  "sourcing.alt.cupDims":
+    "A clear PET cup with its dimensions marked: 92 to 93 mm rim, 56 mm tall, 55 mm base",
+  "sourcing.alt.iceCups":
+    "Paper ice-cream cups printed with a leaf motif",
+  "sourcing.alt.cutlery":
+    "Six wooden cutlery shapes laid out on slate, with a paper sleeve",
+  "sourcing.alt.spoon":
+    "A single white disposable spoon",
   "sourcing.alt.labels":
     "Gold holographic security labels in their carton",
   "brand.app.carton":
