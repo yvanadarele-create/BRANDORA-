@@ -90,6 +90,10 @@ for (const page of pages) {
   for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
     const ref = match[1];
     if (/^(https?:|mailto:|tel:|data:|#|\/\/)/.test(ref)) continue;
+    // A server route, not a static file — vercel.json rewrites /api/* to the
+    // one function, so there is no file on disk to find, and there never will
+    // be. routes.ts is this reference's own check.
+    if (ref.startsWith("/api/")) continue;
     const [pathPart] = ref.split("#");
     if (!pathPart) continue;
     const target = join(root, pathPart.split("?")[0]);

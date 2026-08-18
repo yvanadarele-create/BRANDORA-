@@ -87,6 +87,11 @@ export function assertPooledUrl(url: string, warn: (message: string) => void): v
  * unattended on every cold start.
  */
 const ADDITIVE_COLUMNS: readonly string[] = [
+  // An operator-facing notification (a quote request) sends here instead of
+  // to the triggering user's own address. See the column's comment in
+  // schema.sql.
+  "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS recipient_email TEXT;",
+
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS name TEXT;",
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS business TEXT;",
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS interest TEXT;",

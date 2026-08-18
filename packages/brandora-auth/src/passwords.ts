@@ -134,3 +134,24 @@ export function sessionExpiry(from: Date = new Date(), hours = SESSION_TTL_HOURS
 
 export const sessionIsLive = (expiresAt: string, now: Date = new Date()): boolean =>
   new Date(expiresAt).getTime() > now.getTime();
+
+/* --- Password reset tokens -------------------------------------------------- */
+
+/**
+ * Same construction as a session token — 256 bits from the CSPRNG, stored
+ * raw and looked up by exact match — but a much shorter life and single use,
+ * because the two are not the same risk. A session token that leaks is bad
+ * for as long as it is valid; a reset token that leaks lets someone take the
+ * account over, so it lives for an hour rather than two weeks and is burned
+ * the moment it is used once.
+ */
+export const newPasswordResetToken = (): string => randomBytes(32).toString("base64url");
+
+export const PASSWORD_RESET_TTL_HOURS = 1;
+
+export function passwordResetExpiry(from: Date = new Date(), hours = PASSWORD_RESET_TTL_HOURS): string {
+  return new Date(from.getTime() + hours * 3_600_000).toISOString();
+}
+
+export const passwordResetIsLive = (expiresAt: string, now: Date = new Date()): boolean =>
+  new Date(expiresAt).getTime() > now.getTime();

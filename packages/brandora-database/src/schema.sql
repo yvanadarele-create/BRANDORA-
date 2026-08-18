@@ -462,12 +462,33 @@ CREATE TABLE IF NOT EXISTS notifications (
   attempts    INTEGER NOT NULL DEFAULT 0,
   last_error  TEXT,
   sent_at     TEXT,
+  -- Every other notification is "tell user_id something about their own
+  -- account", so deliverOne() sends to user_id's own email. A quote request
+  -- is the first notification about something a customer did, addressed to
+  -- Brandora rather than to them — user_id still names who triggered it (a
+  -- real FK, kept for the audit trail), but delivery goes here instead when
+  -- it is set.
+  recipient_email TEXT,
   created_at  TEXT NOT NULL,
   updated_at  TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications(status);
+
+-- Password reset tokens. One-shot: `used_at` is set the moment the password
+-- actually changes, and a used or expired token is rejected exactly like a
+-- token that never existed — see routes.ts's password-reset endpoints for why
+-- the response never distinguishes the two.
+CREATE TABLE IF NOT EXISTS password_resets (
+  token      TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TEXT NOT NULL,
+  used_at    TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
 
 -- Append-only. An order's history is evidence when a customer asks why their
 -- order sat for three days, so rows are never updated or deleted.

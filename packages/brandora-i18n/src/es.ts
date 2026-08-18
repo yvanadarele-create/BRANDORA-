@@ -267,6 +267,36 @@ export const es: Catalogue = {
   "auth.signup.lede": "Una cuenta para cada marca que construyas, cada presupuesto y cada pedido.",
   "auth.signup.submit": "Crear mi cuenta",
   "auth.signup.alt": "¿Ya tienes una cuenta?",
+  "auth.forgot-password":
+    "¿Olvidaste tu contraseña?",
+  "auth.google.signin":
+    "Iniciar sesión con Google",
+  "auth.or-divider":
+    "o",
+  "auth.forgot.title":
+    "Restablece tu contraseña",
+  "auth.forgot.lede":
+    "Indica tu correo y te enviaremos un enlace para restablecerla.",
+  "auth.forgot.submit":
+    "Enviar enlace",
+  "auth.forgot.sent":
+    "Si existe una cuenta para esa dirección, un enlace de restablecimiento está en camino. Revisa tu bandeja de entrada.",
+  "auth.back-to-login":
+    "Volver a iniciar sesión",
+  "auth.reset.title":
+    "Elige una nueva contraseña",
+  "auth.reset.lede":
+    "Introduce una nueva contraseña para tu cuenta.",
+  "auth.reset.new-password":
+    "Nueva contraseña",
+  "auth.reset.submit":
+    "Actualizar contraseña",
+  "auth.reset.done":
+    "Tu contraseña se ha actualizado. Iniciando sesión…",
+  "auth.reset.no-token":
+    "Este enlace no tiene token.",
+  "auth.reset.request-new":
+    "Solicitar un nuevo enlace",
 
   "dashboard.title": "Tu trabajo",
   "dashboard.brands": "Mis marcas",
@@ -295,6 +325,7 @@ export const es: Catalogue = {
   "error.auth.required": "Inicia sesión para continuar.",
   "error.auth.weak-password": "Elige una contraseña más larga: al menos 10 caracteres.",
   "error.auth.forbidden": "No tienes acceso a esto.",
+  "error.auth.reset-invalid": "Este enlace de restablecimiento no es válido o ha caducado. Solicita uno nuevo.",
   "error.input.invalid": "Algo en el formulario no está bien. Revísalo e inténtalo de nuevo.",
   "error.rate.limited": "Son muchas peticiones. Espera un momento e inténtalo de nuevo.",
   "error.internal": "Algo ha fallado por nuestra parte. Estamos en ello.",

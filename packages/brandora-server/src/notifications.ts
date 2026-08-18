@@ -173,7 +173,10 @@ export async function deliverOne(
 
   try {
     await transport.send({
-      to: user.email,
+      // A quote request sets recipientEmail to Brandora's own inbox — see
+      // the column's comment in schema.sql. Everything else is unset and
+      // goes to the account the notification is about.
+      to: notification.recipientEmail ?? user.email,
       subject: notification.subject,
       body: notification.body,
       kind: notification.kind,

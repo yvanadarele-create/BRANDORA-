@@ -9,7 +9,10 @@ import {
   authorize,
   hashPassword,
   isAdmin,
+  newPasswordResetToken,
   newSessionToken,
+  passwordResetExpiry,
+  passwordResetIsLive,
   requireAuthorized,
   sessionExpiry,
   sessionIsLive,
@@ -98,6 +101,33 @@ describe("session tokens", () => {
   test("an expired session is not live even one second past", () => {
     assert.equal(
       sessionIsLive("2026-01-01T00:00:00.000Z", new Date("2026-01-01T00:00:01Z")),
+      false,
+    );
+  });
+});
+
+/* --- Password reset tokens -------------------------------------------------- */
+
+describe("password reset tokens", () => {
+  test("tokens are long, URL-safe and unique — the same shape as a session token", () => {
+    const tokens = new Set(Array.from({ length: 200 }, () => newPasswordResetToken()));
+    assert.equal(tokens.size, 200, "a collision means the RNG is not what we think");
+    for (const token of tokens) {
+      assert.match(token, /^[A-Za-z0-9_-]{40,}$/);
+    }
+  });
+
+  test("expiry is one hour by default, not a session's fourteen days", () => {
+    const from = new Date("2026-01-01T00:00:00Z");
+    const expires = passwordResetExpiry(from);
+    assert.equal(expires, "2026-01-01T01:00:00.000Z");
+    assert.equal(passwordResetIsLive(expires, new Date("2026-01-01T00:30:00Z")), true);
+    assert.equal(passwordResetIsLive(expires, new Date("2026-01-01T01:00:01Z")), false);
+  });
+
+  test("an expired reset token is not live even one second past", () => {
+    assert.equal(
+      passwordResetIsLive("2026-01-01T01:00:00.000Z", new Date("2026-01-01T01:00:01Z")),
       false,
     );
   });

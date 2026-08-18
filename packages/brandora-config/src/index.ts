@@ -127,6 +127,26 @@ export function calendlyUrl(source: Env = env()): string {
 
 export const schedulingConfigured = (source: Env = env()): boolean => calendlyUrl(source) !== "";
 
+/* --- Google sign-in -------------------------------------------------------- */
+
+/**
+ * A real OAuth Client ID and Secret from Google Cloud Console — not the same
+ * thing as a personal Google account being connected to anything else. Until
+ * both are set, `googleSignInConfigured` is false and the button hides
+ * itself, the same way "Book a call" does with no Calendly URL: an
+ * unconfigured feature disappears rather than opening onto an error.
+ */
+export function googleClientId(source: Env = env()): string {
+  return optional("GOOGLE_CLIENT_ID", "", source);
+}
+
+export function googleClientSecret(source: Env = env()): string {
+  return optional("GOOGLE_CLIENT_SECRET", "", source);
+}
+
+export const googleSignInConfigured = (source: Env = env()): boolean =>
+  googleClientId(source) !== "" && googleClientSecret(source) !== "";
+
 /* --- Payments ------------------------------------------------------------ */
 
 const PAYSTACK_HINT =

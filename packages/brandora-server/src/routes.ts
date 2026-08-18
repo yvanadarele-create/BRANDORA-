@@ -25,6 +25,8 @@
  * because no handler has a line that could.
  */
 
+import { randomBytes } from "node:crypto";
+
 import {
   BrandoraError,
   type BrandoraProduct,
@@ -72,7 +74,10 @@ import {
   MIN_PASSWORD_LENGTH,
   assertPasswordAcceptable,
   hashPassword,
+  newPasswordResetToken,
   newSessionToken,
+  passwordResetExpiry,
+  passwordResetIsLive,
   sessionExpiry,
   verifyPassword,
   wasteVerificationTime,
@@ -81,6 +86,9 @@ import { DEFAULT_VALIDITY_DAYS, quoteReference } from "@brandora/quotes";
 import {
   aliexpressIntegrationStatus,
   calendlyUrl,
+  googleClientId,
+  googleClientSecret,
+  googleSignInConfigured,
   notificationsIntegrationStatus,
   paystackIntegrationStatus,
   paystackWebhookSecret,
@@ -98,6 +106,7 @@ import {
   requireInteger,
   requireString,
   signValue,
+  unsignValue,
 } from "./http.js";
 import { type PricingSettings, priceProject, recommendProducts } from "./pricing.js";
 import { MAX_QUESTION_LENGTH, ask } from "./assistant.js";
@@ -158,6 +167,9 @@ export interface ServerDeps {
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 14;
 
+/** Carries the Google OAuth CSRF state between /start and /callback. Cleared on the way out. */
+const GOOGLE_STATE_COOKIE = "brandora_google_state";
+
 /**
  * How a message from Brandora Union signs off.
  *
@@ -181,6 +193,8 @@ export interface RateLimits {
   generationWindowMs: number;
   subscribesPerWindow: number;
   subscribeWindowMs: number;
+  passwordResetsPerWindow: number;
+  passwordResetWindowMs: number;
 }
 
 /**
@@ -209,6 +223,14 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
   // address can all sign up in an afternoon.
   subscribesPerWindow: 30,
   subscribeWindowMs: 60 * 60 * 1000,
+  // Throttled like login, not like signup: a request costs Brandora an email
+  // send and costs the target inbox a message they did not ask for, so an
+  // address should not be able to trigger many of them quickly. The response
+  // is identical whether or not the address has an account either way (no
+  // enumeration), so this limit is the only thing standing between the form
+  // and an attacker mail-bombing a stranger's inbox with reset links.
+  passwordResetsPerWindow: 6,
+  passwordResetWindowMs: 60 * 60 * 1000,
 };
 
 /* --- Presentation helpers -------------------------------------------------- */
@@ -290,6 +312,7 @@ export function createRouter(deps: ServerDeps): Router {
   const signupLimiter = new RateLimiter(limits.signupsPerWindow, limits.signupWindowMs);
   const generateLimiter = new RateLimiter(limits.generationsPerWindow, limits.generationWindowMs);
   const subscribeLimiter = new RateLimiter(limits.subscribesPerWindow, limits.subscribeWindowMs);
+  const passwordResetLimiter = new RateLimiter(limits.passwordResetsPerWindow, limits.passwordResetWindowMs);
 
   const byId = new Map(catalog.map((p) => [p.id, p]));
 
@@ -328,7 +351,13 @@ export function createRouter(deps: ServerDeps): Router {
     userId: string,
     orderId: string | undefined,
     kind: string,
-    message: { subject: string; body: string; channel?: "email" | "sms" | "whatsapp" | "in-app" },
+    message: {
+      subject: string;
+      body: string;
+      channel?: "email" | "sms" | "whatsapp" | "in-app";
+      /** Overrides userId's own email — see recipient_email's comment in schema.sql. */
+      to?: string;
+    },
   ): Promise<void> => {
     let row;
     try {
@@ -339,6 +368,7 @@ export function createRouter(deps: ServerDeps): Router {
         channel: message.channel ?? "email",
         subject: message.subject,
         body: message.body,
+        ...(message.to ? { recipientEmail: message.to } : {}),
       });
     } catch (err) {
       deps.logger.error(`notification ${kind} could not be recorded: ${String(err)}`);
@@ -377,6 +407,10 @@ export function createRouter(deps: ServerDeps): Router {
       // Empty when unset, and every booking control hides itself rather than
       // linking somewhere that is not a booking page.
       calendlyUrl: calendlyUrl(deps.env ?? process.env),
+      // Same rule as calendlyUrl: false until a real Client ID and Secret are
+      // both set, and the "Sign in with Google" button hides itself rather
+      // than starting a flow that cannot finish.
+      googleSignInEnabled: googleSignInConfigured(deps.env ?? process.env),
       locales: ["en", "fr", "es"],
     }),
   );
@@ -583,6 +617,199 @@ export function createRouter(deps: ServerDeps): Router {
 
     loginLimiter.reset(ctx.ip);
     return json(200, { user: publicUser(user) }, { cookies: await setSessionCookie(user.id) });
+  });
+
+  /**
+   * Request a reset link.
+   *
+   * The response is the same sentence whether or not the address has an
+   * account — the enumeration defence login already has, applied here too,
+   * because "no account for that address" is exactly the fact a password
+   * reset form must not leak. The generic response happens whether or not the
+   * lookup, token creation and email queueing below actually ran.
+   */
+  router.post("/api/auth/password-reset/request", async (ctx) => {
+    if (passwordResetLimiter.exceeded(ctx.ip)) {
+      throw new RateLimitedError(`password reset rate limit from ${ctx.ip}`);
+    }
+
+    const email = requireString(ctx.body, "email", 254).trim().toLowerCase();
+    const GENERIC = {
+      requested: true,
+      message: "If an account exists for that address, a reset link is on its way.",
+    };
+
+    const user = await repos.users.findByEmail(email);
+    if (!user) return json(200, GENERIC);
+
+    // A fresh request invalidates any link already out for this account —
+    // only the newest email should work.
+    await repos.passwordResets.destroyAllFor(user.id);
+
+    const token = newPasswordResetToken();
+    await repos.passwordResets.create(user.id, token, passwordResetExpiry(now()));
+
+    const resetUrl = `${deps.publicBaseUrl}/reset-password.html?token=${encodeURIComponent(token)}`;
+    await notify(user.id, undefined, "auth.password-reset-requested", {
+      subject: "Reset your Brandora password",
+      body:
+        `We received a request to reset the password on your Brandora account.\n\n` +
+        `Reset it here (valid for one hour): ${resetUrl}\n\n` +
+        `If you did not request this, you can ignore this email — your password has not been changed.`,
+    });
+
+    return json(200, GENERIC);
+  });
+
+  /**
+   * Spend the token.
+   *
+   * A missing, expired or already-used token gets the same error — an
+   * attacker probing which is true learns nothing either way, the same
+   * reasoning as the generic response above.
+   */
+  router.post("/api/auth/password-reset/confirm", async (ctx) => {
+    const token = requireString(ctx.body, "token", 128);
+    const password = requireString(ctx.body, "password", 512);
+
+    const record = await repos.passwordResets.find(token);
+    const valid = record && !record.usedAt && passwordResetIsLive(record.expiresAt, now());
+    if (!record || !valid) {
+      throw new BrandoraError("auth.reset-invalid", "reset token missing, used or expired", 400);
+    }
+
+    assertPasswordAcceptable(password);
+    const hashed = hashPassword(password);
+    await repos.users.setCredentials(record.userId, hashed.hash, hashed.salt);
+    await repos.passwordResets.markUsed(token);
+
+    // A changed password invalidates every session — the whole point of a
+    // reset is that whoever had the old password should be logged out
+    // everywhere, not just unable to log back in with it.
+    await repos.sessions.destroyAllFor(record.userId);
+
+    return json(200, { reset: true }, { cookies: await setSessionCookie(record.userId) });
+  });
+
+  /**
+   * Google sign-in, start.
+   *
+   * Redirects to Google's consent screen with a CSRF `state` value carried in
+   * a short-lived signed cookie — compared, not trusted, on the way back at
+   * /callback. 404s rather than redirecting to a Client ID that does not
+   * exist when Google sign-in is not configured; the button that links here
+   * is already hidden in that case (see /api/settings), so reaching this
+   * route unconfigured means someone typed the URL by hand.
+   */
+  router.get("/api/auth/google/start", async () => {
+    const clientId = googleClientId(deps.env ?? process.env);
+    if (!clientId) throw new NotFoundError("route", "/api/auth/google/start");
+
+    const state = randomBytes(24).toString("base64url");
+    const redirectUri = `${deps.publicBaseUrl}/api/auth/google/callback`;
+    const authorizeUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authorizeUrl.searchParams.set("client_id", clientId);
+    authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+    authorizeUrl.searchParams.set("response_type", "code");
+    authorizeUrl.searchParams.set("scope", "openid email profile");
+    authorizeUrl.searchParams.set("state", state);
+    authorizeUrl.searchParams.set("prompt", "select_account");
+
+    return {
+      status: 302,
+      headers: { Location: authorizeUrl.toString() },
+      cookies: [{ name: GOOGLE_STATE_COOKIE, value: signValue(state, deps.authSecret), maxAgeSeconds: 600 }],
+    };
+  });
+
+  /**
+   * Google sign-in, callback.
+   *
+   * Two server-to-server calls and nothing else: exchange the code for an
+   * access token, then ask Google's userinfo endpoint who it belongs to.
+   * Neither step needs this server to verify a JWT signature itself — the
+   * calls are already authenticated by Google over TLS — so no JOSE/JWT
+   * dependency was added for a check the HTTP call already makes.
+   *
+   * A Google account with an unverified email is refused rather than trusted:
+   * `email_verified` is Google's own attestation that the address is real,
+   * and signing someone in against an address they do not control is exactly
+   * the account-takeover this whole flow exists to prevent.
+   */
+  router.get("/api/auth/google/callback", async (ctx) => {
+    const clientId = googleClientId(deps.env ?? process.env);
+    const clientSecret = googleClientSecret(deps.env ?? process.env);
+    const failure = (reason: string) => ({
+      status: 302 as const,
+      headers: { Location: `/login.html?error=${encodeURIComponent(reason)}` },
+    });
+
+    if (!clientId || !clientSecret) return failure("google-not-configured");
+
+    const code = ctx.query.get("code");
+    const state = ctx.query.get("state");
+    const expectedState = unsignValue(ctx.cookies[GOOGLE_STATE_COOKIE], deps.authSecret);
+    if (!code || !state || !expectedState || state !== expectedState) {
+      return failure("google-state-mismatch");
+    }
+
+    const redirectUri = `${deps.publicBaseUrl}/api/auth/google/callback`;
+
+    let accessToken: string;
+    try {
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: "authorization_code",
+        }).toString(),
+      });
+      if (!tokenResponse.ok) return failure("google-token-exchange-failed");
+      const tokenBody = (await tokenResponse.json()) as { access_token?: string };
+      if (!tokenBody.access_token) return failure("google-token-exchange-failed");
+      accessToken = tokenBody.access_token;
+    } catch {
+      return failure("google-unreachable");
+    }
+
+    let profile: { email?: string; email_verified?: boolean; name?: string };
+    try {
+      const profileResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!profileResponse.ok) return failure("google-profile-failed");
+      profile = (await profileResponse.json()) as typeof profile;
+    } catch {
+      return failure("google-unreachable");
+    }
+
+    if (!profile.email || !profile.email_verified) return failure("google-email-unverified");
+
+    const email = profile.email.trim().toLowerCase();
+    let user = await repos.users.findByEmail(email);
+    if (!user) {
+      user = await repos.users.create({
+        email,
+        name: profile.name?.trim() || email.split("@")[0] || "Brandora customer",
+        role: "customer",
+      });
+      // No setCredentials call: this account has no password, by design —
+      // credentialsFor() returning null already makes the password-login
+      // route refuse it correctly, with no extra branch needed there.
+    }
+
+    return {
+      status: 302,
+      headers: { Location: "/dashboard.html" },
+      cookies: [
+        ...(await setSessionCookie(user.id))!,
+        { name: GOOGLE_STATE_COOKIE, value: "", clear: true },
+      ],
+    };
   });
 
   router.post("/api/auth/logout", async (ctx) => {

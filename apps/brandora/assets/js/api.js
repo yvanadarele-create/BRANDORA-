@@ -113,6 +113,9 @@ export const api = {
   signup: (input) => request('POST', '/api/auth/signup', input),
   login: (input) => request('POST', '/api/auth/login', input),
   logout: () => request('POST', '/api/auth/logout', {}),
+  requestPasswordReset: (email) => request('POST', '/api/auth/password-reset/request', { email }),
+  confirmPasswordReset: (token, password) =>
+    request('POST', '/api/auth/password-reset/confirm', { token, password }),
 
   /* Projects */
   projects: () => request('GET', '/api/projects'),
@@ -419,6 +422,29 @@ export async function mountBooking() {
       event.preventDefault();
       openScheduler();
     });
+  });
+}
+
+/**
+ * Show or hide "Sign in with Google", the same way mountBooking() shows or
+ * hides "Book a call": ask /api/settings, and if the feature is not
+ * configured the control simply is not there rather than opening onto an
+ * error. A real click just navigates to /api/auth/google/start — this is not
+ * a JS SDK integration, so there is nothing else to wire up here.
+ */
+export async function mountGoogleSignIn() {
+  const controls = document.querySelectorAll('[data-google-signin]');
+  if (controls.length === 0) return;
+
+  let enabled = false;
+  try {
+    enabled = Boolean((await api.get('/api/settings')).googleSignInEnabled);
+  } catch (err) {
+    enabled = false;
+  }
+
+  controls.forEach((control) => {
+    control.hidden = !enabled;
   });
 }
 

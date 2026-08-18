@@ -285,6 +285,36 @@ export const en = {
   "auth.signup.lede": "One account holds every brand you build, every quote and every order.",
   "auth.signup.submit": "Create my account",
   "auth.signup.alt": "Already have an account?",
+  "auth.forgot-password":
+    "Forgot your password?",
+  "auth.google.signin":
+    "Sign in with Google",
+  "auth.or-divider":
+    "or",
+  "auth.forgot.title":
+    "Reset your password",
+  "auth.forgot.lede":
+    "Enter your email and we'll send you a link to reset it.",
+  "auth.forgot.submit":
+    "Send reset link",
+  "auth.forgot.sent":
+    "If an account exists for that address, a reset link is on its way. Check your inbox.",
+  "auth.back-to-login":
+    "Back to log in",
+  "auth.reset.title":
+    "Choose a new password",
+  "auth.reset.lede":
+    "Enter a new password for your account.",
+  "auth.reset.new-password":
+    "New password",
+  "auth.reset.submit":
+    "Update password",
+  "auth.reset.done":
+    "Your password has been updated. Signing you in…",
+  "auth.reset.no-token":
+    "This link is missing its token.",
+  "auth.reset.request-new":
+    "Request a new reset link",
 
   "dashboard.title": "Your work",
   "dashboard.brands": "My brands",
@@ -314,6 +344,7 @@ export const en = {
   "error.auth.required": "Please sign in to continue.",
   "error.auth.weak-password": "Please choose a longer password — at least 10 characters.",
   "error.auth.forbidden": "You don't have access to this.",
+  "error.auth.reset-invalid": "This reset link is invalid or has expired. Request a new one.",
   "error.input.invalid": "Something in that form didn't look right. Please check and try again.",
   "error.rate.limited": "That's a lot of requests. Please wait a moment and try again.",
   "error.internal": "Something went wrong on our side. We're on it.",

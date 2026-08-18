@@ -43,6 +43,11 @@ export const CUSTOMER_MESSAGES = {
   "auth.invalid": "That email address or password is not right.",
   "auth.weak-password": "Please choose a longer password — at least 10 characters.",
   "auth.forbidden": "You don't have access to this.",
+  // Deliberately identical for missing, expired and already-used — the same
+  // enumeration reasoning as auth.invalid above: distinguishing them tells
+  // whoever is holding a dead link something about a token they should not
+  // be able to probe.
+  "auth.reset-invalid": "This reset link is invalid or has expired. Request a new one.",
   "input.invalid": "Something in that form didn't look right. Please check and try again.",
   "rate.limited": "That's a lot of requests. Please wait a moment and try again.",
   "internal": "Something went wrong on our side. We're on it.",

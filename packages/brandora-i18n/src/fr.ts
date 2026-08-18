@@ -274,6 +274,36 @@ export const fr: Catalogue = {
   "auth.signup.lede": "Un seul compte pour toutes vos marques, vos devis et vos commandes.",
   "auth.signup.submit": "Créer mon compte",
   "auth.signup.alt": "Vous avez déjà un compte ?",
+  "auth.forgot-password":
+    "Mot de passe oublié ?",
+  "auth.google.signin":
+    "Se connecter avec Google",
+  "auth.or-divider":
+    "ou",
+  "auth.forgot.title":
+    "Réinitialiser votre mot de passe",
+  "auth.forgot.lede":
+    "Indiquez votre e-mail et nous vous enverrons un lien pour le réinitialiser.",
+  "auth.forgot.submit":
+    "Envoyer le lien",
+  "auth.forgot.sent":
+    "Si un compte existe pour cette adresse, un lien de réinitialisation est en route. Vérifiez votre boîte de réception.",
+  "auth.back-to-login":
+    "Retour à la connexion",
+  "auth.reset.title":
+    "Choisissez un nouveau mot de passe",
+  "auth.reset.lede":
+    "Saisissez un nouveau mot de passe pour votre compte.",
+  "auth.reset.new-password":
+    "Nouveau mot de passe",
+  "auth.reset.submit":
+    "Mettre à jour le mot de passe",
+  "auth.reset.done":
+    "Votre mot de passe a été mis à jour. Connexion en cours…",
+  "auth.reset.no-token":
+    "Ce lien n'a pas de jeton.",
+  "auth.reset.request-new":
+    "Demander un nouveau lien",
 
   "dashboard.title": "Votre travail",
   "dashboard.brands": "Mes marques",
@@ -303,6 +333,7 @@ export const fr: Catalogue = {
   "error.auth.required": "Connectez-vous pour continuer.",
   "error.auth.weak-password": "Choisissez un mot de passe plus long — au moins 10 caractères.",
   "error.auth.forbidden": "Vous n'avez pas accès à cette page.",
+  "error.auth.reset-invalid": "Ce lien de réinitialisation est invalide ou a expiré. Demandez-en un nouveau.",
   "error.input.invalid": "Un champ ne semble pas correct. Vérifiez et réessayez.",
   "error.rate.limited": "Cela fait beaucoup de requêtes. Patientez un instant et réessayez.",
   "error.internal": "Un problème est survenu de notre côté. Nous nous en occupons.",

@@ -595,6 +595,99 @@ describe("brandora api", () => {
     });
   });
 
+  describe("password reset", () => {
+    it("carries a customer from request to token to reset to a working login with the new password", async () => {
+      const email = "reset-cycle@example.com";
+      await signUp(h, email);
+      const user = await h.app.repos.users.findByEmail(email);
+      assert.ok(user);
+
+      // Request. The response never says whether the address had an account —
+      // asserted separately below — and the queued email is where the token
+      // actually lives, the same place a real customer would find it.
+      const requested = await new Client(h.base).post("/api/auth/password-reset/request", { email });
+      assert.equal(requested.status, 200);
+
+      const queued = await h.app.repos.notifications.listForUser(user.id);
+      const resetEmail = queued.find((n) => n.kind === "auth.password-reset-requested");
+      assert.ok(resetEmail, "no reset email was queued");
+      const [, token] = /token=([^&\s]+)/.exec(resetEmail.body) ?? [];
+      assert.ok(token, `no token found in the queued email: ${resetEmail.body}`);
+
+      // Reset, with a password distinct from the one signUp() set.
+      const newPassword = "a-completely-different-passphrase";
+      const confirmed = await new Client(h.base).post("/api/auth/password-reset/confirm", {
+        token,
+        password: newPassword,
+      });
+      assert.equal(confirmed.status, 200, JSON.stringify(confirmed.json));
+
+      // The old password no longer works…
+      const oldLogin = await new Client(h.base).post("/api/auth/login", { email, password: PASSWORD });
+      assert.equal(oldLogin.status, 401);
+
+      // …and the new one does.
+      const newLogin = new Client(h.base);
+      const login = await newLogin.post("/api/auth/login", { email, password: newPassword });
+      assert.equal(login.status, 200, JSON.stringify(login.json));
+      assert.equal((await newLogin.get("/api/auth/me")).json["user"].email, email);
+
+      // A used token is spent — replaying it must not work a second time.
+      const replay = await new Client(h.base).post("/api/auth/password-reset/confirm", {
+        token,
+        password: "yet-another-passphrase",
+      });
+      assert.equal(replay.status, 400);
+    });
+
+    it("says the same thing for an address with an account and one without", async () => {
+      await signUp(h, "has-account@example.com");
+
+      const withAccount = await new Client(h.base).post("/api/auth/password-reset/request", {
+        email: "has-account@example.com",
+      });
+      const withoutAccount = await new Client(h.base).post("/api/auth/password-reset/request", {
+        email: "no-such-account@example.com",
+      });
+
+      assert.equal(withAccount.status, withoutAccount.status);
+      assert.deepEqual(withAccount.json, withoutAccount.json);
+    });
+
+    it("refuses a token that was never issued", async () => {
+      const response = await new Client(h.base).post("/api/auth/password-reset/confirm", {
+        token: "not-a-real-token",
+        password: "some-new-passphrase-here",
+      });
+      assert.equal(response.status, 400);
+    });
+
+    it("logging out everywhere is a side effect of a reset, not an afterthought", async () => {
+      const email = "logout-everywhere@example.com";
+      const original = await signUp(h, email);
+      // The original session is live before the reset…
+      assert.equal((await original.get("/api/auth/me")).json["user"].email, email);
+
+      const user = await h.app.repos.users.findByEmail(email);
+      assert.ok(user);
+      await new Client(h.base).post("/api/auth/password-reset/request", { email });
+      const queued = await h.app.repos.notifications.listForUser(user.id);
+      const [, token] = /token=([^&\s]+)/.exec(
+        queued.find((n) => n.kind === "auth.password-reset-requested")!.body,
+      ) ?? [];
+      assert.ok(token);
+
+      await new Client(h.base).post("/api/auth/password-reset/confirm", {
+        token,
+        password: "brand-new-passphrase-here",
+      });
+
+      // …and dead after it, because the reset invalidated every session, not
+      // only the one that changed the password.
+      assert.equal((await original.get("/api/auth/me")).json["user"], null);
+    });
+  });
+
   describe("the journey", () => {
     it("carries one customer from interview to a paid order", async () => {
       const client = await signUp(h, "journey@example.com");

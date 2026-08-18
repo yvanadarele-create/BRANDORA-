@@ -18,6 +18,8 @@ Disallow: /quote.html
 Disallow: /signup.html
 Disallow: /suppliers.html
 Disallow: /testimonials.html
+Disallow: /forgot-password.html
+Disallow: /reset-password.html
 Disallow: /api/
 
 Sitemap: https://brandoraunion.online/sitemap.xml

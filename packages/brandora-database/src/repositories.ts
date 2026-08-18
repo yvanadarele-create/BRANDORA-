@@ -344,6 +344,8 @@ export interface NotificationRow {
   channel: "email" | "sms" | "whatsapp" | "in-app";
   subject: string;
   body: string;
+  /** Overrides the recipient's own email. See the column's comment in schema.sql. */
+  recipientEmail?: string;
   status: NotificationStatus;
   attempts: number;
   lastError?: string;
@@ -356,6 +358,7 @@ const toNotification = (row: Record<string, unknown>): NotificationRow => ({
   userId: text(row["user_id"]),
   orderId: optionalText(row["order_id"]),
   kind: text(row["kind"]),
+  recipientEmail: optionalText(row["recipient_email"]),
   channel: text(row["channel"]) as NotificationRow["channel"],
   subject: text(row["subject"]),
   body: text(row["body"]),
@@ -558,6 +561,17 @@ export interface Repositories {
     destroy(token: string): Promise<void>;
     destroyAllFor(userId: string): Promise<void>;
     purgeExpired(now?: string): Promise<number>;
+  };
+
+  passwordResets: {
+    create(userId: string, token: string, expiresAt: string): Promise<void>;
+    find(
+      token: string,
+    ): Promise<{ token: string; userId: string; expiresAt: string; usedAt: string | null } | null>;
+    /** One-shot: called the moment the password actually changes. */
+    markUsed(token: string): Promise<void>;
+    /** A fresh reset request should not leave an earlier link still live. */
+    destroyAllFor(userId: string): Promise<void>;
   };
 
   projects: {
@@ -1029,6 +1043,7 @@ export interface NotificationInput {
   channel: NotificationRow["channel"];
   subject: string;
   body: string;
+  recipientEmail?: string;
 }
 
 export function createRepositories(db: SqlDriver): Repositories {
@@ -1150,6 +1165,34 @@ export function createRepositories(db: SqlDriver): Repositories {
         await run(`DELETE FROM sessions WHERE expires_at < ?`, now);
         const after = int((await get(`SELECT COUNT(*) AS n FROM sessions`))?.["n"]);
         return before - after;
+      },
+    },
+
+    passwordResets: {
+      async create(userId, token, expiresAt) {
+        await run(`INSERT INTO password_resets (token,user_id,expires_at,created_at) VALUES (?,?,?,?)`,
+          token, userId, expiresAt, nowIso(),
+        );
+      },
+
+      async find(token) {
+        const row = await get(`SELECT * FROM password_resets WHERE token = ?`, token);
+        return row
+          ? {
+              token: text(row["token"]),
+              userId: text(row["user_id"]),
+              expiresAt: text(row["expires_at"]),
+              usedAt: optionalText(row["used_at"]) ?? null,
+            }
+          : null;
+      },
+
+      async markUsed(token) {
+        await run(`UPDATE password_resets SET used_at = ? WHERE token = ?`, nowIso(), token);
+      },
+
+      async destroyAllFor(userId) {
+        await run(`DELETE FROM password_resets WHERE user_id = ?`, userId);
       },
     },
 
@@ -2059,10 +2102,10 @@ export function createRepositories(db: SqlDriver): Repositories {
         const now = nowIso();
         const id = newId("notification");
         await run(`INSERT INTO notifications
-             (id,user_id,order_id,kind,channel,subject,body,status,attempts,created_at,updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+             (id,user_id,order_id,kind,channel,subject,body,recipient_email,status,attempts,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
           id, input.userId, input.orderId ?? null, input.kind, input.channel,
-          input.subject, input.body, "pending", 0, now, now,
+          input.subject, input.body, input.recipientEmail ?? null, "pending", 0, now, now,
         );
         const row = await get(`SELECT * FROM notifications WHERE id = ?`, id);
         if (!row) throw new Error("notification vanished immediately after insert");

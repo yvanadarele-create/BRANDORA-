@@ -112,6 +112,9 @@
         <button class="btn btn--primary" type="submit" data-submit data-i18n="auth.signup.submit">Create my account</button>
       </form>
 
+      <p class="auth-divider" data-google-signin hidden><span data-i18n="auth.or-divider">or</span></p>
+      <a class="btn btn--ghost auth-google" href="/api/auth/google/start" data-google-signin hidden data-i18n="auth.google.signin">Sign in with Google</a>
+
       <p class="auth-alt">
         <span data-i18n="auth.signup.alt">Already have an account?</span>
         <a href="login.html" data-login-link data-i18n="auth.login.submit">Log in</a>
@@ -142,6 +145,7 @@
 <script src="assets/js/app.js" defer></script>
 <script type="module" src="assets/js/booking.js"></script>
 <script type="module" src="assets/js/assistant-widget.js"></script>
+<script type="module" src="assets/js/google-signin.js"></script>
 <script type="module" src="assets/js/auth.js"></script>
 </body>
 </html>
