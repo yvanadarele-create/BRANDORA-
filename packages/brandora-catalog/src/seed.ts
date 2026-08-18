@@ -45,9 +45,13 @@ const NOW = "2026-01-01T00:00:00.000Z";
 interface SeedInput {
   id: string;
   name: string;
+  /** See `BrandoraProduct.nameFr`. */
+  nameFr?: string;
   category: ProductCategory;
   subcategory: string;
   description: string;
+  /** See `BrandoraProduct.descriptionFr`. */
+  descriptionFr?: string;
   material?: string;
   colors: string[];
   minimumQuantity: number;
@@ -391,9 +395,11 @@ function toProduct(seed: SeedInput): BrandoraProduct {
   return {
     id: seed.id,
     name: seed.name,
+    ...(seed.nameFr ? { nameFr: seed.nameFr } : {}),
     category: seed.category,
     subcategory: seed.subcategory,
     description: seed.description,
+    ...(seed.descriptionFr ? { descriptionFr: seed.descriptionFr } : {}),
     images: seed.images ?? [`/assets/img/catalog/${seed.id.replace("prd_", "")}.webp`],
     material: seed.material,
     dimensions: { volumeMl: seed.volumeMl, weightG: seed.weightG },
@@ -438,10 +444,13 @@ const REAL_SEED: SeedInput[] = [
   {
     id: "prd_label_holo_round_20",
     name: "Round holographic security label, 20×20mm",
+    nameFr: "Étiquette de sécurité holographique ronde, 20×20mm",
     category: "brand-materials",
     subcategory: "labels",
     description:
       "Tamper-evident holographic film, round, 20mm. Quoted by the manufacturer per production lot, from 10,000 pieces — well above a single small order, which is why Brandora is asking them about smaller pilot quantities before listing a price.",
+    descriptionFr:
+      "Film holographique inviolable, rond, 20mm. Prix communiqué par le fabricant par lot de production, à partir de 10 000 pièces — bien au-delà d'une petite commande, ce qui explique pourquoi Brandora leur demande des quantités pilotes plus faibles avant d'afficher un prix.",
     material: "Holographic film",
     colors: ["gold / rainbow"],
     minimumQuantity: 10_000,
@@ -458,10 +467,13 @@ const REAL_SEED: SeedInput[] = [
   {
     id: "prd_label_holo_rect_1625",
     name: "Rectangular holographic security label, 16×25mm",
+    nameFr: "Étiquette de sécurité holographique rectangulaire, 16×25mm",
     category: "brand-materials",
     subcategory: "labels",
     description:
       "Tamper-evident holographic film, rectangular, 16×25mm. Same manufacturer and minimum order as the round label.",
+    descriptionFr:
+      "Film holographique inviolable, rectangulaire, 16×25mm. Même fabricant et même quantité minimale que l'étiquette ronde.",
     material: "Holographic film",
     colors: ["gold / rainbow"],
     minimumQuantity: 10_000,
@@ -478,10 +490,13 @@ const REAL_SEED: SeedInput[] = [
   {
     id: "prd_label_holo_rect_1625_qr",
     name: "Rectangular holographic label with QR code and serial, 16×25mm",
+    nameFr: "Étiquette holographique rectangulaire avec code QR et numéro de série, 16×25mm",
     category: "brand-materials",
     subcategory: "labels",
     description:
       "The same holographic film with a printed QR code and a unique serial number per label, for scan-to-verify authentication. Longer production time than the plain labels (9–10 days against 7–9) because each one is individually numbered.",
+    descriptionFr:
+      "Le même film holographique, avec un code QR imprimé et un numéro de série unique par étiquette, pour une authentification par scan. Délai de production plus long que les étiquettes simples (9 à 10 jours contre 7 à 9), car chaque étiquette est numérotée individuellement.",
     material: "Holographic film",
     colors: ["gold / rainbow"],
     minimumQuantity: 10_000,

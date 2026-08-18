@@ -18,7 +18,7 @@
  * launcher at all; the page's own "Log in" control already does that job.
  */
 
-import { api, ApiError, currentProjectId, el, requireSignIn, t } from './api.js';
+import { api, ApiError, currentProjectId, el, localizedField, requireSignIn, t } from './api.js';
 
 // The full page already offers this; a launcher on top of it would open a
 // second, smaller copy of the page it is sitting on.
@@ -58,7 +58,7 @@ function productLine(product) {
     ? t('ui.catalog.quote-on-request', 'Price on request')
     : (product.unitPrice?.display ?? '—');
   return el('li', { class: 'ask-widget__product' }, [
-    el('span', { class: 'ask-widget__product-name', text: product.name }),
+    el('span', { class: 'ask-widget__product-name', text: localizedField(product, 'name') }),
     el('span', { class: 'ask-widget__product-price', text: priceText }),
   ]);
 }

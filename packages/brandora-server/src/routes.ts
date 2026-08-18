@@ -230,9 +230,15 @@ const asMoney = (value: { amount: number; currency: string }) => ({
 const productView = (product: BrandoraProduct) => ({
   id: product.id,
   name: product.name,
+  // Both languages travel together; the browser already knows which one the
+  // visitor is reading (§ the whole i18n system is client-driven) and picks
+  // via localizedField() in api.js. Absent when no French copy exists yet —
+  // the client falls back to the English name rather than showing nothing.
+  nameFr: product.nameFr ?? null,
   category: product.category,
   subcategory: product.subcategory,
   description: product.description,
+  descriptionFr: product.descriptionFr ?? null,
   images: product.images,
   material: product.material ?? null,
   colors: product.colors,

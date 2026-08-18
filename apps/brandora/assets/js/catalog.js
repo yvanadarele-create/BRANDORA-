@@ -24,6 +24,7 @@ import {
   currentProjectId,
   el,
   hideError,
+  localizedField,
   mountAccountNav,
   onLocaleChange,
   priceLabel,
@@ -92,19 +93,20 @@ function productCard(product, orderable, quantity) {
           }),
         ];
 
+  const name = localizedField(product, 'name');
   return el('article', { class: 'card' }, [
     product.images?.[0]
       ? el('img', {
           class: 'product__photo',
           src: product.images[0],
-          alt: product.name,
+          alt: name,
           loading: 'lazy',
           decoding: 'async',
         })
       : null,
-    el('h3', { text: product.name }),
+    el('h3', { text: name }),
     el('p', { class: 'product__meta', text: `${product.category} · ${product.subcategory}` }),
-    el('p', { text: product.description }),
+    el('p', { text: localizedField(product, 'description') }),
     product.supplierReference
       ? el('p', {
           class: 'product__meta',

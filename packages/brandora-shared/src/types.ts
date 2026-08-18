@@ -204,9 +204,20 @@ export interface BrandoraVariant {
 export interface BrandoraProduct {
   id: Id;
   name: string;
+  /**
+   * French copy for `name`, written for the visitor Brandora is actually
+   * built for — the site defaults to French. Optional because a fixture or a
+   * product added before translation catches up should still render (in
+   * English) rather than disappear; the client falls back to `name` when
+   * absent, the same way a missing i18n key falls back to its English default
+   * rather than showing a blank string.
+   */
+  nameFr?: string;
   category: ProductCategory;
   subcategory: string;
   description: string;
+  /** French copy for `description`. See `nameFr`. */
+  descriptionFr?: string;
   images: string[];
   material?: string;
   dimensions?: Dimensions;

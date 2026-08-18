@@ -16,6 +16,7 @@ import {
   currentProjectId,
   el,
   hideError,
+  localizedField,
   mountAccountNav,
   onLocaleChange,
   price,
@@ -194,7 +195,7 @@ async function renderRecommendations() {
     payload.recommendations.slice(0, 6).forEach((entry) => {
       node.recommended.appendChild(
         el('article', { class: 'card' }, [
-          el('h3', { style: 'font-size:1.02rem', text: entry.product.name }),
+          el('h3', { style: 'font-size:1.02rem', text: localizedField(entry.product, 'name') }),
           el('p', { class: 'product__reason', text: entry.reasons[0] || '' }),
           el('p', {
             class: 'product__price',

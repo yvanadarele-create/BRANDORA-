@@ -19,6 +19,7 @@ import {
   currentProjectId,
   el,
   hideError,
+  localizedField,
   mountAccountNav,
   priceLabel,
   projectUrl,
@@ -69,7 +70,7 @@ function addThinking() {
 function productCard(product) {
   const quoteOnly = product.quoteOnRequest === true;
   return el('article', { class: 'card card--flat suggested' }, [
-    el('h3', { style: 'font-size:1rem;margin-bottom:0.25rem', text: product.name }),
+    el('h3', { style: 'font-size:1rem;margin-bottom:0.25rem', text: localizedField(product, 'name') }),
     el('p', {
       class: 'product__price',
       text: quoteOnly ? priceLabel(product) : t('ui.catalog.per-unit', '{price} per unit', { price: priceLabel(product) }),

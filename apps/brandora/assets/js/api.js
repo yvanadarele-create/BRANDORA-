@@ -295,6 +295,24 @@ export function hideError(node) {
 export const price = (money) => (money ? money.display : '—');
 
 /**
+ * A localised catalogue field: `product.nameFr` for `name`, and so on.
+ *
+ * The server sends every language it has (see productView in routes.ts) and
+ * leaves the choice to the browser, the same division of labour as the rest
+ * of the i18n system — `document.documentElement.lang` is already the
+ * authoritative "what language is this page in right now" flag, kept current
+ * by applyLocale() on every switch, so reading it here needs no new state to
+ * track. A product with no translation yet for the active language falls
+ * back to the base field rather than rendering blank — the same rule
+ * `t()`'s own English fallback follows for UI copy.
+ */
+export function localizedField(product, field) {
+  const suffix = { fr: 'Fr', es: 'Es' }[document.documentElement.lang];
+  const localized = suffix && product[field + suffix];
+  return localized || product[field];
+}
+
+/**
  * A product's price, or the honest reason there isn't one.
  *
  * `product.unitPrice` is still a real Money object (zero) on a quote-on-request
