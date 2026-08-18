@@ -61,6 +61,12 @@ export function addItem(
   if (!Number.isInteger(quantity) || quantity <= 0) {
     throw new ValidationError("quantity", `expected a positive whole number, got ${quantity}`);
   }
+  if (product.quoteOnRequest) {
+    throw new ValidationError(
+      "productId",
+      `${product.name} has no fixed price yet — request a quote for it directly`,
+    );
+  }
   if (product.indicativeUnitPrice.currency !== pkg.currency) {
     throw new ValidationError(
       "currency",

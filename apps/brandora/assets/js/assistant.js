@@ -15,11 +15,12 @@ import {
   api,
   ApiError,
   clear,
+  confidenceLabel,
   currentProjectId,
   el,
   hideError,
   mountAccountNav,
-  price,
+  priceLabel,
   projectUrl,
   requireSignIn,
   showError,
@@ -66,16 +67,20 @@ function addThinking() {
  * Nothing here is parsed out of the answer text — that is the whole point.
  */
 function productCard(product) {
+  const quoteOnly = product.quoteOnRequest === true;
   return el('article', { class: 'card card--flat suggested' }, [
     el('h3', { style: 'font-size:1rem;margin-bottom:0.25rem', text: product.name }),
-    el('p', { class: 'product__price', text: t('ui.catalog.per-unit', '{price} per unit', { price: price(product.unitPrice) }) }),
+    el('p', {
+      class: 'product__price',
+      text: quoteOnly ? priceLabel(product) : t('ui.catalog.per-unit', '{price} per unit', { price: priceLabel(product) }),
+    }),
     el('p', { class: 'product__meta', text: t('ui.assistant.product-meta', 'Minimum {min} · {category}', {
       min: product.minimumQuantity,
       category: product.category,
     }) }),
     el('span', {
       class: `tag ${product.customization.canCarryLogo ? 'tag--ok' : 'tag--unconfirmed'}`,
-      text: product.customization.label,
+      text: confidenceLabel(product.customization),
     }),
     el('a', {
       class: 'btn btn--ghost btn--small',

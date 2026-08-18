@@ -135,11 +135,19 @@ function describeProduct(
         ? ` | CAN be ordered at ${quantity}`
         : ` | CANNOT be ordered at ${quantity} (minimum ${product.minimumQuantity})`;
 
+  // A quote-on-request product's indicativeUnitPrice is zero, not free — the
+  // model must never read that zero as a price and repeat it to a customer.
+  const priceText = product.quoteOnRequest
+    ? "QUOTE ON REQUEST, no fixed unit price yet — do not state a number, tell the customer to ask for a quote"
+    : `${formatMoney(product.indicativeUnitPrice)} per unit`;
+  const supplierText = product.supplierReference ? `| supplier: ${product.supplierReference.name} ` : "";
+
   return [
     `[${product.id}]`,
     product.name,
     `— ${product.category}/${product.subcategory}`,
-    `| ${formatMoney(product.indicativeUnitPrice)} per unit`,
+    `| ${priceText}`,
+    supplierText,
     `| minimum ${product.minimumQuantity}`,
     `| ${product.availableQuantity} available`,
     `| ${customization}`,

@@ -215,6 +215,21 @@ export interface BrandoraProduct {
   availableQuantity: number;
   /** Indicative shelf price per unit before sourcing runs. */
   indicativeUnitPrice: Money;
+  /**
+   * True when a real, named supplier stands behind this product but Brandora
+   * has not yet computed a landed customer price for it — freight, customs or
+   * local delivery are not confirmed. `indicativeUnitPrice` is zero in this
+   * case and must never be displayed as a price; the interface asks the
+   * visitor to request a quote instead. Distinct from the catalogue being
+   * empty: this is a real product Brandora is actively sourcing.
+   */
+  quoteOnRequest?: boolean;
+  /** The real manufacturer behind this product, when Brandora has one. */
+  supplierReference?: {
+    supplierId: string;
+    name: string;
+    platform?: string;
+  };
   customization: Customization;
   variants: BrandoraVariant[];
   status: ProductStatus;

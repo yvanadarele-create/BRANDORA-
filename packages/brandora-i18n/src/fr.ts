@@ -174,6 +174,14 @@ export const fr: Catalogue = {
   "catalog.category.brand-materials": "Supports de marque",
   "catalog.category.tableware": "Vaisselle",
   "catalog.category.merchandise": "Goodies",
+  "catalog.category.label":
+    "Catégorie",
+  "catalog.category.all":
+    "Toutes",
+  "catalog.search.label":
+    "Recherche",
+  "catalog.search.placeholder":
+    "gobelets, autocollants, boîtes…",
   "catalog.moq": "À partir de {min} unités",
   "catalog.customizable": "Personnalisation disponible",
   "catalog.customization.unknown": "Personnalisation non confirmée",
@@ -328,6 +336,20 @@ export const fr: Catalogue = {
     " \u00b7 \u00e0 partir de {min} unit\u00e9s",
   "ui.catalog.from-unit":
     " \u00b7 \u00e0 partir de {min} unit\u00e9",
+  "ui.catalog.quote-on-request":
+    "Sur devis",
+  "ui.catalog.request-quote":
+    "Demander un devis",
+  "ui.catalog.sourced-from":
+    "Fourni par {supplier}",
+  "ui.catalog.confidence.verified":
+    "Confirmé : peut porter votre logo",
+  "ui.catalog.confidence.reported":
+    "Le fournisseur déclare pouvoir le personnaliser — à confirmer avant paiement",
+  "ui.catalog.confidence.unavailable":
+    "Ne peut pas être personnalisé",
+  "ui.catalog.confidence.unknown":
+    "Personnalisation non confirmée",
   "ui.package.open-brand-book":
     "Ouvrir le livre de marque \u2192",
   "ui.package.with-logo":
@@ -358,6 +380,18 @@ export const fr: Catalogue = {
     "Recherche dans le catalogue\u2026",
   "ui.assistant.product-meta":
     "Minimum {min} \u00b7 {category}",
+  "ui.assistant-widget.open":
+    "Demander à Brandora",
+  "ui.assistant-widget.title":
+    "Demander à Brandora",
+  "ui.assistant-widget.close":
+    "Fermer",
+  "ui.assistant-widget.placeholder":
+    "Posez une question…",
+  "ui.assistant-widget.send":
+    "Envoyer",
+  "ui.assistant-widget.open-full":
+    "Ouvrir l'assistant complet",
   "ui.assistant.needs-brand":
     "Cr\u00e9ez d'abord une marque \u2014 l'assistant r\u00e9pond \u00e0 partir d'elle. ",
   "ui.assistant.placeholder-hint":

@@ -167,6 +167,14 @@ export const es: Catalogue = {
   "catalog.category.brand-materials": "Materiales de marca",
   "catalog.category.tableware": "Vajilla",
   "catalog.category.merchandise": "Merchandising",
+  "catalog.category.label":
+    "Categoría",
+  "catalog.category.all":
+    "Todas",
+  "catalog.search.label":
+    "Buscar",
+  "catalog.search.placeholder":
+    "vasos, pegatinas, cajas…",
   "catalog.moq": "Desde {min} unidades",
   "catalog.customizable": "Personalización disponible",
   "catalog.customization.unknown": "Personalización sin confirmar",
@@ -320,6 +328,20 @@ export const es: Catalogue = {
     " \u00b7 desde {min} unidades",
   "ui.catalog.from-unit":
     " \u00b7 desde {min} unidad",
+  "ui.catalog.quote-on-request":
+    "Precio a solicitud",
+  "ui.catalog.request-quote":
+    "Solicitar una cotización",
+  "ui.catalog.sourced-from":
+    "Suministrado por {supplier}",
+  "ui.catalog.confidence.verified":
+    "Confirmado: puede llevar su logo",
+  "ui.catalog.confidence.reported":
+    "El proveedor declara poder personalizarlo — se confirma antes del pago",
+  "ui.catalog.confidence.unavailable":
+    "No se puede personalizar",
+  "ui.catalog.confidence.unknown":
+    "Personalización no confirmada",
   "ui.package.open-brand-book":
     "Abrir el libro de marca \u2192",
   "ui.package.with-logo":
@@ -350,6 +372,18 @@ export const es: Catalogue = {
     "Buscando en el cat\u00e1logo\u2026",
   "ui.assistant.product-meta":
     "M\u00ednimo {min} \u00b7 {category}",
+  "ui.assistant-widget.open":
+    "Preguntar a Brandora",
+  "ui.assistant-widget.title":
+    "Preguntar a Brandora",
+  "ui.assistant-widget.close":
+    "Cerrar",
+  "ui.assistant-widget.placeholder":
+    "Haga una pregunta…",
+  "ui.assistant-widget.send":
+    "Enviar",
+  "ui.assistant-widget.open-full":
+    "Abrir el asistente completo",
   "ui.assistant.needs-brand":
     "Crea primero una marca \u2014 el asistente responde a partir de ella. ",
   "ui.assistant.placeholder-hint":

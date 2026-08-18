@@ -98,6 +98,15 @@ export function priceProject(
     if (product.status !== "active") {
       throw new ValidationError("productId", `${product.name} is not available`);
     }
+    // A product with no landed price cannot be summed into a total — the only
+    // number available is zero, and zero is not "we haven't priced it yet",
+    // it is "free". Request a quote for this one directly instead.
+    if (product.quoteOnRequest) {
+      throw new ValidationError(
+        "productId",
+        `${product.name} has no fixed price yet — request a quote for it directly rather than adding it to an automatically priced package`,
+      );
+    }
     if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
       throw new ValidationError("quantity", `invalid quantity for ${product.name}`);
     }

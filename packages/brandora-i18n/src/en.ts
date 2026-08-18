@@ -180,6 +180,14 @@ export const en = {
   "catalog.category.brand-materials": "Brand materials",
   "catalog.category.tableware": "Tableware",
   "catalog.category.merchandise": "Merchandise",
+  "catalog.category.label":
+    "Category",
+  "catalog.category.all":
+    "All",
+  "catalog.search.label":
+    "Search",
+  "catalog.search.placeholder":
+    "cups, stickers, boxes…",
   "catalog.moq": "From {min} units",
   "catalog.customizable": "Customisation available",
   "catalog.customization.unknown": "Customisation not confirmed",
@@ -339,6 +347,20 @@ export const en = {
     " \u00b7 from {min} units",
   "ui.catalog.from-unit":
     " \u00b7 from {min} unit",
+  "ui.catalog.quote-on-request":
+    "Price on request",
+  "ui.catalog.request-quote":
+    "Request a quote",
+  "ui.catalog.sourced-from":
+    "Sourced from {supplier}",
+  "ui.catalog.confidence.verified":
+    "Confirmed: carries your logo",
+  "ui.catalog.confidence.reported":
+    "Supplier reports branding — we confirm before you pay",
+  "ui.catalog.confidence.unavailable":
+    "Cannot be branded",
+  "ui.catalog.confidence.unknown":
+    "Branding not confirmed yet",
   "ui.package.open-brand-book":
     "Open the brand book \u2192",
   "ui.package.with-logo":
@@ -369,6 +391,18 @@ export const en = {
     "Looking through the catalogue\u2026",
   "ui.assistant.product-meta":
     "Minimum {min} \u00b7 {category}",
+  "ui.assistant-widget.open":
+    "Ask Brandora",
+  "ui.assistant-widget.title":
+    "Ask Brandora",
+  "ui.assistant-widget.close":
+    "Close",
+  "ui.assistant-widget.placeholder":
+    "Ask a question…",
+  "ui.assistant-widget.send":
+    "Send",
+  "ui.assistant-widget.open-full":
+    "Open the full assistant",
   "ui.assistant.needs-brand":
     "Build a brand first \u2014 the assistant answers from it. ",
   "ui.assistant.placeholder-hint":

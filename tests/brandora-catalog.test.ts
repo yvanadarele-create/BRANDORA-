@@ -2,6 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  CATALOG,
   EXAMPLE_CATALOG,
   addItem,
   buildStarterPackage,
@@ -18,6 +19,46 @@ import {
   STARTER_PACKAGES,
 } from "@brandora/catalog";
 import { ValidationError, fromMajor } from "@brandora/shared";
+
+// ValidationError's public `.message` is deliberately a generic customer
+// sentence — the reason lives in `.technicalDetail`, which is what a test
+// about the reason must read. See tests/brandora-quote-pricing.test.ts.
+const detailOf = (fn: () => unknown): string => {
+  try {
+    fn();
+    throw new Error("expected it to throw");
+  } catch (err) {
+    if (err instanceof ValidationError) return err.technicalDetail;
+    throw err;
+  }
+};
+
+describe("the real catalogue never invents a price or a supplier", () => {
+  test("every shipped product names a real supplier", () => {
+    assert.ok(CATALOG.length > 0, "the catalogue should not be empty once real products exist");
+    for (const product of CATALOG) {
+      assert.ok(
+        product.supplierReference?.name,
+        `${product.id} has no supplierReference — this is exactly what check-catalog.mjs exists to block`,
+      );
+    }
+  });
+
+  test("a quote-on-request product is never priced above zero", () => {
+    for (const product of CATALOG) {
+      if (product.quoteOnRequest) {
+        assert.equal(product.indicativeUnitPrice.amount, 0, `${product.id} claims quoteOnRequest but also carries a price`);
+      }
+    }
+  });
+
+  test("addItem refuses a quote-on-request product rather than pricing it at zero", () => {
+    const quoteOnly = CATALOG.find((product) => product.quoteOnRequest);
+    assert.ok(quoteOnly, "expected at least one quote-on-request product to test against");
+    const pkg = createPackage("brn_1", "Test", quoteOnly.indicativeUnitPrice.currency);
+    assert.match(detailOf(() => addItem(pkg, quoteOnly, quoteOnly.minimumQuantity)), /no fixed price yet/);
+  });
+});
 
 /* --- §25, §64 The shelf --------------------------------------------------- */
 

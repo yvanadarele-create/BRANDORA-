@@ -19,6 +19,7 @@ import {
   mountAccountNav,
   onLocaleChange,
   price,
+  priceLabel,
   projectUrl,
   requireSignIn,
   showError,
@@ -195,7 +196,12 @@ async function renderRecommendations() {
         el('article', { class: 'card' }, [
           el('h3', { style: 'font-size:1.02rem', text: entry.product.name }),
           el('p', { class: 'product__reason', text: entry.reasons[0] || '' }),
-          el('p', { class: 'product__price', text: t('ui.catalog.per-unit', '{price} per unit', { price: price(entry.product.unitPrice) }) }),
+          el('p', {
+            class: 'product__price',
+            text: entry.product.quoteOnRequest
+              ? priceLabel(entry.product)
+              : t('ui.catalog.per-unit', '{price} per unit', { price: priceLabel(entry.product) }),
+          }),
           el('a', {
             class: 'btn btn--ghost btn--small',
             href: projectUrl('catalog.html', state.projectId),

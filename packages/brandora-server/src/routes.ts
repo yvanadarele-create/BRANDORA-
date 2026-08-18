@@ -239,6 +239,10 @@ const productView = (product: BrandoraProduct) => ({
   minimumQuantity: product.minimumQuantity,
   availableQuantity: product.availableQuantity,
   unitPrice: asMoney(product.indicativeUnitPrice),
+  // See BrandoraProduct.quoteOnRequest: unitPrice above is zero when this is
+  // true, and the interface must never format it as a price.
+  quoteOnRequest: product.quoteOnRequest === true,
+  supplierReference: product.supplierReference ?? null,
   weightG: product.dimensions?.weightG ?? null,
   featured: product.featured,
   customization: {
@@ -1035,6 +1039,15 @@ export function createRouter(deps: ServerDeps): Router {
     const productId = requireString(ctx.body, "productId", 80);
     const product = byId.get(productId);
     if (!product) throw new ValidationError("productId", `unknown product ${productId}`);
+    // A quote-on-request product has no landed price to sum into a package
+    // total — adding it would either silently price it at zero or crash the
+    // package view. It gets its own request-a-quote path instead.
+    if (product.quoteOnRequest) {
+      throw new ValidationError(
+        "productId",
+        `${product.name} has no fixed price yet — request a quote for it directly`,
+      );
+    }
 
     const quantity = requireInteger(ctx.body, "quantity", 1, 1_000_000);
     const method = optionalString(ctx.body, "customizationMethod", 40);

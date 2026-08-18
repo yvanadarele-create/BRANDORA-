@@ -30,7 +30,7 @@ import {
   unsignValue,
 } from "@brandora/server";
 import { EXAMPLE_CATALOG } from "@brandora/catalog";
-import { money } from "@brandora/shared";
+import { ValidationError, money } from "@brandora/shared";
 
 /**
  * The repository root, found rather than assumed.
@@ -224,6 +224,23 @@ describe("pricing accepts intent, never amounts", () => {
 
   it("refuses an unknown product rather than dropping the line", () => {
     assert.throws(() => priceProject([{ productId: "prd_not_real", quantity: 10 }], EXAMPLE_CATALOG, settings));
+  });
+
+  it("refuses to price a quote-on-request product rather than treating its zero as a real cost", () => {
+    const quoteOnly = {
+      ...product,
+      id: "prd_test_quote_only",
+      quoteOnRequest: true as const,
+    };
+    // ValidationError's public `.message` is a generic customer sentence on
+    // purpose — the reason is on `.technicalDetail`.
+    try {
+      priceProject([{ productId: quoteOnly.id, quantity: 10 }], [...EXAMPLE_CATALOG, quoteOnly], settings);
+      assert.fail("expected priceProject to refuse a quote-on-request product");
+    } catch (err) {
+      assert.ok(err instanceof ValidationError);
+      assert.match(err.technicalDetail, /no fixed price yet/);
+    }
   });
 
   it("refuses a negative or fractional quantity", () => {

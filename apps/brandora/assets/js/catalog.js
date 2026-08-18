@@ -20,12 +20,13 @@ import {
   ApiError,
   api,
   clear,
+  confidenceLabel,
   currentProjectId,
   el,
   hideError,
   mountAccountNav,
   onLocaleChange,
-  price,
+  priceLabel,
   projectUrl,
   showError,
   t,
@@ -57,35 +58,59 @@ function customizationTag(product) {
   const info = product.customization;
   return el('span', {
     class: `tag ${info.canCarryLogo ? 'tag--ok' : 'tag--unconfirmed'}`,
-    text: info.label,
+    text: confidenceLabel(info),
   });
 }
 
 function productCard(product, orderable, quantity) {
   const reason = state.recommended.get(product.id);
+  const quoteOnly = product.quoteOnRequest === true;
 
-  const actions = orderable
+  const actions = quoteOnly
     ? [
-        el('button', {
+        el('a', {
           class: 'btn btn--primary btn--small',
-          type: 'button',
-          'data-add': product.id,
-          text: t('ui.catalog.add-to-package', 'Add to my package'),
+          href: 'index.html#ask-brandora',
+          text: t('ui.catalog.request-quote', 'Request a quote'),
         }),
       ]
-    : [
-        el('p', {
-          class: 'product__meta',
-          text: t('ui.catalog.raise-quantity', 'Minimum order {min}. Raise your quantity to add it.', {
-            min: product.minimumQuantity,
+    : orderable
+      ? [
+          el('button', {
+            class: 'btn btn--primary btn--small',
+            type: 'button',
+            'data-add': product.id,
+            text: t('ui.catalog.add-to-package', 'Add to my package'),
           }),
-        }),
-      ];
+        ]
+      : [
+          el('p', {
+            class: 'product__meta',
+            text: t('ui.catalog.raise-quantity', 'Minimum order {min}. Raise your quantity to add it.', {
+              min: product.minimumQuantity,
+            }),
+          }),
+        ];
 
   return el('article', { class: 'card' }, [
+    product.images?.[0]
+      ? el('img', {
+          class: 'product__photo',
+          src: product.images[0],
+          alt: product.name,
+          loading: 'lazy',
+          decoding: 'async',
+        })
+      : null,
     el('h3', { text: product.name }),
     el('p', { class: 'product__meta', text: `${product.category} · ${product.subcategory}` }),
     el('p', { text: product.description }),
+    product.supplierReference
+      ? el('p', {
+          class: 'product__meta',
+          text: t('ui.catalog.sourced-from', 'Sourced from {supplier}', { supplier: product.supplierReference.name }),
+        })
+      : null,
     reason
       ? el('p', {
           class: 'product__reason',
@@ -94,7 +119,7 @@ function productCard(product, orderable, quantity) {
       : null,
     el('p', {
       class: 'product__price',
-      text: t('ui.catalog.per-unit', '{price} per unit', { price: price(product.unitPrice) }),
+      text: quoteOnly ? priceLabel(product) : t('ui.catalog.per-unit', '{price} per unit', { price: priceLabel(product) }),
     }),
     el('p', { class: 'product__meta' }, [
       customizationTag(product),

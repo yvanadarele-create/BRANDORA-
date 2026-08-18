@@ -34,8 +34,10 @@ import {
   type BrandoraProduct,
   type Customization,
   type ProductCategory,
+  DEFAULT_CURRENCY,
   fromMajor,
   money,
+  zero,
 } from "@brandora/shared";
 
 const NOW = "2026-01-01T00:00:00.000Z";
@@ -50,12 +52,21 @@ interface SeedInput {
   colors: string[];
   minimumQuantity: number;
   availableQuantity: number;
-  /** Major units, XOF. */
-  unitPrice: number;
+  /**
+   * Major units, XOF. Omit together with `quoteOnRequest: true` when no
+   * landed price has been computed yet — never a guess dressed as a number.
+   */
+  unitPrice?: number;
+  /** See `BrandoraProduct.quoteOnRequest`. */
+  quoteOnRequest?: boolean;
+  /** See `BrandoraProduct.supplierReference`. Required for anything real. */
+  supplierReference?: { supplierId: string; name: string; platform?: string };
   customization: Customization;
   featured?: boolean;
   volumeMl?: number;
   weightG?: number;
+  /** Overrides the default `/assets/img/catalog/<id>.webp` guess. */
+  images?: string[];
 }
 
 const verified = (methods: Customization["methods"], unitPrice: number, minimumUnits: number, notes: string): Customization => ({
@@ -383,13 +394,15 @@ function toProduct(seed: SeedInput): BrandoraProduct {
     category: seed.category,
     subcategory: seed.subcategory,
     description: seed.description,
-    images: [`/assets/img/catalog/${seed.id.replace("prd_", "")}.webp`],
+    images: seed.images ?? [`/assets/img/catalog/${seed.id.replace("prd_", "")}.webp`],
     material: seed.material,
     dimensions: { volumeMl: seed.volumeMl, weightG: seed.weightG },
     colors: seed.colors,
     minimumQuantity: seed.minimumQuantity,
     availableQuantity: seed.availableQuantity,
-    indicativeUnitPrice: fromMajor(seed.unitPrice),
+    indicativeUnitPrice: seed.quoteOnRequest ? zero(DEFAULT_CURRENCY) : fromMajor(seed.unitPrice ?? 0),
+    ...(seed.quoteOnRequest ? { quoteOnRequest: true as const } : {}),
+    ...(seed.supplierReference ? { supplierReference: seed.supplierReference } : {}),
     customization: seed.customization,
     variants: [],
     status: "active",
@@ -406,11 +419,90 @@ function toProduct(seed: SeedInput): BrandoraProduct {
  */
 export const EXAMPLE_CATALOG: readonly BrandoraProduct[] = SEED.map(toProduct);
 
+/* --- Real products ---------------------------------------------------------
+ *
+ * Unlike SEED above, every field here traces to something a real supplier
+ * said, photographed, or wrote in a spec sheet — see sourcing/README.md for
+ * where that evidence lives (git-ignored; it carries a supplier's contact
+ * details, and this repository is public).
+ *
+ * None of these three carry a price. Shenzhen Zhengbiao quoted a per-lot cost
+ * in USD to their factory gate; turning that into a customer price in XOF
+ * needs international freight, customs and local delivery, none of which is
+ * quoted yet, and Brandora's own quote engine (quote-pricing.ts) refuses to
+ * silently treat a missing cost as zero. So `quoteOnRequest: true` and no
+ * `unitPrice` — a visitor can see the product and its real MOQ, and asks for
+ * a quote rather than reading an invented number.
+ */
+const REAL_SEED: SeedInput[] = [
+  {
+    id: "prd_label_holo_round_20",
+    name: "Round holographic security label, 20×20mm",
+    category: "brand-materials",
+    subcategory: "labels",
+    description:
+      "Tamper-evident holographic film, round, 20mm. Quoted by the manufacturer per production lot, from 10,000 pieces — well above a single small order, which is why Brandora is asking them about smaller pilot quantities before listing a price.",
+    material: "Holographic film",
+    colors: ["gold / rainbow"],
+    minimumQuantity: 10_000,
+    availableQuantity: 100_000,
+    quoteOnRequest: true,
+    supplierReference: {
+      supplierId: "SUP-0003",
+      name: "Shenzhen Zhengbiao Anti-Counterfeit Technology Co., Ltd",
+      platform: "made-in-china",
+    },
+    customization: unknown([], "Whether Brandora's own artwork or a serial sequence can be added to this label has not been confirmed with the manufacturer."),
+    images: ["/assets/img/sourcing/holographic-labels.webp"],
+  },
+  {
+    id: "prd_label_holo_rect_1625",
+    name: "Rectangular holographic security label, 16×25mm",
+    category: "brand-materials",
+    subcategory: "labels",
+    description:
+      "Tamper-evident holographic film, rectangular, 16×25mm. Same manufacturer and minimum order as the round label.",
+    material: "Holographic film",
+    colors: ["gold / rainbow"],
+    minimumQuantity: 10_000,
+    availableQuantity: 100_000,
+    quoteOnRequest: true,
+    supplierReference: {
+      supplierId: "SUP-0003",
+      name: "Shenzhen Zhengbiao Anti-Counterfeit Technology Co., Ltd",
+      platform: "made-in-china",
+    },
+    customization: unknown([], "Whether Brandora's own artwork or a serial sequence can be added to this label has not been confirmed with the manufacturer."),
+    images: ["/assets/img/sourcing/holographic-labels.webp"],
+  },
+  {
+    id: "prd_label_holo_rect_1625_qr",
+    name: "Rectangular holographic label with QR code and serial, 16×25mm",
+    category: "brand-materials",
+    subcategory: "labels",
+    description:
+      "The same holographic film with a printed QR code and a unique serial number per label, for scan-to-verify authentication. Longer production time than the plain labels (9–10 days against 7–9) because each one is individually numbered.",
+    material: "Holographic film",
+    colors: ["gold / rainbow"],
+    minimumQuantity: 10_000,
+    availableQuantity: 100_000,
+    quoteOnRequest: true,
+    supplierReference: {
+      supplierId: "SUP-0003",
+      name: "Shenzhen Zhengbiao Anti-Counterfeit Technology Co., Ltd",
+      platform: "made-in-china",
+    },
+    customization: unknown([], "Whether Brandora's own artwork can be combined with the QR/serial system has not been confirmed with the manufacturer."),
+    images: ["/assets/img/sourcing/holographic-labels.webp"],
+  },
+];
+
 /**
  * The catalogue Brandora actually serves.
  *
- * Empty by decision, not by oversight. Real products are entered against real
- * manufacturers; until then the catalogue page says it is being prepared, which
- * is true, rather than showing twenty things nobody can actually order.
+ * No longer empty, but still never *invented*: every product below traces to
+ * a named, real supplier (`supplierReference`), and none carries a price
+ * nobody quoted (`quoteOnRequest` where a landed price is not yet computed).
+ * `scripts/check-catalog.mjs` fails the build if either guarantee breaks.
  */
-export const CATALOG: readonly BrandoraProduct[] = [];
+export const CATALOG: readonly BrandoraProduct[] = REAL_SEED.map(toProduct);

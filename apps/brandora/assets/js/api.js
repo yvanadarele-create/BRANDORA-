@@ -294,6 +294,29 @@ export function hideError(node) {
 /** Money always arrives pre-formatted from the server. The browser never divides. */
 export const price = (money) => (money ? money.display : '—');
 
+/**
+ * A product's price, or the honest reason there isn't one.
+ *
+ * `product.unitPrice` is still a real Money object (zero) on a quote-on-request
+ * product — the field can never be absent without breaking every consumer that
+ * expects Money — so calling `price()` on it directly would print "0 FCFA" for
+ * something nobody priced at zero. Check the flag first.
+ */
+export const priceLabel = (product) =>
+  product.quoteOnRequest ? t('ui.catalog.quote-on-request', 'Price on request') : price(product.unitPrice);
+
+/**
+ * The customisation tag's text, translated.
+ *
+ * The server computes `customization.label` so tests can assert on it without
+ * loading a translator, but it is only ever English — a customer-facing tag
+ * must go through `t()` like everything else, keyed on the one fact that
+ * actually varies (`confidence`), with that same English sentence as the
+ * fallback for a locale that has not translated the key yet.
+ */
+export const confidenceLabel = (customization) =>
+  t(`ui.catalog.confidence.${customization.confidence}`, customization.label);
+
 /* --- Language --------------------------------------------------------------- */
 
 /**
