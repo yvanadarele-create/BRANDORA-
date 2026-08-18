@@ -37,7 +37,6 @@ import {
   add,
   formatMoney,
   money,
-  multiply,
   sum,
   toMajor,
 } from "@brandora/shared";
@@ -1439,8 +1438,11 @@ export function createRouter(deps: ServerDeps): Router {
 
     // Margin is stored, never returned by a customer-facing read (§39). It is
     // written here so an admin can see it later; the quote view below has no
-    // field it could travel in.
-    const margin = multiply(subtotal, deps.pricing.serviceRate);
+    // field it could travel in. Read straight off `priced` rather than
+    // recomputed, so the stored figure can never drift from what the
+    // customer was actually charged — priceProject() already applies the
+    // margin to goods and shipping together.
+    const margin = priced.serviceTotal;
 
     const quote = await insertQuoteWithUniqueReference(repos, issuedAt, {
       projectId: project.id,

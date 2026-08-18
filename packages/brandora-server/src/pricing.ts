@@ -34,7 +34,13 @@ export interface RequestedLine {
 
 export interface PricingSettings {
   currency: CurrencyCode;
-  /** Brandora's coordination fee, as a rate on goods. */
+  /**
+   * Brandora's margin, as a rate on (products + customization + shipping) —
+   * everything the customer is charged before this fee and the logistics fee
+   * are added. Configurable rather than hardcoded so it can be tuned without
+   * a deploy; BRANDORA_MARGIN_RATE defaults to 0.35, inside the 25–35% band
+   * this business runs on.
+   */
   serviceRate: number;
   /** Local handling and last-mile, as a rate on goods. */
   logisticsRate: number;
@@ -180,7 +186,12 @@ export function priceProject(
   );
 
   const logisticsTotal = multiply(goods, settings.logisticsRate);
-  const serviceTotal = multiply(goods, settings.serviceRate);
+  // The margin is charged on what the customer's order actually costs
+  // Brandora to fulfil — goods *and* shipping — not on goods alone. A rate
+  // applied only to goods understates the true margin on every order that
+  // carries a shipping charge, worst on the small orders this business is
+  // built for, where shipping is a larger share of the total.
+  const serviceTotal = multiply(add(goods, shippingTotal), settings.serviceRate);
 
   const rawTotal = add(add(goods, shippingTotal), add(logisticsTotal, serviceTotal));
   const total = roundUpTo(rawTotal, settings.roundingStep ?? 0);

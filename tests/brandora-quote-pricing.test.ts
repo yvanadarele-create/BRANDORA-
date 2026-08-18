@@ -94,6 +94,54 @@ describe("gross margin, not markup", () => {
     // USD has cents, so 8000 minor units is $80.00 and 11429 is $114.29.
     assert.equal(result.customerPrice.amount, 11_429);
   });
+
+  it("the margin base is product cost plus shipping, not product cost alone", () => {
+    // Item 5 of the six-issue ticket: a margin applied only to product cost
+    // understates the real margin the moment shipping is non-zero — exactly
+    // the bug this engine was built to replace (see the file header).
+    // localDelivery is this engine's shipping component; a quote that ships
+    // for free and one that ships for 20,000 must not land on the same
+    // customer price for the same product cost, or shipping was never in the
+    // base to begin with.
+    const flat: PricingPolicy = {
+      ...policy,
+      paymentFeeRate: 0,
+      contingencyRate: 0,
+      bands: [{ upToCost: null, targetMargin: 0.3, label: "flat" }],
+      minimumMargin: 0,
+      minimumOrderValue: money(0, XOF),
+      minimumGrossProfit: money(0, XOF),
+    };
+
+    const noShipping = priceQuote(
+      {
+        currency: XOF,
+        product: money(100_000, XOF),
+        internationalFreight: money(0, XOF),
+        customsAndHandling: money(0, XOF),
+        localDelivery: money(0, XOF),
+      },
+      flat,
+    );
+    const withShipping = priceQuote(
+      {
+        currency: XOF,
+        product: money(100_000, XOF),
+        internationalFreight: money(0, XOF),
+        customsAndHandling: money(0, XOF),
+        localDelivery: money(20_000, XOF),
+      },
+      flat,
+    );
+
+    assert.notEqual(withShipping.customerPrice.amount, noShipping.customerPrice.amount);
+    // 120000 ÷ 0.7, rounded up — the whole landed cost divided by (1 − margin).
+    assert.equal(withShipping.customerPrice.amount, 171_429);
+    assert.ok(
+      Math.abs(realised(withShipping) - 0.3) < 0.001,
+      `realised margin with shipping in the base should still be 30%, was ${(realised(withShipping) * 100).toFixed(2)}%`,
+    );
+  });
 });
 
 describe("the payment fee comes out of the customer's payment", () => {

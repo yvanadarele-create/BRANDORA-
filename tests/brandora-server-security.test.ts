@@ -262,6 +262,30 @@ describe("pricing accepts intent, never amounts", () => {
       priced.serviceTotal.amount;
     assert.equal(parts, priced.total.amount);
   });
+
+  it("charges the margin on shipping as well as goods, not on goods alone", () => {
+    // Rounding is switched off for this one: the rounding step deliberately
+    // lands its remainder on the service line (see pricing.ts), which would
+    // make an exact-figure assertion here fight that behaviour instead of
+    // testing the margin base.
+    const exact = { ...settings, roundingStep: 0 };
+    const priced = priceProject([{ productId: product.id, quantity: 60 }], EXAMPLE_CATALOG, exact);
+    const goods = priced.productsTotal.amount + priced.customizationTotal.amount;
+
+    // The bug this guards against: `service = goods × rate`, which drops
+    // shipping out of the margin base entirely and understates the real
+    // margin on every order — worst on the small ones shipping is a larger
+    // share of.
+    const marginOnGoodsOnly = Math.round(goods * exact.serviceRate);
+    assert.notEqual(
+      priced.serviceTotal.amount,
+      marginOnGoodsOnly,
+      "the margin must not be computed on goods alone once shipping is non-zero",
+    );
+
+    const expected = Math.round((goods + priced.shippingTotal.amount) * exact.serviceRate);
+    assert.equal(priced.serviceTotal.amount, expected);
+  });
 });
 
 /* --- Source scans ------------------------------------------------------------ */
