@@ -20,8 +20,10 @@ import {
   currentProjectId,
   el,
   mountAccountNav,
+  onLocaleChange,
   projectUrl,
   requireSignIn,
+  t,
 } from './api.js';
 
 const node = {
@@ -100,15 +102,37 @@ function renderPersonality(traits) {
  * are shown as what they are: the palette and the letterforms applied to the
  * shapes of the things in the catalogue.
  */
+/**
+ * The products a brand is shown on.
+ *
+ * Real photographs of real packaging from the manufacturers Brandora sources
+ * from — not CSS silhouettes. A coloured rounded rectangle labelled "Cup" tells
+ * a founder nothing about whether their green works on a kraft box, which is
+ * the entire question this section exists to answer.
+ *
+ * The list is what there are photographs *of*. There is no cup here because
+ * there is no photograph of a cup: promising one and drawing a rectangle
+ * instead is how the old version worked, and it is worse than a shorter list.
+ */
 const APPLICATIONS = [
-  { key: 'cup', label: 'Cup', shape: 'app-cup' },
-  { key: 'box', label: 'Box', shape: 'app-box' },
-  { key: 'bag', label: 'Bag', shape: 'app-bag' },
-  { key: 'card', label: 'Business card', shape: 'app-card' },
-  { key: 'label', label: 'Label', shape: 'app-label' },
-  { key: 'sticker', label: 'Sticker', shape: 'app-sticker' },
+  { key: 'carton', labelKey: 'brand.app.carton', label: 'Folding carton', image: 'boxes-folding-cartons.webp' },
+  { key: 'mailer', labelKey: 'brand.app.mailer', label: 'Mailer box', image: 'boxes-mailer.webp' },
+  { key: 'small', labelKey: 'brand.app.small', label: 'Small printed box', image: 'boxes-small-printed.webp' },
+  { key: 'gift', labelKey: 'brand.app.gift', label: 'Rigid gift box', image: 'boxes-rigid-gift.webp' },
+  { key: 'display', labelKey: 'brand.app.display', label: 'Counter display', image: 'boxes-display.webp' },
+  { key: 'label', labelKey: 'brand.app.label', label: 'Label', image: 'holographic-labels.webp' },
 ];
 
+/**
+ * The brand, on real products.
+ *
+ * The mark sits in a plate over the photograph rather than being warped onto
+ * the box's surface. That is a deliberate limit: a perspective-mapped mock-up
+ * would look like a proof, and a proof is something only the manufacturer can
+ * produce after seeing the artwork. This shows the colour and the letterforms
+ * against the real material, which is the honest version of the question — and
+ * the caption underneath says exactly that.
+ */
 function renderApplications(brand) {
   const host = document.querySelector('[data-applications]');
   clear(host);
@@ -118,11 +142,25 @@ function renderApplications(brand) {
   APPLICATIONS.forEach((application) => {
     host.appendChild(
       el('figure', { class: 'application' }, [
-        el('div', { class: `application__object ${application.shape}` }, [
-          el('span', { class: 'application__mark', text: mark }),
-          el('span', { class: 'application__word', text: brand.name }),
+        el('div', { class: 'application__object' }, [
+          el('img', {
+            class: 'application__photo',
+            src: `assets/img/sourcing/${application.image}`,
+            width: '700',
+            height: '700',
+            loading: 'lazy',
+            decoding: 'async',
+            alt: '',
+          }),
+          el('span', { class: 'application__plate' }, [
+            el('span', { class: 'application__mark', text: mark }),
+            el('span', { class: 'application__word', text: brand.name }),
+          ]),
         ]),
-        el('figcaption', { class: 'application__caption', text: application.label }),
+        el('figcaption', {
+          class: 'application__caption',
+          text: t(application.labelKey, application.label),
+        }),
       ]),
     );
   });

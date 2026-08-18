@@ -508,4 +508,18 @@ export const es: Catalogue = {
     "Cajas caj\u00f3n en tres colores",
   "sourcing.alt.labels":
     "Etiquetas hologr\u00e1ficas doradas en su caja",
+  "brand.app.carton":
+    "Estuche plegable",
+  "brand.app.mailer":
+    "Caja de env\u00edo",
+  "brand.app.small":
+    "Caja peque\u00f1a impresa",
+  "brand.app.gift":
+    "Caja r\u00edgida de regalo",
+  "brand.app.display":
+    "Expositor de mostrador",
+  "brand.app.label":
+    "Etiqueta",
+  "brand.world.caveat":
+    "Tus colores y tus letras sobre los materiales reales que Brandora consigue. Una indicaci\u00f3n, no una prueba de impresi\u00f3n \u2014 la produce el fabricante cuando reciba tus archivos.",
 };

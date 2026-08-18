@@ -28,6 +28,7 @@ import {
 import type { Row, SqlDriver } from "./driver.js";
 import {
   fromJson,
+  fromJsonArray,
   int,
   nowIso,
   optionalText,
@@ -126,7 +127,7 @@ const toProjectSummary = (row: Record<string, unknown>): ProjectSummaryRow => ({
   positioning: (optionalText(row["positioning"]) as Positioning | undefined) ?? null,
   palette: row["palette"] === null || row["palette"] === undefined
     ? null
-    : fromJson<ColorSwatch[]>(row["palette"], []),
+    : fromJsonArray<ColorSwatch>(row["palette"], []),
   packageItems: int(row["package_items"]),
 });
 
@@ -237,9 +238,9 @@ const toSupplier = (row: Record<string, unknown>): SupplierRow => ({
   contactName: optionalText(row["contact_name"]),
   contactEmail: optionalText(row["contact_email"]),
   contactPhone: optionalText(row["contact_phone"]),
-  categories: fromJson<string[]>(row["categories"], []),
-  certifications: fromJson<string[]>(row["certifications"], []),
-  customization: fromJson<string[]>(row["customization"], []),
+  categories: fromJsonArray<string>(row["categories"], []),
+  certifications: fromJsonArray<string>(row["certifications"], []),
+  customization: fromJsonArray<string>(row["customization"], []),
   minimumOrder: int(row["minimum_order"]),
   leadTimeDays: row["lead_time_days"] === null ? undefined : int(row["lead_time_days"]),
   completedOrders: int(row["completed_orders"]),
@@ -268,7 +269,7 @@ const toOffer = (row: Record<string, unknown>): SupplierOfferRow => ({
   availableQuantity: int(row["available_quantity"]),
   productionDays: row["production_days"] === null ? undefined : int(row["production_days"]),
   shippingCost: row["shipping_cost"] === null ? undefined : readMoney(row["shipping_cost"], row["currency"]),
-  customization: fromJson<string[]>(row["customization"], []),
+  customization: fromJsonArray<string>(row["customization"], []),
   lastCheckedAt: text(row["last_checked_at"]),
 });
 
@@ -295,9 +296,9 @@ const toQualityCheck = (row: Record<string, unknown>): QualityCheckRow => ({
   kind: text(row["kind"]) as QualityCheckRow["kind"],
   outcome: text(row["outcome"]) as QualityOutcome,
   inspectedBy: text(row["inspected_by"]),
-  defects: fromJson<string[]>(row["defects"], []),
+  defects: fromJsonArray<string>(row["defects"], []),
   notes: optionalText(row["notes"]),
-  evidence: fromJson<string[]>(row["evidence"], []),
+  evidence: fromJsonArray<string>(row["evidence"], []),
   inspectedAt: optionalText(row["inspected_at"]),
   createdAt: text(row["created_at"]),
 });
@@ -481,7 +482,7 @@ function toQuote(row: Record<string, unknown>): QuoteRow {
     userId: text(row["user_id"]),
     reference: text(row["reference"]),
     currency,
-    lineItems: fromJson<QuoteLineRow[]>(row["line_items"], []),
+    lineItems: fromJsonArray<QuoteLineRow>(row["line_items"], []),
     subtotal: readMoney(row["subtotal"], currency),
     shipping: readMoney(row["shipping"], currency),
     fees: readMoney(row["fees"], currency),
@@ -1319,14 +1320,14 @@ export function createRepositories(db: SqlDriver): Repositories {
           industry: text(row["industry"]),
           positioning: text(row["positioning"]) as Positioning,
           targetCustomer: text(row["target_customer"]),
-          personality: fromJson<string[]>(row["personality"], []),
+          personality: fromJsonArray<string>(row["personality"], []),
           promise: text(row["promise"]),
           mission: text(row["mission"]),
           vision: text(row["vision"]),
           slogan: text(row["slogan"]),
           toneOfVoice: text(row["tone_of_voice"]),
           brandStory: text(row["brand_story"]),
-          nameAlternatives: fromJson<string[]>(row["name_alternatives"], []),
+          nameAlternatives: fromJsonArray<string>(row["name_alternatives"], []),
           createdAt: text(row["created_at"]),
         };
       },
@@ -1363,7 +1364,7 @@ export function createRepositories(db: SqlDriver): Repositories {
         return {
           id: text(row["id"]),
           projectId: text(row["project_id"]),
-          palette: fromJson<ColorSwatch[]>(row["palette"], []),
+          palette: fromJsonArray<ColorSwatch>(row["palette"], []),
           typography: fromJson<Typography>(row["typography"], {
             primary: "Inter",
             secondary: "Inter",

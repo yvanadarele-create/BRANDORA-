@@ -63,6 +63,33 @@ export function fromJson<T>(value: unknown, fallback: T): T {
   }
 }
 
+/**
+ * A JSON column that must come back as an array.
+ *
+ * `fromJson` casts whatever it parsed to `T` and trusts the caller's type
+ * argument, which is fine until the stored value is not the shape the column is
+ * supposed to hold. A strategy whose `personality` was written as the string
+ * "warm, reliable" instead of `["warm","reliable"]` parses back as a string,
+ * satisfies `fromJson<string[]>` as far as the compiler is concerned, and then
+ * throws `personality.join is not a function` the first time anything reads it.
+ *
+ * That failure is permanent: the row is on disk, so every load of the brand
+ * book 500s until somebody edits the database. A model returning a string where
+ * an array was asked for is exactly the malformed response this layer exists to
+ * absorb, so the shape is checked rather than assumed.
+ *
+ * A single string is wrapped rather than discarded — "warm, reliable" is data
+ * somebody meant, and losing it silently is its own bug.
+ */
+export function fromJsonArray<T>(value: unknown, fallback: T[] = []): T[] {
+  const parsed = fromJson<unknown>(value, null);
+  if (Array.isArray(parsed)) return parsed as T[];
+  if (typeof parsed === "string" && parsed.trim() !== "") {
+    return parsed.split(/\s*[,;·]\s*/).filter(Boolean) as unknown as T[];
+  }
+  return fallback;
+}
+
 export const text = (value: unknown): string => (typeof value === "string" ? value : String(value ?? ""));
 
 export const optionalText = (value: unknown): string | undefined =>

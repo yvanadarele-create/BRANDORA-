@@ -377,3 +377,59 @@ describe("transactions", () => {
     assert.equal((await repos.projects.listForOwner(user.id)).length, 1);
   });
 });
+
+/**
+ * A malformed value in a JSON array column must not poison the row for ever.
+ *
+ * `fromJson<string[]>` casts whatever it parsed and trusts the type argument.
+ * When a model returned "warm, reliable" instead of ["warm","reliable"], the
+ * value parsed back as a string, satisfied the compiler, and threw
+ * `personality.join is not a function` on every subsequent read — a permanent
+ * 500 on the brand book, fixable only by editing the database.
+ */
+describe("a JSON array column survives a value that is not an array", () => {
+  test("wraps a single string rather than throwing or dropping it", async () => {
+    const db = openSqlite(":memory:");
+    const repos = createRepositories(db);
+
+    const user = await repos.users.create({ email: `shape-${Date.now()}@example.com`, name: "Shape" });
+    const project = await repos.projects.create(user.id, "Shape test");
+
+    // Exactly what a model returning prose instead of a list would store.
+    await repos.strategies.save(project.id, {
+      name: "Maison Doré", description: "A bakery", industry: "bakery",
+      positioning: "accessible-premium", targetCustomer: "Families",
+      personality: "chaleureux, fiable" as unknown as string[],
+      promise: "Baked this morning", mission: "m", vision: "v", slogan: "s",
+      toneOfVoice: "warm", brandStory: "story", nameAlternatives: [],
+    }, "{}");
+
+    const read = await repos.strategies.findForProject(project.id);
+    assert.ok(read, "the strategy was not saved");
+    assert.ok(Array.isArray(read.personality), "personality must read back as an array");
+    // The words are kept, not discarded — somebody meant them.
+    assert.deepEqual(read.personality, ["chaleureux", "fiable"]);
+    // And the thing that used to throw now works.
+    assert.equal(read.personality.join(" · "), "chaleureux · fiable");
+
+    await db.close();
+  });
+
+  test("a proper array is untouched", async () => {
+    const db = openSqlite(":memory:");
+    const repos = createRepositories(db);
+    const user = await repos.users.create({ email: `shape2-${Date.now()}@example.com`, name: "S" });
+    const project = await repos.projects.create(user.id, "Shape test");
+
+    await repos.strategies.save(project.id, {
+      name: "N", description: "d", industry: "bakery", positioning: "premium",
+      targetCustomer: "t", personality: ["warm", "elegant"], promise: "p",
+      mission: "m", vision: "v", slogan: "s", toneOfVoice: "t", brandStory: "b",
+      nameAlternatives: [],
+    }, "{}");
+
+    const read = await repos.strategies.findForProject(project.id);
+    assert.deepEqual(read?.personality, ["warm", "elegant"]);
+    await db.close();
+  });
+});

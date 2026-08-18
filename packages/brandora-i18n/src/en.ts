@@ -527,6 +527,20 @@ export const en = {
     "Drawer boxes in three colours",
   "sourcing.alt.labels":
     "Gold holographic security labels in their carton",
+  "brand.app.carton":
+    "Folding carton",
+  "brand.app.mailer":
+    "Mailer box",
+  "brand.app.small":
+    "Small printed box",
+  "brand.app.gift":
+    "Rigid gift box",
+  "brand.app.display":
+    "Counter display",
+  "brand.app.label":
+    "Label",
+  "brand.world.caveat":
+    "Your colours and letterforms shown against the real materials Brandora sources. An indication, not a print proof \u2014 the manufacturer produces that once they have your artwork.",
 } as const;
 
 export type MessageKey = keyof typeof en;

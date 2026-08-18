@@ -516,4 +516,18 @@ export const fr: Catalogue = {
     "Bo\u00eetes tiroir en trois couleurs",
   "sourcing.alt.labels":
     "\u00c9tiquettes holographiques dor\u00e9es dans leur carton",
+  "brand.app.carton":
+    "\u00c9tui pliant",
+  "brand.app.mailer":
+    "Bo\u00eete d'exp\u00e9dition",
+  "brand.app.small":
+    "Petite bo\u00eete imprim\u00e9e",
+  "brand.app.gift":
+    "Coffret rigide",
+  "brand.app.display":
+    "Pr\u00e9sentoir de comptoir",
+  "brand.app.label":
+    "\u00c9tiquette",
+  "brand.world.caveat":
+    "Vos couleurs et vos lettres sur les mati\u00e8res r\u00e9elles que Brandora source. Une indication, pas un bon \u00e0 tirer \u2014 c'est le fabricant qui le produit une fois vos fichiers re\u00e7us.",
 };

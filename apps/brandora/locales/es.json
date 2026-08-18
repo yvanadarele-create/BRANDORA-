@@ -348,5 +348,12 @@
   "sourcing.alt.small": "Cajas pequeñas impresas para velas",
   "sourcing.alt.colour": "Cajas impresas en rosa y amarillo",
   "sourcing.alt.drawer": "Cajas cajón en tres colores",
-  "sourcing.alt.labels": "Etiquetas holográficas doradas en su caja"
+  "sourcing.alt.labels": "Etiquetas holográficas doradas en su caja",
+  "brand.app.carton": "Estuche plegable",
+  "brand.app.mailer": "Caja de envío",
+  "brand.app.small": "Caja pequeña impresa",
+  "brand.app.gift": "Caja rígida de regalo",
+  "brand.app.display": "Expositor de mostrador",
+  "brand.app.label": "Etiqueta",
+  "brand.world.caveat": "Tus colores y tus letras sobre los materiales reales que Brandora consigue. Una indicación, no una prueba de impresión — la produce el fabricante cuando reciba tus archivos."
 }
