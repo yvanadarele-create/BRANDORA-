@@ -132,6 +132,7 @@ export const api = {
 
   /* Catalogue */
   catalog: (params) => request('GET', `/api/catalog${params ? `?${params}` : ''}`),
+  requestQuote: (productId, input) => request('POST', `/api/catalog/${productId}/quote-request`, input),
 
   /* Package */
   package: (id) => request('GET', `/api/projects/${id}/package`),

@@ -31,6 +31,8 @@ export interface OutboundMessage {
   body: string;
   /** For the transport's own logging. Never shown to the recipient. */
   kind: string;
+  /** Base64 content, Resend's own attachment shape — passed through as-is. */
+  attachments?: { filename: string; content: string }[];
 }
 
 export interface NotificationTransport {
@@ -98,6 +100,9 @@ export class ResendTransport implements NotificationTransport {
         to: [message.to],
         subject: message.subject,
         text: message.body,
+        ...(message.attachments && message.attachments.length > 0
+          ? { attachments: message.attachments }
+          : {}),
       }),
     });
 
@@ -180,6 +185,13 @@ export async function deliverOne(
       subject: notification.subject,
       body: notification.body,
       kind: notification.kind,
+      ...(notification.attachmentFilename && notification.attachmentData
+        ? {
+            attachments: [
+              { filename: notification.attachmentFilename, content: notification.attachmentData },
+            ],
+          }
+        : {}),
     });
     await repos.notifications.markSent(notification.id);
     return true;

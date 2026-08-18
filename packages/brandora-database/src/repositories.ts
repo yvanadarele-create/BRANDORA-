@@ -346,6 +346,9 @@ export interface NotificationRow {
   body: string;
   /** Overrides the recipient's own email. See the column's comment in schema.sql. */
   recipientEmail?: string;
+  /** A quote request's logo upload, base64. Both set or neither. */
+  attachmentFilename?: string;
+  attachmentData?: string;
   status: NotificationStatus;
   attempts: number;
   lastError?: string;
@@ -359,6 +362,8 @@ const toNotification = (row: Record<string, unknown>): NotificationRow => ({
   orderId: optionalText(row["order_id"]),
   kind: text(row["kind"]),
   recipientEmail: optionalText(row["recipient_email"]),
+  attachmentFilename: optionalText(row["attachment_filename"]),
+  attachmentData: optionalText(row["attachment_data"]),
   channel: text(row["channel"]) as NotificationRow["channel"],
   subject: text(row["subject"]),
   body: text(row["body"]),
@@ -1044,6 +1049,8 @@ export interface NotificationInput {
   subject: string;
   body: string;
   recipientEmail?: string;
+  attachmentFilename?: string;
+  attachmentData?: string;
 }
 
 export function createRepositories(db: SqlDriver): Repositories {
@@ -2102,10 +2109,12 @@ export function createRepositories(db: SqlDriver): Repositories {
         const now = nowIso();
         const id = newId("notification");
         await run(`INSERT INTO notifications
-             (id,user_id,order_id,kind,channel,subject,body,recipient_email,status,attempts,created_at,updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+             (id,user_id,order_id,kind,channel,subject,body,recipient_email,attachment_filename,attachment_data,status,attempts,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
           id, input.userId, input.orderId ?? null, input.kind, input.channel,
-          input.subject, input.body, input.recipientEmail ?? null, "pending", 0, now, now,
+          input.subject, input.body, input.recipientEmail ?? null,
+          input.attachmentFilename ?? null, input.attachmentData ?? null,
+          "pending", 0, now, now,
         );
         const row = await get(`SELECT * FROM notifications WHERE id = ?`, id);
         if (!row) throw new Error("notification vanished immediately after insert");

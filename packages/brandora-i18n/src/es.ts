@@ -373,6 +373,36 @@ export const es: Catalogue = {
     "No se puede personalizar",
   "ui.catalog.confidence.unknown":
     "Personalización no confirmada",
+  "ui.quote-request.photo-label":
+    "Solicitar una cotización para {product}",
+  "ui.quote-request.title":
+    "Solicitud de cotización — {product}",
+  "ui.quote-request.lede":
+    "Cuéntanos qué necesitas. Te responderemos por correo electrónico.",
+  "ui.quote-request.moq-label":
+    "Cantidad mínima de pedido",
+  "ui.quote-request.color-label":
+    "Color (opcional)",
+  "ui.quote-request.material-label":
+    "Material / textura (opcional)",
+  "ui.quote-request.logo-label":
+    "Sube tu logo (opcional)",
+  "ui.quote-request.note-label":
+    "¿Algo más que debamos saber? (opcional)",
+  "ui.quote-request.submit":
+    "Enviar solicitud",
+  "ui.quote-request.sending":
+    "Enviando…",
+  "ui.quote-request.sent-title":
+    "Solicitud enviada",
+  "ui.quote-request.sent-body":
+    "Te responderemos en un plazo de 48 horas.",
+  "ui.quote-request.close":
+    "Cerrar",
+  "ui.quote-request.moq-invalid":
+    "Introduce un número entero mayor que cero.",
+  "ui.quote-request.logo-too-large":
+    "Ese archivo de logo es demasiado grande — usa uno de menos de 150 KB.",
   "ui.package.open-brand-book":
     "Abrir el libro de marca \u2192",
   "ui.package.with-logo":

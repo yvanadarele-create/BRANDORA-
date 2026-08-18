@@ -33,6 +33,10 @@ import {
   t,
 } from './api.js';
 
+/** A logo upload has to fit inside the server's 256KB request-body cap
+ *  alongside the rest of the form — see MAX_BODY_BYTES in http.ts. */
+const MAX_LOGO_BYTES = 150_000;
+
 const node = {
   quantity: document.querySelector('[data-quantity]'),
   category: document.querySelector('[data-category]'),
@@ -51,6 +55,7 @@ const state = {
   user: null,
   brandName: null,
   recommended: new Map(),
+  productsById: new Map(),
 };
 
 /* --- Rendering -------------------------------------------------------------- */
@@ -96,13 +101,25 @@ function productCard(product, orderable, quantity) {
   const name = localizedField(product, 'name');
   return el('article', { class: 'card' }, [
     product.images?.[0]
-      ? el('img', {
-          class: 'product__photo',
-          src: product.images[0],
-          alt: name,
-          loading: 'lazy',
-          decoding: 'async',
-        })
+      ? el('div', { class: 'product__photo-wrap' }, [
+          el('img', {
+            class: 'product__photo',
+            src: product.images[0],
+            alt: name,
+            loading: 'lazy',
+            decoding: 'async',
+          }),
+          // Every product photo doubles as a manufacturer-quote entry point
+          // (MOQ, colour, material, logo, note → one email), independent of
+          // the pricing-side "Request a quote" action above.
+          el('button', {
+            class: 'product__photo-quote',
+            type: 'button',
+            'data-quote-request': product.id,
+            'aria-label': t('ui.quote-request.photo-label', 'Request a quote for {product}', { product: name }),
+            text: t('ui.catalog.request-quote', 'Request a quote'),
+          }),
+        ])
       : null,
     el('h3', { text: name }),
     el('p', { class: 'product__meta', text: `${product.category} · ${product.subcategory}` }),
@@ -139,13 +156,16 @@ function productCard(product, orderable, quantity) {
 function render(payload, quantity) {
   clear(node.products);
   clear(node.nearMisses);
+  state.productsById.clear();
 
   payload.products.forEach((product) => {
+    state.productsById.set(product.id, product);
     node.products.appendChild(productCard(product, true, quantity));
   });
 
   const near = payload.nearMisses || [];
   near.forEach((product) => {
+    state.productsById.set(product.id, product);
     node.nearMisses.appendChild(productCard(product, false, quantity));
   });
 
@@ -281,6 +301,193 @@ async function add(productId, button) {
     showError(node.error, err);
   }
 }
+
+/* --- Requesting a manufacturer quote ------------------------------------------ */
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error || new Error('could not read the file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * The form a clicked product photo opens: MOQ, colour, material, an optional
+ * logo, and a free-text note, emailed to Brandora's own inbox (see
+ * QUOTE_REQUEST_INBOX in routes.ts — no manufacturer portal exists yet).
+ *
+ * Reuses the `.scheduler` dialog shell already built for the Calendly embed
+ * (openScheduler() in api.js) — same overlay, close button, Escape key and
+ * scroll lock — rather than a second dialog implementation.
+ */
+function openQuoteRequestModal(product) {
+  if (!state.user) {
+    window.location.href = `login.html?next=${encodeURIComponent('/catalog')}`;
+    return;
+  }
+
+  const name = localizedField(product, 'name');
+  const body = el('div', { class: 'quote-request' });
+
+  const error = el('p', { class: 'notice', role: 'alert', hidden: true });
+  const moqInput = el('input', {
+    type: 'number',
+    min: '1',
+    step: '1',
+    value: String(product.minimumQuantity || 1),
+    required: true,
+  });
+  const colorInput = el('input', { type: 'text', maxlength: '200' });
+  const materialInput = el('input', { type: 'text', maxlength: '200' });
+  const logoInput = el('input', { type: 'file', accept: 'image/*,.pdf' });
+  const noteInput = el('textarea', { maxlength: '2000' });
+  const submitButton = el('button', {
+    class: 'btn btn--primary',
+    type: 'submit',
+    text: t('ui.quote-request.submit', 'Send request'),
+  });
+
+  const form = el('form', { class: 'quote-request-form' }, [
+    el('div', { class: 'field' }, [
+      el('label', { text: t('ui.quote-request.moq-label', 'Minimum order quantity') }),
+      moqInput,
+    ]),
+    el('div', { class: 'field' }, [
+      el('label', { text: t('ui.quote-request.color-label', 'Colour (optional)') }),
+      colorInput,
+    ]),
+    el('div', { class: 'field' }, [
+      el('label', { text: t('ui.quote-request.material-label', 'Material / texture (optional)') }),
+      materialInput,
+    ]),
+    el('div', { class: 'field' }, [
+      el('label', { text: t('ui.quote-request.logo-label', 'Upload your logo (optional)') }),
+      logoInput,
+    ]),
+    el('div', { class: 'field' }, [
+      el('label', { text: t('ui.quote-request.note-label', 'Anything else we should know? (optional)') }),
+      noteInput,
+    ]),
+    error,
+    submitButton,
+  ]);
+
+  body.appendChild(el('h3', { text: name }));
+  body.appendChild(
+    el('p', {
+      class: 'product__meta',
+      text: t('ui.quote-request.lede', "Tell us what you need. We'll follow up by email."),
+    }),
+  );
+  body.appendChild(form);
+
+  const dialog = el(
+    'div',
+    {
+      class: 'scheduler',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-label': t('ui.quote-request.title', 'Request a quote — {product}', { product: name }),
+    },
+    [
+      el('div', { class: 'scheduler__panel scheduler__panel--form' }, [
+        el('button', {
+          class: 'btn btn--ghost btn--small scheduler__close',
+          type: 'button',
+          'aria-label': t('ui.quote-request.close', 'Close'),
+          text: t('ui.quote-request.close', 'Close'),
+        }),
+        body,
+      ]),
+    ],
+  );
+
+  const previouslyFocused = document.activeElement;
+  const close = () => {
+    dialog.remove();
+    document.body.style.removeProperty('overflow');
+    if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (event) => {
+    if (event.key === 'Escape') close();
+  };
+
+  dialog.querySelector('.scheduler__close').addEventListener('click', close);
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) close();
+  });
+  document.addEventListener('keydown', onKey);
+
+  document.body.appendChild(dialog);
+  document.body.style.overflow = 'hidden';
+  moqInput.focus();
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    error.hidden = true;
+
+    const moq = Number(moqInput.value);
+    if (!Number.isInteger(moq) || moq <= 0) {
+      error.textContent = t('ui.quote-request.moq-invalid', 'Enter a whole number greater than zero.');
+      error.hidden = false;
+      return;
+    }
+
+    const file = logoInput.files[0];
+    if (file && file.size > MAX_LOGO_BYTES) {
+      error.textContent = t(
+        'ui.quote-request.logo-too-large',
+        'That logo file is too large — please use one under 150KB.',
+      );
+      error.hidden = false;
+      return;
+    }
+
+    submitButton.disabled = true;
+    const originalLabel = submitButton.textContent;
+    submitButton.textContent = t('ui.quote-request.sending', 'Sending…');
+
+    try {
+      let logoFilename;
+      let logoData;
+      if (file) {
+        const dataUrl = await readFileAsDataUrl(file);
+        logoFilename = file.name;
+        logoData = dataUrl.split(',')[1] || '';
+      }
+
+      await api.requestQuote(product.id, {
+        moq,
+        ...(colorInput.value.trim() ? { color: colorInput.value.trim() } : {}),
+        ...(materialInput.value.trim() ? { material: materialInput.value.trim() } : {}),
+        ...(noteInput.value.trim() ? { note: noteInput.value.trim() } : {}),
+        ...(logoFilename ? { logoFilename, logoData } : {}),
+      });
+
+      clear(body);
+      body.appendChild(el('h3', { text: t('ui.quote-request.sent-title', 'Request sent') }));
+      body.appendChild(
+        el('p', { text: t('ui.quote-request.sent-body', "We'll follow up within 48 hours.") }),
+      );
+    } catch (err) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalLabel;
+      error.textContent =
+        err instanceof ApiError ? err.readable : t('error.unknown', 'Something went wrong. Please try again.');
+      error.hidden = false;
+    }
+  });
+}
+
+document.addEventListener('click', (event) => {
+  const trigger = event.target.closest ? event.target.closest('[data-quote-request]') : null;
+  if (!trigger) return;
+  const product = state.productsById.get(trigger.getAttribute('data-quote-request'));
+  if (product) openQuoteRequestModal(product);
+});
 
 /* --- Wiring ------------------------------------------------------------------ */
 

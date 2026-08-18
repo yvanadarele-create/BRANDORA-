@@ -688,6 +688,86 @@ describe("brandora api", () => {
     });
   });
 
+  describe("quote requests", () => {
+    it("submits a full quote request and queues the email — with an attachment built", async () => {
+      const client = await signUp(h, "quote-request@example.com");
+      const user = await h.app.repos.users.findByEmail("quote-request@example.com");
+      assert.ok(user);
+
+      const response = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        moq: 500,
+        color: "Forest green",
+        material: "Recycled kraft board",
+        note: "Need these by end of quarter.",
+        logoFilename: "acme-logo.png",
+        logoData: Buffer.from("not-a-real-png").toString("base64"),
+      });
+      assert.equal(response.status, 201, JSON.stringify(response.json));
+      assert.equal(response.json["sent"], true);
+
+      const queued = await h.app.repos.notifications.listForUser(user.id);
+      const quote = queued.find((n) => n.kind === "quote.request");
+      assert.ok(quote, "no quote-request email was queued");
+      assert.equal(quote.recipientEmail, "brandora.union@gmail.com");
+      assert.match(quote.subject, /Kraft paper cup/);
+      assert.match(quote.body, /Quantity requested: 500/);
+      assert.match(quote.body, /Colour: Forest green/);
+      assert.match(quote.body, /Logo file attached: acme-logo\.png/);
+      assert.equal(quote.attachmentFilename, "acme-logo.png");
+      assert.equal(quote.attachmentData, Buffer.from("not-a-real-png").toString("base64"));
+    });
+
+    it("does not require a logo — the request is still built and queued", async () => {
+      const client = await signUp(h, "quote-request-no-logo@example.com");
+      const user = await h.app.repos.users.findByEmail("quote-request-no-logo@example.com");
+      assert.ok(user);
+
+      const response = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", { moq: 30 });
+      assert.equal(response.status, 201, JSON.stringify(response.json));
+
+      const queued = await h.app.repos.notifications.listForUser(user.id);
+      const quote = queued.find((n) => n.kind === "quote.request");
+      assert.ok(quote);
+      assert.equal(quote.attachmentFilename, undefined);
+      assert.match(quote.body, /No logo file attached\./);
+    });
+
+    it("refuses an unauthenticated request — a file-upload endpoint is not left open", async () => {
+      const response = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        moq: 30,
+      });
+      assert.equal(response.status, 401);
+    });
+
+    it("rejects an unknown product", async () => {
+      const client = await signUp(h, "quote-request-unknown@example.com");
+      const response = await client.post("/api/catalog/not-a-real-product/quote-request", { moq: 30 });
+      assert.equal(response.status, 404);
+    });
+
+    it("rejects a missing or non-positive MOQ", async () => {
+      const client = await signUp(h, "quote-request-bad-moq@example.com");
+      const missing = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {});
+      assert.equal(missing.status, 400);
+      const zero = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", { moq: 0 });
+      assert.equal(zero.status, 400);
+    });
+
+    it("rejects a logo filename sent without its data, and the reverse", async () => {
+      const client = await signUp(h, "quote-request-orphan-logo@example.com");
+      const filenameOnly = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        moq: 30,
+        logoFilename: "logo.png",
+      });
+      assert.equal(filenameOnly.status, 400);
+      const dataOnly = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        moq: 30,
+        logoData: "aGVsbG8=",
+      });
+      assert.equal(dataOnly.status, 400);
+    });
+  });
+
   describe("the journey", () => {
     it("carries one customer from interview to a paid order", async () => {
       const client = await signUp(h, "journey@example.com");

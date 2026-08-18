@@ -392,6 +392,36 @@ export const en = {
     "Cannot be branded",
   "ui.catalog.confidence.unknown":
     "Branding not confirmed yet",
+  "ui.quote-request.photo-label":
+    "Request a quote for {product}",
+  "ui.quote-request.title":
+    "Request a quote — {product}",
+  "ui.quote-request.lede":
+    "Tell us what you need. We'll follow up by email.",
+  "ui.quote-request.moq-label":
+    "Minimum order quantity",
+  "ui.quote-request.color-label":
+    "Colour (optional)",
+  "ui.quote-request.material-label":
+    "Material / texture (optional)",
+  "ui.quote-request.logo-label":
+    "Upload your logo (optional)",
+  "ui.quote-request.note-label":
+    "Anything else we should know? (optional)",
+  "ui.quote-request.submit":
+    "Send request",
+  "ui.quote-request.sending":
+    "Sending…",
+  "ui.quote-request.sent-title":
+    "Request sent",
+  "ui.quote-request.sent-body":
+    "We'll follow up within 48 hours.",
+  "ui.quote-request.close":
+    "Close",
+  "ui.quote-request.moq-invalid":
+    "Enter a whole number greater than zero.",
+  "ui.quote-request.logo-too-large":
+    "That logo file is too large — please use one under 150KB.",
   "ui.package.open-brand-book":
     "Open the brand book \u2192",
   "ui.package.with-logo":

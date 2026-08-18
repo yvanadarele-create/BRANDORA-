@@ -91,6 +91,8 @@ const ADDITIVE_COLUMNS: readonly string[] = [
   // to the triggering user's own address. See the column's comment in
   // schema.sql.
   "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS recipient_email TEXT;",
+  "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS attachment_filename TEXT;",
+  "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS attachment_data TEXT;",
 
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS name TEXT;",
   "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS business TEXT;",

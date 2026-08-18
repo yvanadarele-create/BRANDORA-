@@ -82,7 +82,7 @@ import {
   verifyPassword,
   wasteVerificationTime,
 } from "@brandora/auth";
-import { DEFAULT_VALIDITY_DAYS, quoteReference } from "@brandora/quotes";
+import { DEFAULT_VALIDITY_DAYS, buildQuoteRequestEmail, quoteReference } from "@brandora/quotes";
 import {
   aliexpressIntegrationStatus,
   calendlyUrl,
@@ -184,6 +184,16 @@ const EMAIL_SIGNATURE = [
   "brandora.union@gmail.com · 0556140994",
 ].join("\n");
 
+/**
+ * Where a "request a quote" click on a catalogue photo lands.
+ *
+ * No manufacturer portal exists yet (zero manufacturers onboarded), so this
+ * is Brandora's own inbox — the same address already published in the site
+ * footer and JSON-LD above — until there is somewhere more specific to route
+ * a given product's requests to.
+ */
+const QUOTE_REQUEST_INBOX = "brandora.union@gmail.com";
+
 export interface RateLimits {
   loginsPerWindow: number;
   loginWindowMs: number;
@@ -195,6 +205,8 @@ export interface RateLimits {
   subscribeWindowMs: number;
   passwordResetsPerWindow: number;
   passwordResetWindowMs: number;
+  quoteRequestsPerWindow: number;
+  quoteRequestWindowMs: number;
 }
 
 /**
@@ -231,6 +243,11 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
   // and an attacker mail-bombing a stranger's inbox with reset links.
   passwordResetsPerWindow: 6,
   passwordResetWindowMs: 60 * 60 * 1000,
+  // Keyed on the signed-in user, not the address, since it costs Brandora a
+  // real email to its own inbox each time — loose enough for a founder
+  // genuinely comparing several products in one sitting.
+  quoteRequestsPerWindow: 20,
+  quoteRequestWindowMs: 60 * 60 * 1000,
 };
 
 /* --- Presentation helpers -------------------------------------------------- */
@@ -313,6 +330,7 @@ export function createRouter(deps: ServerDeps): Router {
   const generateLimiter = new RateLimiter(limits.generationsPerWindow, limits.generationWindowMs);
   const subscribeLimiter = new RateLimiter(limits.subscribesPerWindow, limits.subscribeWindowMs);
   const passwordResetLimiter = new RateLimiter(limits.passwordResetsPerWindow, limits.passwordResetWindowMs);
+  const quoteRequestLimiter = new RateLimiter(limits.quoteRequestsPerWindow, limits.quoteRequestWindowMs);
 
   const byId = new Map(catalog.map((p) => [p.id, p]));
 
@@ -357,6 +375,8 @@ export function createRouter(deps: ServerDeps): Router {
       channel?: "email" | "sms" | "whatsapp" | "in-app";
       /** Overrides userId's own email — see recipient_email's comment in schema.sql. */
       to?: string;
+      /** A quote request's logo upload — see attachment_data's comment in schema.sql. */
+      attachment?: { filename: string; data: string };
     },
   ): Promise<void> => {
     let row;
@@ -369,6 +389,9 @@ export function createRouter(deps: ServerDeps): Router {
         subject: message.subject,
         body: message.body,
         ...(message.to ? { recipientEmail: message.to } : {}),
+        ...(message.attachment
+          ? { attachmentFilename: message.attachment.filename, attachmentData: message.attachment.data }
+          : {}),
       });
     } catch (err) {
       deps.logger.error(`notification ${kind} could not be recorded: ${String(err)}`);
@@ -1113,6 +1136,69 @@ export function createRouter(deps: ServerDeps): Router {
     const product = byId.get(ctx.params["productId"] ?? "");
     if (!product) throw new NotFoundError("product", ctx.params["productId"] ?? "");
     return json(200, { product: productView(product) });
+  });
+
+  /**
+   * "Request a quote" from a catalogue photo.
+   *
+   * Behind `requireUser` for the reason stated on the signup route's
+   * neighbours: an unauthenticated endpoint that accepts a file upload is an
+   * abuse vector, and mirroring the sign-in gate `add()` already puts in
+   * front of the package builder (apps/brandora/assets/js/catalog.js) keeps
+   * one rule for "do something with a product" rather than two.
+   *
+   * No manufacturer portal exists yet, so the only thing this route does is
+   * turn the form into one email to QUOTE_REQUEST_INBOX via the existing
+   * notification queue — same durability guarantee as every other email
+   * Brandora sends: the row is written before delivery is attempted, and a
+   * transport outage does not fail the request or lose the requester's
+   * contact details.
+   */
+  router.post("/api/catalog/:productId/quote-request", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    if (quoteRequestLimiter.exceeded(user.id)) {
+      throw new RateLimitedError(`quote request rate limit for ${user.id}`);
+    }
+
+    const product = byId.get(ctx.params["productId"] ?? "");
+    if (!product) throw new NotFoundError("product", ctx.params["productId"] ?? "");
+
+    const moq = requireInteger(ctx.body, "moq", 1, 10_000_000);
+    const color = optionalString(ctx.body, "color", 200);
+    const material = optionalString(ctx.body, "material", 200);
+    const note = optionalString(ctx.body, "note", 2_000);
+
+    // Base64, and capped well inside MAX_BODY_BYTES (256KB) so a filename with
+    // no matching data — or the reverse — fails loudly instead of queuing an
+    // email that can't carry the logo it promises.
+    const logoFilename = optionalString(ctx.body, "logoFilename", 200);
+    const logoData = optionalString(ctx.body, "logoData", 200_000);
+    if ((logoFilename && !logoData) || (!logoFilename && logoData)) {
+      throw new ValidationError("logoFilename", "logoFilename and logoData must be sent together");
+    }
+
+    const email = buildQuoteRequestEmail({
+      productId: product.id,
+      productName: product.name,
+      requesterName: user.name,
+      requesterEmail: user.email,
+      moq,
+      ...(color ? { color } : {}),
+      ...(material ? { material } : {}),
+      ...(note ? { note } : {}),
+      ...(logoFilename ? { logoFilename } : {}),
+    });
+
+    await notify(user.id, undefined, "quote.request", {
+      subject: email.subject,
+      body: email.body,
+      to: QUOTE_REQUEST_INBOX,
+      ...(logoFilename && logoData
+        ? { attachment: { filename: logoFilename, data: logoData } }
+        : {}),
+    });
+
+    return json(201, { sent: true });
   });
 
   router.get("/api/projects/:id/recommendations", async (ctx) => {

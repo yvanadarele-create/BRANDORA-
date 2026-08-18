@@ -478,6 +478,12 @@ CREATE TABLE IF NOT EXISTS notifications (
   -- real FK, kept for the audit trail), but delivery goes here instead when
   -- it is set.
   recipient_email TEXT,
+  -- A quote request's logo upload. Both or neither — base64, and the
+  -- retention question that raises is deliberately narrow: this is the one
+  -- attachment kind the application produces, it exists only until the
+  -- delivery worker sends it, and nothing reads it back out afterward.
+  attachment_filename TEXT,
+  attachment_data     TEXT,
   created_at  TEXT NOT NULL,
   updated_at  TEXT NOT NULL
 );
