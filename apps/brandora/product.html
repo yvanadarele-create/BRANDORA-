@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+  <script>
+    /* Language before first paint. See catalog.html's identical script for why. */
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produit — Brandora Union</title>
+<meta name="description" content="Détails du produit, spécifications connues, et une demande de devis en un seul formulaire — sans créer de compte.">
+<link rel="canonical" href="https://brandoraunion.online/product.html">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+</head>
+<body>
+
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html" aria-label="Brandora Union — home">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__stack">
+        <span class="brand-lockup__word">BRANDORA</span>
+        <span class="brand-lockup__union">UNION</span>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="assistant.html" data-when-signed-in hidden data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="procurement.html" data-when-admin hidden>Sourcing</a>
+      <a href="testimonials.html" data-when-admin hidden>Testimonials</a>
+    </nav>
+
+    <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="section">
+  <div class="wrap">
+
+    <p><a href="catalog.html" data-i18n="product.back">&larr; Back to the catalogue</a></p>
+
+    <p class="notice" data-error hidden role="alert"></p>
+    <p class="notice" data-not-found hidden data-i18n="product.not-found">
+      This product could not be found. It may have been removed from the catalogue.
+    </p>
+
+    <div data-product hidden>
+      <div class="grid grid--2">
+
+        <div data-photos></div>
+
+        <div>
+          <p class="eyebrow" data-detail-category></p>
+          <h1 data-detail-name></h1>
+          <p class="lede" data-detail-description></p>
+
+          <dl class="spec" data-specs></dl>
+
+          <p class="product__meta" data-detail-supplier></p>
+        </div>
+      </div>
+
+      <section class="panel" style="margin-top:3rem">
+        <h2 data-i18n="product.quote.title">Demander un devis</h2>
+        <p class="product__meta" data-i18n="product.quote.lede">
+          Aucun compte n'est nécessaire. Décrivez ce qu'il vous faut et nous vous répondrons par e-mail.
+        </p>
+
+        <form data-quote-form novalidate>
+          <div class="grid grid--2">
+            <div class="field">
+              <label for="qr-name" data-i18n="product.quote.name">Votre nom</label>
+              <input class="input" id="qr-name" name="customerName" required maxlength="200" autocomplete="name">
+            </div>
+            <div class="field">
+              <label for="qr-company" data-i18n="product.quote.company">Entreprise / marque (optionnel)</label>
+              <input class="input" id="qr-company" name="companyName" maxlength="200" autocomplete="organization">
+            </div>
+            <div class="field">
+              <label for="qr-email" data-i18n="product.quote.email">E-mail</label>
+              <input class="input" id="qr-email" name="email" type="email" required maxlength="254" autocomplete="email">
+            </div>
+            <div class="field">
+              <label for="qr-phone" data-i18n="product.quote.phone">Téléphone (optionnel)</label>
+              <input class="input" id="qr-phone" name="phone" type="tel" maxlength="40" autocomplete="tel">
+            </div>
+            <div class="field">
+              <label for="qr-quantity" data-i18n="product.quote.quantity">Quantité souhaitée</label>
+              <input class="input" id="qr-quantity" name="quantity" type="number" min="1" step="1" required inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="qr-material" data-i18n="product.quote.material">Matière</label>
+              <input class="input" id="qr-material" name="material" maxlength="200">
+              <p class="field__why" data-material-hint></p>
+            </div>
+            <div class="field">
+              <label for="qr-shape" data-i18n="product.quote.shape">Forme</label>
+              <input class="input" id="qr-shape" name="shape" maxlength="200">
+              <p class="field__why" data-shape-hint></p>
+            </div>
+            <div class="field">
+              <label for="qr-dimensions" data-i18n="product.quote.dimensions">Dimensions</label>
+              <input class="input" id="qr-dimensions" name="dimensions" maxlength="500">
+              <p class="field__why" data-dimensions-hint></p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label data-i18n="product.quote.customization">Personnalisation souhaitée</label>
+            <div class="options options--inline" data-customization-options>
+              <label><input type="checkbox" value="Logo" name="customizationOption"> <span data-i18n="product.quote.custom.logo">Logo</span></label>
+              <label><input type="checkbox" value="Full design" name="customizationOption"> <span data-i18n="product.quote.custom.design">Design complet</span></label>
+              <label><input type="checkbox" value="Printing" name="customizationOption"> <span data-i18n="product.quote.custom.printing">Impression</span></label>
+              <label><input type="checkbox" value="Sticker" name="customizationOption"> <span data-i18n="product.quote.custom.sticker">Sticker</span></label>
+              <label><input type="checkbox" value="Embossing" name="customizationOption"> <span data-i18n="product.quote.custom.embossing">Gaufrage</span></label>
+              <label><input type="checkbox" value="Other" name="customizationOption"> <span data-i18n="product.quote.custom.other">Autre</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="qr-logo" data-i18n="product.quote.logo">Téléverser votre logo / design (optionnel)</label>
+            <input class="input" id="qr-logo" name="logo" type="file" accept="image/*,.pdf">
+          </div>
+
+          <div class="field">
+            <label for="qr-destination" data-i18n="product.quote.destination">Destination</label>
+            <input class="input" id="qr-destination" name="destination" maxlength="300" data-i18n-attr="placeholder:product.quote.destination-placeholder" placeholder="Ville, pays">
+          </div>
+
+          <div class="field">
+            <label for="qr-message" data-i18n="product.quote.message">Message additionnel (optionnel)</label>
+            <textarea class="input" id="qr-message" name="message" rows="4" maxlength="2000"></textarea>
+          </div>
+
+          <p class="notice" data-quote-error hidden role="alert"></p>
+
+          <button class="btn btn--primary" type="submit" data-quote-submit data-i18n="product.quote.submit">Demander un devis</button>
+        </form>
+
+        <div data-quote-sent hidden>
+          <h3 data-i18n="product.quote.sent-title">Demande envoyée</h3>
+          <p data-i18n="product.quote.sent-body">Nous avons bien reçu votre demande. Nous vous répondrons par e-mail.</p>
+        </div>
+      </section>
+    </div>
+
+    <noscript><div class="notice">Cette page a besoin de JavaScript.</div></noscript>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__identity">
+    <p class="site-footer__name">Brandora&nbsp;Union</p>
+    <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
+    <p class="site-footer__contact">
+      <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+      <span aria-hidden="true">·</span>
+      <a href="tel:0556140994">0556140994</a>
+    </p>
+  </div>
+  <div class="wrap site-footer__row">
+    <a href="create.html" data-i18n="nav.create">Create my brand</a>
+    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="privacy.html" data-i18n="footer.privacy">Privacy policy</a>
+    <a href="terms.html" data-i18n="footer.terms">Terms of service</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
+<script type="module" src="assets/js/assistant-widget.js"></script>
+<script type="module" src="assets/js/product.js"></script>
+</body>
+</html>

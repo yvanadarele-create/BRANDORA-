@@ -220,6 +220,8 @@ export interface BrandoraProduct {
   descriptionFr?: string;
   images: string[];
   material?: string;
+  /** e.g. "round", "rectangular" — only set when the supplier's own spec states it. */
+  shape?: string;
   dimensions?: Dimensions;
   colors: string[];
   minimumQuantity: number;

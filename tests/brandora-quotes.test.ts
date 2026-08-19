@@ -277,60 +277,78 @@ describe("order lifecycle", () => {
   });
 });
 
-describe("buildQuoteRequestEmail — a clicked product photo, turned into an email", () => {
+describe("buildQuoteRequestEmail — a product-page submission, turned into an email", () => {
   const input = {
     productId: "prd_cup_kraft_250",
     productName: "Kraft cup, 250ml",
-    requesterName: "Awa Diallo",
-    requesterEmail: "awa@example.com",
-    moq: 500,
+    customerName: "Awa Diallo",
+    email: "awa@example.com",
+    quantity: 500,
   };
 
-  test("rejects a missing or non-positive MOQ — a quote without a quantity is not a quote", () => {
-    assert.throws(() => buildQuoteRequestEmail({ ...input, moq: 0 }), ValidationError);
-    assert.throws(() => buildQuoteRequestEmail({ ...input, moq: -5 }), ValidationError);
-    assert.throws(() => buildQuoteRequestEmail({ ...input, moq: 12.5 }), ValidationError);
+  test("rejects a missing or non-positive quantity — a quote without one is not a quote", () => {
+    assert.throws(() => buildQuoteRequestEmail({ ...input, quantity: 0 }), ValidationError);
+    assert.throws(() => buildQuoteRequestEmail({ ...input, quantity: -5 }), ValidationError);
+    assert.throws(() => buildQuoteRequestEmail({ ...input, quantity: 12.5 }), ValidationError);
+  });
+
+  test("requires a customer name", () => {
+    assert.throws(() => buildQuoteRequestEmail({ ...input, customerName: "   " }), ValidationError);
+  });
+
+  test("rejects an address that does not look like an email", () => {
+    assert.throws(() => buildQuoteRequestEmail({ ...input, email: "not-an-address" }), ValidationError);
   });
 
   test("builds a subject and body carrying every field the visitor gave", () => {
     const email = buildQuoteRequestEmail({
       ...input,
-      color: "Forest green",
+      companyName: "Awa Bakes",
+      phone: "+225 05 56 14 09 94",
       material: "Recycled kraft board",
-      note: "Need these by end of quarter.",
+      shape: "round",
+      dimensions: "Diameter 90mm, height 55mm",
+      customization: "Logo, full colour print",
+      destination: "Abidjan, Côte d'Ivoire",
+      message: "Need these by end of quarter.",
     });
 
-    assert.equal(email.subject, "Quote request: Kraft cup, 250ml");
-    assert.match(email.body, /Awa Diallo \(awa@example\.com\)/);
+    assert.equal(email.subject, "Quote request: Kraft cup, 250ml — Awa Diallo");
+    assert.match(email.body, /NEW BRANDORA QUOTE REQUEST/);
+    assert.match(email.body, /Customer: Awa Diallo/);
+    assert.match(email.body, /Company: Awa Bakes/);
+    assert.match(email.body, /Email: awa@example\.com/);
+    assert.match(email.body, /Phone: \+225 05 56 14 09 94/);
     assert.match(email.body, /Product: Kraft cup, 250ml/);
-    assert.match(email.body, /Product id: prd_cup_kraft_250/);
-    assert.match(email.body, /Quantity requested: 500/);
-    assert.match(email.body, /Colour: Forest green/);
-    assert.match(email.body, /Material \/ texture: Recycled kraft board/);
-    assert.match(email.body, /No logo file attached\./);
-    assert.match(email.body, /Need these by end of quarter\./);
+    assert.match(email.body, /Quantity: 500/);
+    assert.match(email.body, /Material: Recycled kraft board/);
+    assert.match(email.body, /Shape: round/);
+    assert.match(email.body, /Dimensions: Diameter 90mm, height 55mm/);
+    assert.match(email.body, /Customization: Logo, full colour print/);
+    assert.match(email.body, /Destination: Abidjan, Côte d'Ivoire/);
+    assert.match(email.body, /Additional message: Need these by end of quarter\./);
+    assert.match(email.body, /Logo\/design uploaded: NO/);
     assert.match(email.body, /Reply directly to awa@example\.com/);
   });
 
   test("says so explicitly when a field was left blank, rather than omitting the line", () => {
     const email = buildQuoteRequestEmail(input);
-    assert.match(email.body, /Colour: not specified/);
-    assert.match(email.body, /Material \/ texture: not specified/);
-    assert.doesNotMatch(email.body, /Note from the customer/);
+    assert.match(email.body, /Company: not specified/);
+    assert.match(email.body, /Phone: not specified/);
+    assert.match(email.body, /Material: not specified/);
+    assert.match(email.body, /Shape: not specified/);
+    assert.match(email.body, /Dimensions: not specified/);
+    assert.match(email.body, /Customization: not specified/);
+    assert.match(email.body, /Destination: not specified/);
+    assert.match(email.body, /Additional message: not specified/);
   });
 
   test("names the logo file when one was attached", () => {
     const email = buildQuoteRequestEmail({ ...input, logoFilename: "acme-logo.png" });
-    assert.match(email.body, /Logo file attached: acme-logo\.png/);
-    assert.doesNotMatch(email.body, /No logo file attached/);
-  });
-
-  test("falls back to a generic requester name rather than an empty one", () => {
-    const email = buildQuoteRequestEmail({ ...input, requesterName: "   " });
-    assert.match(email.body, /A Brandora customer \(awa@example\.com\)/);
+    assert.match(email.body, /Logo\/design uploaded: YES \(acme-logo\.png\)/);
   });
 
   test("rejects a field far longer than any real answer to these questions", () => {
-    assert.throws(() => buildQuoteRequestEmail({ ...input, note: "x".repeat(2_001) }), ValidationError);
+    assert.throws(() => buildQuoteRequestEmail({ ...input, message: "x".repeat(2_001) }), ValidationError);
   });
 });

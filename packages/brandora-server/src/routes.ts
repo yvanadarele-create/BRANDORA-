@@ -184,14 +184,15 @@ const EMAIL_SIGNATURE = [
 ].join("\n");
 
 /**
- * Where a "request a quote" click on a catalogue photo lands.
+ * Where a "Demander un devis" submission lands.
  *
- * No manufacturer portal exists yet (zero manufacturers onboarded), so this
- * is Brandora's own inbox — the same address already published in the site
- * footer and JSON-LD above — until there is somewhere more specific to route
- * a given product's requests to.
+ * No manufacturer portal exists yet (zero manufacturers onboarded), so every
+ * request goes straight to this inbox and an operator follows up by hand —
+ * this is the specific address the MVP simplification brief names for it,
+ * distinct from the general brandora.union@gmail.com published in the site
+ * footer and JSON-LD.
  */
-const QUOTE_REQUEST_INBOX = "brandora.union@gmail.com";
+const QUOTE_REQUEST_INBOX = "yvanadarele@gmail.com";
 
 export interface RateLimits {
   loginsPerWindow: number;
@@ -279,6 +280,7 @@ const productView = (product: BrandoraProduct) => ({
   descriptionFr: product.descriptionFr ?? null,
   images: product.images,
   material: product.material ?? null,
+  shape: product.shape ?? null,
   colors: product.colors,
   minimumQuantity: product.minimumQuantity,
   availableQuantity: product.availableQuantity,
@@ -288,6 +290,15 @@ const productView = (product: BrandoraProduct) => ({
   quoteOnRequest: product.quoteOnRequest === true,
   supplierReference: product.supplierReference ?? null,
   weightG: product.dimensions?.weightG ?? null,
+  // Only the fields a spec sheet actually stated — null rather than a
+  // fabricated zero for anything nobody measured.
+  dimensions: {
+    lengthMm: product.dimensions?.lengthMm ?? null,
+    widthMm: product.dimensions?.widthMm ?? null,
+    heightMm: product.dimensions?.heightMm ?? null,
+    volumeMl: product.dimensions?.volumeMl ?? null,
+    weightG: product.dimensions?.weightG ?? null,
+  },
   featured: product.featured,
   customization: {
     confidence: product.customization.confidence,
@@ -1138,34 +1149,41 @@ export function createRouter(deps: ServerDeps): Router {
   });
 
   /**
-   * "Request a quote" from a catalogue photo.
+   * "Demander un devis" from a product page.
    *
-   * Behind `requireUser` for the reason stated on the signup route's
-   * neighbours: an unauthenticated endpoint that accepts a file upload is an
-   * abuse vector, and mirroring the sign-in gate `add()` already puts in
-   * front of the package builder (apps/brandora/assets/js/catalog.js) keeps
-   * one rule for "do something with a product" rather than two.
+   * Deliberately open to anyone, no account required (MVP simplification
+   * brief, §6) — a customer should not have to sign up just to ask what
+   * something costs. That removes the sign-in gate the previous version of
+   * this route had, so an IP-keyed rate limit and the same file-size cap on
+   * the logo upload are what stand between this and an open abuse vector
+   * instead.
    *
-   * No manufacturer portal exists yet, so the only thing this route does is
-   * turn the form into one email to QUOTE_REQUEST_INBOX via the existing
-   * notification queue — same durability guarantee as every other email
-   * Brandora sends: the row is written before delivery is attempted, and a
-   * transport outage does not fail the request or lose the requester's
-   * contact details.
+   * Two things happen, and only the first is required for a 201: the request
+   * is written to `quote_requests` — the durable record §17 asks for, which
+   * exists whether or not the second thing below succeeds — and then, best
+   * effort, one email is sent straight to QUOTE_REQUEST_INBOX. There is no
+   * manufacturer portal yet, so that email *is* the handoff: an operator
+   * reads it and takes it from there by hand.
    */
   router.post("/api/catalog/:productId/quote-request", async (ctx) => {
-    const user = await requireUser(ctx, session);
-    if (quoteRequestLimiter.exceeded(user.id)) {
-      throw new RateLimitedError(`quote request rate limit for ${user.id}`);
+    if (quoteRequestLimiter.exceeded(ctx.ip)) {
+      throw new RateLimitedError(`quote request rate limit from ${ctx.ip}`);
     }
 
     const product = byId.get(ctx.params["productId"] ?? "");
     if (!product) throw new NotFoundError("product", ctx.params["productId"] ?? "");
 
-    const moq = requireInteger(ctx.body, "moq", 1, 10_000_000);
-    const color = optionalString(ctx.body, "color", 200);
+    const customerName = requireString(ctx.body, "customerName", 200);
+    const companyName = optionalString(ctx.body, "companyName", 200);
+    const requesterEmail = requireString(ctx.body, "email", 254);
+    const phone = optionalString(ctx.body, "phone", 40);
+    const quantity = requireInteger(ctx.body, "quantity", 1, 10_000_000);
     const material = optionalString(ctx.body, "material", 200);
-    const note = optionalString(ctx.body, "note", 2_000);
+    const shape = optionalString(ctx.body, "shape", 200);
+    const dimensions = optionalString(ctx.body, "dimensions", 500);
+    const customization = optionalString(ctx.body, "customization", 500);
+    const destination = optionalString(ctx.body, "destination", 300);
+    const message = optionalString(ctx.body, "message", 2_000);
 
     // Base64, and capped well inside MAX_BODY_BYTES (256KB) so a filename with
     // no matching data — or the reverse — fails loudly instead of queuing an
@@ -1179,25 +1197,65 @@ export function createRouter(deps: ServerDeps): Router {
     const email = buildQuoteRequestEmail({
       productId: product.id,
       productName: product.name,
-      requesterName: user.name,
-      requesterEmail: user.email,
-      moq,
-      ...(color ? { color } : {}),
+      customerName,
+      email: requesterEmail,
+      quantity,
+      ...(companyName ? { companyName } : {}),
+      ...(phone ? { phone } : {}),
       ...(material ? { material } : {}),
-      ...(note ? { note } : {}),
+      ...(shape ? { shape } : {}),
+      ...(dimensions ? { dimensions } : {}),
+      ...(customization ? { customization } : {}),
+      ...(destination ? { destination } : {}),
+      ...(message ? { message } : {}),
       ...(logoFilename ? { logoFilename } : {}),
     });
 
-    await notify(user.id, undefined, "quote.request", {
-      subject: email.subject,
-      body: email.body,
-      to: QUOTE_REQUEST_INBOX,
-      ...(logoFilename && logoData
-        ? { attachment: { filename: logoFilename, data: logoData } }
-        : {}),
+    const row = await repos.quoteRequests.create({
+      customerName,
+      email: requesterEmail,
+      productId: product.id,
+      productName: product.name,
+      quantity,
+      ...(companyName ? { companyName } : {}),
+      ...(phone ? { phone } : {}),
+      ...(material ? { material } : {}),
+      ...(shape ? { shape } : {}),
+      ...(dimensions ? { dimensions } : {}),
+      ...(customization ? { customization } : {}),
+      ...(destination ? { destination } : {}),
+      ...(message ? { message } : {}),
+      ...(logoFilename ? { attachmentFilename: logoFilename } : {}),
+      ...(logoData ? { attachmentData: logoData } : {}),
     });
 
-    return json(201, { sent: true });
+    // Best effort. The row above is already the durable record §17 asks
+    // for — an unconfigured or failing transport does not undo the fact
+    // that the request was received, so it never turns this into a 500.
+    let emailSent = false;
+    if (transport.configured) {
+      try {
+        await transport.send({
+          to: QUOTE_REQUEST_INBOX,
+          subject: email.subject,
+          body: email.body,
+          kind: "quote.request",
+          ...(logoFilename && logoData
+            ? { attachments: [{ filename: logoFilename, content: logoData }] }
+            : {}),
+        });
+        emailSent = true;
+        await repos.quoteRequests.markDelivered(row.id);
+      } catch (err) {
+        await repos.quoteRequests.markDeliveryFailed(
+          row.id,
+          err instanceof Error ? err.message : String(err),
+        );
+        deps.logger.error(`quote request ${row.id} email delivery failed: ${String(err)}`);
+      }
+    }
+
+    return json(201, { sent: true, emailSent, id: row.id });
   });
 
   router.get("/api/projects/:id/recommendations", async (ctx) => {

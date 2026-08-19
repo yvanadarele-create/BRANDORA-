@@ -29,6 +29,7 @@ const PREFIXES = {
   trend: "trd",
   subscriber: "sbr",
   testimonial: "tst",
+  quoteRequest: "qrq",
 } as const;
 
 export type IdKind = keyof typeof PREFIXES;

@@ -496,6 +496,45 @@ CREATE TABLE IF NOT EXISTS password_resets (
 
 CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
 
+-- A "request a quote" submission from a product page. Deliberately not tied
+-- to a user_id: the MVP flow this backs does not require an account (a
+-- customer should not have to sign up just to ask what something costs), so
+-- there is no logged-in party to attach the row to. This is the durable
+-- record of the request itself; email delivery is a separate, best-effort
+-- attempt against it (delivered_at / delivery_error), and `status` is the
+-- human follow-up workflow, not the delivery outcome — a request can be
+-- "new" whether or not its email actually sent.
+CREATE TABLE IF NOT EXISTS quote_requests (
+  id                  TEXT PRIMARY KEY,
+  created_at          TEXT NOT NULL,
+  customer_name       TEXT NOT NULL,
+  company_name        TEXT,
+  email               TEXT NOT NULL,
+  phone               TEXT,
+  product_id          TEXT NOT NULL,
+  -- Denormalised on purpose: the catalogue can change after the request was
+  -- made, and this row should still say what the customer actually asked
+  -- about, the same reason a quote's own line items carry their own
+  -- description rather than re-reading the product by id.
+  product_name        TEXT NOT NULL,
+  quantity            INTEGER NOT NULL,
+  material            TEXT,
+  shape               TEXT,
+  dimensions          TEXT,
+  customization       TEXT,
+  destination         TEXT,
+  message             TEXT,
+  attachment_filename TEXT,
+  attachment_data     TEXT,
+  status              TEXT NOT NULL DEFAULT 'new'
+                        CHECK (status IN ('new','contacted','quote_sent','manufacturer_confirmed','completed','cancelled')),
+  delivered_at        TEXT,
+  delivery_error      TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_quote_requests_status ON quote_requests(status);
+CREATE INDEX IF NOT EXISTS idx_quote_requests_created ON quote_requests(created_at);
+
 -- Append-only. An order's history is evidence when a customer asks why their
 -- order sat for three days, so rows are never updated or deleted.
 CREATE TABLE IF NOT EXISTS order_events (

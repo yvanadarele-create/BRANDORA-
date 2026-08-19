@@ -17,7 +17,13 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 
 import { createApp } from "@brandora/server";
-import type { PaymentProvider, PaymentIntent, VerificationResult } from "@brandora/server";
+import type {
+  NotificationTransport,
+  OutboundMessage,
+  PaymentProvider,
+  PaymentIntent,
+  VerificationResult,
+} from "@brandora/server";
 import { EXAMPLE_CATALOG } from "@brandora/catalog";
 import { openSqlite } from "@brandora/database";
 import { type Money, money } from "@brandora/shared";
@@ -83,6 +89,19 @@ class StubPaymentProvider implements PaymentProvider {
   }
 }
 
+/** A transport that remembers what it was asked to send, instead of a real network call. */
+class RecordingTransport implements NotificationTransport {
+  readonly name = "recording";
+  configured = true;
+  sent: OutboundMessage[] = [];
+  fail: string | null = null;
+
+  async send(message: OutboundMessage): Promise<void> {
+    if (this.fail) throw new Error(this.fail);
+    this.sent.push(message);
+  }
+}
+
 /* --- Harness --------------------------------------------------------------- */
 
 const ENV: Record<string, string> = {
@@ -116,7 +135,7 @@ interface Harness {
   close(): Promise<void>;
 }
 
-async function start(): Promise<Harness> {
+async function start(options: { notifications?: NotificationTransport } = {}): Promise<Harness> {
   const strategy = new StubStrategyProvider();
   const payments = new StubPaymentProvider();
   const app = await createApp({
@@ -130,6 +149,7 @@ async function start(): Promise<Harness> {
     secureCookies: false,
     logger: { error: () => {} },
     rateLimits: LIMITS,
+    ...(options.notifications ? { notifications: options.notifications } : {}),
   });
 
   const server = createServer(app.listener);
@@ -688,80 +708,115 @@ describe("brandora api", () => {
     });
   });
 
-  describe("quote requests", () => {
-    it("submits a full quote request and queues the email — with an attachment built", async () => {
-      const client = await signUp(h, "quote-request@example.com");
-      const user = await h.app.repos.users.findByEmail("quote-request@example.com");
-      assert.ok(user);
-
-      const response = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {
-        moq: 500,
-        color: "Forest green",
+  describe("quote requests — no account required", () => {
+    it("submits a full quote request and stores it, with no transport configured", async () => {
+      const anon = new Client(h.base);
+      const response = await anon.post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        customerName: "Awa Diallo",
+        companyName: "Awa Bakes",
+        email: "awa@example.com",
+        phone: "+225 05 56 14 09 94",
+        quantity: 500,
         material: "Recycled kraft board",
-        note: "Need these by end of quarter.",
+        shape: "round",
+        dimensions: "Diameter 90mm",
+        customization: "Logo print",
+        destination: "Abidjan, Côte d'Ivoire",
+        message: "Need these by end of quarter.",
         logoFilename: "acme-logo.png",
         logoData: Buffer.from("not-a-real-png").toString("base64"),
       });
       assert.equal(response.status, 201, JSON.stringify(response.json));
       assert.equal(response.json["sent"], true);
+      // The test harness has no RESEND_API_KEY, so the transport is
+      // unconfigured — the request is still accepted and recorded; only the
+      // best-effort email attempt is skipped.
+      assert.equal(response.json["emailSent"], false);
+      assert.ok(!anon.hasSession, "no session cookie for a request that never signed in");
 
-      const queued = await h.app.repos.notifications.listForUser(user.id);
-      const quote = queued.find((n) => n.kind === "quote.request");
-      assert.ok(quote, "no quote-request email was queued");
-      assert.equal(quote.recipientEmail, "brandora.union@gmail.com");
-      assert.match(quote.subject, /Kraft paper cup/);
-      assert.match(quote.body, /Quantity requested: 500/);
-      assert.match(quote.body, /Colour: Forest green/);
-      assert.match(quote.body, /Logo file attached: acme-logo\.png/);
-      assert.equal(quote.attachmentFilename, "acme-logo.png");
-      assert.equal(quote.attachmentData, Buffer.from("not-a-real-png").toString("base64"));
+      const stored = await h.app.repos.quoteRequests.findById(response.json["id"] as string);
+      assert.ok(stored, "no quote_requests row was written");
+      assert.equal(stored.customerName, "Awa Diallo");
+      assert.equal(stored.companyName, "Awa Bakes");
+      assert.equal(stored.email, "awa@example.com");
+      assert.equal(stored.phone, "+225 05 56 14 09 94");
+      assert.equal(stored.productId, "prd_cup_kraft_250");
+      assert.match(stored.productName, /Kraft paper cup/);
+      assert.equal(stored.quantity, 500);
+      assert.equal(stored.material, "Recycled kraft board");
+      assert.equal(stored.shape, "round");
+      assert.equal(stored.dimensions, "Diameter 90mm");
+      assert.equal(stored.customization, "Logo print");
+      assert.equal(stored.destination, "Abidjan, Côte d'Ivoire");
+      assert.equal(stored.message, "Need these by end of quarter.");
+      assert.equal(stored.attachmentFilename, "acme-logo.png");
+      assert.equal(stored.attachmentData, Buffer.from("not-a-real-png").toString("base64"));
+      assert.equal(stored.status, "new");
+      assert.equal(stored.deliveredAt, undefined);
     });
 
-    it("does not require a logo — the request is still built and queued", async () => {
-      const client = await signUp(h, "quote-request-no-logo@example.com");
-      const user = await h.app.repos.users.findByEmail("quote-request-no-logo@example.com");
-      assert.ok(user);
-
-      const response = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", { moq: 30 });
+    it("does not require a logo — the request is still stored", async () => {
+      const response = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        customerName: "No Logo",
+        email: "no-logo@example.com",
+        quantity: 30,
+      });
       assert.equal(response.status, 201, JSON.stringify(response.json));
 
-      const queued = await h.app.repos.notifications.listForUser(user.id);
-      const quote = queued.find((n) => n.kind === "quote.request");
-      assert.ok(quote);
-      assert.equal(quote.attachmentFilename, undefined);
-      assert.match(quote.body, /No logo file attached\./);
-    });
-
-    it("refuses an unauthenticated request — a file-upload endpoint is not left open", async () => {
-      const response = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
-        moq: 30,
-      });
-      assert.equal(response.status, 401);
+      const stored = await h.app.repos.quoteRequests.findById(response.json["id"] as string);
+      assert.ok(stored);
+      assert.equal(stored.attachmentFilename, undefined);
     });
 
     it("rejects an unknown product", async () => {
-      const client = await signUp(h, "quote-request-unknown@example.com");
-      const response = await client.post("/api/catalog/not-a-real-product/quote-request", { moq: 30 });
+      const response = await new Client(h.base).post("/api/catalog/not-a-real-product/quote-request", {
+        customerName: "Someone",
+        email: "someone@example.com",
+        quantity: 30,
+      });
       assert.equal(response.status, 404);
     });
 
-    it("rejects a missing or non-positive MOQ", async () => {
-      const client = await signUp(h, "quote-request-bad-moq@example.com");
-      const missing = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {});
+    it("rejects a missing or non-positive quantity", async () => {
+      const missing = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        customerName: "Someone",
+        email: "someone@example.com",
+      });
       assert.equal(missing.status, 400);
-      const zero = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", { moq: 0 });
+      const zero = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        customerName: "Someone",
+        email: "someone@example.com",
+        quantity: 0,
+      });
       assert.equal(zero.status, 400);
     });
 
+    it("rejects a missing name or an address that does not look like an email", async () => {
+      const noName = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        email: "someone@example.com",
+        quantity: 30,
+      });
+      assert.equal(noName.status, 400);
+      const badEmail = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        customerName: "Someone",
+        email: "not-an-address",
+        quantity: 30,
+      });
+      assert.equal(badEmail.status, 400);
+    });
+
     it("rejects a logo filename sent without its data, and the reverse", async () => {
-      const client = await signUp(h, "quote-request-orphan-logo@example.com");
-      const filenameOnly = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {
-        moq: 30,
+      const filenameOnly = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        customerName: "Someone",
+        email: "someone@example.com",
+        quantity: 30,
         logoFilename: "logo.png",
       });
       assert.equal(filenameOnly.status, 400);
-      const dataOnly = await client.post("/api/catalog/prd_cup_kraft_250/quote-request", {
-        moq: 30,
+      const dataOnly = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+        customerName: "Someone",
+        email: "someone@example.com",
+        quantity: 30,
         logoData: "aGVsbG8=",
       });
       assert.equal(dataOnly.status, 400);
@@ -1627,5 +1682,58 @@ describe("another customer's brand", () => {
     assert.equal(response.json["error"], "not-found");
     // Being told about an order you never placed is its own small confusion.
     assert.doesNotMatch(String(response.json["message"]), /order/i, String(response.json["message"]));
+  });
+});
+
+/**
+ * The other half of the quote-request behaviour: a configured transport.
+ * Its own harness, because the shared `h` above deliberately runs with no
+ * RESEND_API_KEY so the "unconfigured, still recorded" tests mean something.
+ */
+describe("quote requests reach a configured email transport", () => {
+  let h: Harness;
+  let transport: RecordingTransport;
+  before(async () => {
+    transport = new RecordingTransport();
+    h = await start({ notifications: transport });
+  });
+  after(async () => { await h.close(); });
+
+  it("sends to the quote-request inbox and marks the row delivered", async () => {
+    const response = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+      customerName: "Kofi Mensah",
+      email: "kofi@example.com",
+      quantity: 100,
+    });
+    assert.equal(response.status, 201, JSON.stringify(response.json));
+    assert.equal(response.json["emailSent"], true);
+
+    assert.equal(transport.sent.length, 1);
+    assert.equal(transport.sent[0]!.to, "yvanadarele@gmail.com");
+    assert.match(transport.sent[0]!.subject, /Kraft paper cup/);
+    assert.match(transport.sent[0]!.body, /Customer: Kofi Mensah/);
+    assert.match(transport.sent[0]!.body, /Quantity: 100/);
+
+    const stored = await h.app.repos.quoteRequests.findById(response.json["id"] as string);
+    assert.ok(stored);
+    assert.ok(stored.deliveredAt, "delivered_at was not stamped");
+    assert.equal(stored.deliveryError, undefined);
+  });
+
+  it("still returns 201 and keeps the record when the transport throws", async () => {
+    transport.fail = "Resend had a bad afternoon";
+    const response = await new Client(h.base).post("/api/catalog/prd_cup_kraft_250/quote-request", {
+      customerName: "Fatou Ndiaye",
+      email: "fatou@example.com",
+      quantity: 40,
+    });
+    assert.equal(response.status, 201, JSON.stringify(response.json));
+    assert.equal(response.json["emailSent"], false);
+
+    const stored = await h.app.repos.quoteRequests.findById(response.json["id"] as string);
+    assert.ok(stored);
+    assert.equal(stored.deliveredAt, undefined);
+    assert.match(stored.deliveryError ?? "", /bad afternoon/);
+    transport.fail = null;
   });
 });

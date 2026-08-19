@@ -374,6 +374,60 @@ const toNotification = (row: Record<string, unknown>): NotificationRow => ({
   createdAt: text(row["created_at"]),
 });
 
+export type QuoteRequestStatus =
+  | "new"
+  | "contacted"
+  | "quote_sent"
+  | "manufacturer_confirmed"
+  | "completed"
+  | "cancelled";
+
+export interface QuoteRequestRow {
+  id: string;
+  createdAt: string;
+  customerName: string;
+  companyName?: string;
+  email: string;
+  phone?: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  material?: string;
+  shape?: string;
+  dimensions?: string;
+  customization?: string;
+  destination?: string;
+  message?: string;
+  attachmentFilename?: string;
+  attachmentData?: string;
+  status: QuoteRequestStatus;
+  deliveredAt?: string;
+  deliveryError?: string;
+}
+
+const toQuoteRequest = (row: Record<string, unknown>): QuoteRequestRow => ({
+  id: text(row["id"]),
+  createdAt: text(row["created_at"]),
+  customerName: text(row["customer_name"]),
+  companyName: optionalText(row["company_name"]),
+  email: text(row["email"]),
+  phone: optionalText(row["phone"]),
+  productId: text(row["product_id"]),
+  productName: text(row["product_name"]),
+  quantity: int(row["quantity"]),
+  material: optionalText(row["material"]),
+  shape: optionalText(row["shape"]),
+  dimensions: optionalText(row["dimensions"]),
+  customization: optionalText(row["customization"]),
+  destination: optionalText(row["destination"]),
+  message: optionalText(row["message"]),
+  attachmentFilename: optionalText(row["attachment_filename"]),
+  attachmentData: optionalText(row["attachment_data"]),
+  status: text(row["status"]) as QuoteRequestStatus,
+  deliveredAt: optionalText(row["delivered_at"]),
+  deliveryError: optionalText(row["delivery_error"]),
+});
+
 /* --- Quotes and orders ---------------------------------------------------- */
 
 export type QuoteStatusRow = "draft" | "sent" | "approved" | "rejected" | "expired";
@@ -577,6 +631,20 @@ export interface Repositories {
     markUsed(token: string): Promise<void>;
     /** A fresh reset request should not leave an earlier link still live. */
     destroyAllFor(userId: string): Promise<void>;
+  };
+
+  /**
+   * "Request a quote" submissions from a product page. Not scoped to a user —
+   * the flow this backs is deliberately open to anyone, account or not.
+   */
+  quoteRequests: {
+    create(input: QuoteRequestInput): Promise<QuoteRequestRow>;
+    findById(id: string): Promise<QuoteRequestRow | null>;
+    /** Newest first, for the operator following up on them. */
+    list(limit?: number): Promise<QuoteRequestRow[]>;
+    markDelivered(id: string, at?: string): Promise<void>;
+    markDeliveryFailed(id: string, error: string): Promise<void>;
+    setStatus(id: string, status: QuoteRequestRow["status"]): Promise<void>;
   };
 
   projects: {
@@ -1053,6 +1121,24 @@ export interface NotificationInput {
   attachmentData?: string;
 }
 
+export interface QuoteRequestInput {
+  customerName: string;
+  companyName?: string;
+  email: string;
+  phone?: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  material?: string;
+  shape?: string;
+  dimensions?: string;
+  customization?: string;
+  destination?: string;
+  message?: string;
+  attachmentFilename?: string;
+  attachmentData?: string;
+}
+
 export function createRepositories(db: SqlDriver): Repositories {
   const get = (sql: string, ...params: unknown[]): Promise<Record<string, unknown> | null> =>
     db.get(sql, params);
@@ -1200,6 +1286,67 @@ export function createRepositories(db: SqlDriver): Repositories {
 
       async destroyAllFor(userId) {
         await run(`DELETE FROM password_resets WHERE user_id = ?`, userId);
+      },
+    },
+
+    quoteRequests: {
+      async create(input) {
+        const now = nowIso();
+        const row: QuoteRequestRow = {
+          id: newId("quoteRequest"),
+          createdAt: now,
+          customerName: input.customerName,
+          ...(input.companyName ? { companyName: input.companyName } : {}),
+          email: input.email,
+          ...(input.phone ? { phone: input.phone } : {}),
+          productId: input.productId,
+          productName: input.productName,
+          quantity: input.quantity,
+          ...(input.material ? { material: input.material } : {}),
+          ...(input.shape ? { shape: input.shape } : {}),
+          ...(input.dimensions ? { dimensions: input.dimensions } : {}),
+          ...(input.customization ? { customization: input.customization } : {}),
+          ...(input.destination ? { destination: input.destination } : {}),
+          ...(input.message ? { message: input.message } : {}),
+          ...(input.attachmentFilename ? { attachmentFilename: input.attachmentFilename } : {}),
+          ...(input.attachmentData ? { attachmentData: input.attachmentData } : {}),
+          status: "new",
+        };
+        await run(
+          `INSERT INTO quote_requests
+             (id,created_at,customer_name,company_name,email,phone,product_id,product_name,quantity,
+              material,shape,dimensions,customization,destination,message,
+              attachment_filename,attachment_data,status)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          row.id, row.createdAt, row.customerName, row.companyName ?? null, row.email, row.phone ?? null,
+          row.productId, row.productName, row.quantity,
+          row.material ?? null, row.shape ?? null, row.dimensions ?? null, row.customization ?? null,
+          row.destination ?? null, row.message ?? null,
+          row.attachmentFilename ?? null, row.attachmentData ?? null, row.status,
+        );
+        return row;
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM quote_requests WHERE id = ?`, id);
+        return row ? toQuoteRequest(row) : null;
+      },
+
+      async list(limit = 100) {
+        const rows = await all(`SELECT * FROM quote_requests ORDER BY created_at DESC LIMIT ?`, limit);
+        return rows.map(toQuoteRequest);
+      },
+
+      async markDelivered(id, at = nowIso()) {
+        await run(`UPDATE quote_requests SET delivered_at = ? WHERE id = ?`, at, id);
+      },
+
+      async markDeliveryFailed(id, error) {
+        await run(`UPDATE quote_requests SET delivery_error = ? WHERE id = ?`, error, id);
+      },
+
+      async setStatus(id, status) {
+        await run(`UPDATE quote_requests SET status = ? WHERE id = ?`, status, id);
       },
     },
 

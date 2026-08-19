@@ -53,6 +53,8 @@ interface SeedInput {
   /** See `BrandoraProduct.descriptionFr`. */
   descriptionFr?: string;
   material?: string;
+  /** See `BrandoraProduct.shape`. */
+  shape?: string;
   colors: string[];
   minimumQuantity: number;
   availableQuantity: number;
@@ -69,6 +71,8 @@ interface SeedInput {
   featured?: boolean;
   volumeMl?: number;
   weightG?: number;
+  lengthMm?: number;
+  widthMm?: number;
   /** Overrides the default `/assets/img/catalog/<id>.webp` guess. */
   images?: string[];
 }
@@ -402,7 +406,13 @@ function toProduct(seed: SeedInput): BrandoraProduct {
     ...(seed.descriptionFr ? { descriptionFr: seed.descriptionFr } : {}),
     images: seed.images ?? [`/assets/img/catalog/${seed.id.replace("prd_", "")}.webp`],
     material: seed.material,
-    dimensions: { volumeMl: seed.volumeMl, weightG: seed.weightG },
+    ...(seed.shape ? { shape: seed.shape } : {}),
+    dimensions: {
+      volumeMl: seed.volumeMl,
+      weightG: seed.weightG,
+      lengthMm: seed.lengthMm,
+      widthMm: seed.widthMm,
+    },
     colors: seed.colors,
     minimumQuantity: seed.minimumQuantity,
     availableQuantity: seed.availableQuantity,
@@ -452,6 +462,9 @@ const REAL_SEED: SeedInput[] = [
     descriptionFr:
       "Film holographique inviolable, rond, 20mm. Prix communiqué par le fabricant par lot de production, à partir de 10 000 pièces — bien au-delà d'une petite commande, ce qui explique pourquoi Brandora leur demande des quantités pilotes plus faibles avant d'afficher un prix.",
     material: "Holographic film",
+    shape: "round",
+    lengthMm: 20,
+    widthMm: 20,
     colors: ["gold / rainbow"],
     minimumQuantity: 10_000,
     availableQuantity: 100_000,
@@ -475,6 +488,9 @@ const REAL_SEED: SeedInput[] = [
     descriptionFr:
       "Film holographique inviolable, rectangulaire, 16×25mm. Même fabricant et même quantité minimale que l'étiquette ronde.",
     material: "Holographic film",
+    shape: "rectangular",
+    lengthMm: 25,
+    widthMm: 16,
     colors: ["gold / rainbow"],
     minimumQuantity: 10_000,
     availableQuantity: 100_000,
@@ -498,6 +514,9 @@ const REAL_SEED: SeedInput[] = [
     descriptionFr:
       "Le même film holographique, avec un code QR imprimé et un numéro de série unique par étiquette, pour une authentification par scan. Délai de production plus long que les étiquettes simples (9 à 10 jours contre 7 à 9), car chaque étiquette est numérotée individuellement.",
     material: "Holographic film",
+    shape: "rectangular",
+    lengthMm: 25,
+    widthMm: 16,
     colors: ["gold / rainbow"],
     minimumQuantity: 10_000,
     availableQuantity: 100_000,
