@@ -96,18 +96,49 @@
   <section class="section">
     <div class="wrap wrap--narrow">
 
-      <p class="eyebrow" data-i18n="builder.step.interview">Interview</p>
-      <h1 data-i18n="builder.title">Let's build your brand.</h1>
-      <p class="lede">You do not need a name, a logo, or any idea what &ldquo;positioning&rdquo; means.
-        Answer what you can, and tap <em data-i18n="interview.dont-know">I don't know — help me</em> on anything that stumps you.</p>
+      <!--
+        The two-path gate (MVP simplification brief, §10). A founder who
+        already has a brand should never have to answer a positioning
+        question to buy packaging — the interview below only makes sense
+        for someone who does not yet have a brand.
+      -->
+      <div data-brand-gate>
+        <p class="eyebrow" data-i18n="gate.eyebrow">Create my brand</p>
+        <h1 data-i18n="gate.title">Do you already have a brand?</h1>
+        <p class="lede" data-i18n="gate.lede">This decides which of the two paths below fits you — either one takes less than a minute to start.</p>
 
-      <div class="progress" data-progress role="img" aria-label="Progress"></div>
+        <div class="grid grid--2">
+          <button class="card card--flat" type="button" data-gate-has-brand style="text-align:left;cursor:pointer">
+            <h2 data-i18n="gate.has-brand.title">Yes — I already have my brand</h2>
+            <p class="product__meta" data-i18n="gate.has-brand.body">
+              You have a name, a logo, a slogan. Skip straight to the catalogue,
+              upload your logo on a product, and ask for a quote.
+            </p>
+          </button>
+          <button class="card card--flat" type="button" data-gate-needs-brand style="text-align:left;cursor:pointer">
+            <h2 data-i18n="gate.needs-brand.title">No — I want to create my brand</h2>
+            <p class="product__meta" data-i18n="gate.needs-brand.body">
+              A short interview about your business, product and audience —
+              Brandora builds a name, positioning, palette and identity from it.
+            </p>
+          </button>
+        </div>
+      </div>
 
-      <!-- The interview renders here. -->
-      <section data-question aria-live="polite"></section>
+      <div data-brand-interview hidden>
+        <p class="eyebrow" data-i18n="builder.step.interview">Interview</p>
+        <h1 data-i18n="builder.title">Let's build your brand.</h1>
+        <p class="lede">You do not need a name, a logo, or any idea what &ldquo;positioning&rdquo; means.
+          Answer what you can, and tap <em data-i18n="interview.dont-know">I don't know — help me</em> on anything that stumps you.</p>
 
-      <!-- The review and the Build button render here. -->
-      <section data-result tabindex="-1" aria-live="polite" hidden></section>
+        <div class="progress" data-progress role="img" aria-label="Progress"></div>
+
+        <!-- The interview renders here. -->
+        <section data-question aria-live="polite"></section>
+
+        <!-- The review and the Build button render here. -->
+        <section data-result tabindex="-1" aria-live="polite" hidden></section>
+      </div>
 
       <noscript>
         <div class="notice">

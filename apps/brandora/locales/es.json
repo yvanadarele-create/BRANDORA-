@@ -520,5 +520,12 @@
   "product.detail.price": "Precio",
   "product.detail.customization": "Personalización",
   "product.detail.notes": "Notas",
-  "product.detail.not-confirmed": "Aún no confirmado por el proveedor — dinos lo que necesitas."
+  "product.detail.not-confirmed": "Aún no confirmado por el proveedor — dinos lo que necesitas.",
+  "gate.eyebrow": "Crear mi marca",
+  "gate.title": "¿Ya tienes una marca?",
+  "gate.lede": "Esto decide cuál de los dos caminos te conviene — cualquiera de los dos toma menos de un minuto para empezar.",
+  "gate.has-brand.title": "Sí — ya tengo mi marca",
+  "gate.has-brand.body": "Tienes un nombre, un logo, un eslogan. Ve directo al catálogo, sube tu logo en un producto, y pide una cotización.",
+  "gate.needs-brand.title": "No — quiero crear mi marca",
+  "gate.needs-brand.body": "Una breve entrevista sobre tu negocio, tu producto y tu público — Brandora construye a partir de ella un nombre, un posicionamiento, una paleta y una identidad."
 }

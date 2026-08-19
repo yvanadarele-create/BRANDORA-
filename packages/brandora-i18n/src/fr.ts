@@ -795,4 +795,12 @@ export const fr: Catalogue = {
   "product.detail.customization": "Personnalisation",
   "product.detail.notes": "Notes",
   "product.detail.not-confirmed": "Non confirmé par le fabricant pour le moment — dites-nous ce qu'il vous faut.",
+
+  "gate.eyebrow": "Créer ma marque",
+  "gate.title": "Avez-vous déjà une marque ?",
+  "gate.lede": "Cela détermine lequel des deux parcours ci-dessous vous convient — chacun prend moins d'une minute pour démarrer.",
+  "gate.has-brand.title": "Oui — j'ai déjà ma marque",
+  "gate.has-brand.body": "Vous avez un nom, un logo, un slogan. Allez directement au catalogue, téléversez votre logo sur un produit, et demandez un devis.",
+  "gate.needs-brand.title": "Non — je veux créer ma marque",
+  "gate.needs-brand.body": "Un court entretien sur votre activité, votre produit et votre public — Brandora en tire un nom, un positionnement, une palette et une identité.",
 };

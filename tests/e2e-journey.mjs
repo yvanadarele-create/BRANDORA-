@@ -61,8 +61,13 @@ check('account created and redirected', !afterSignup.endsWith('/signup.html'), a
 const me = await p.evaluate(async () => (await (await fetch('/api/auth/me')).json()).user?.email ?? null);
 check('session established', me === email, String(me));
 
-/* 5. The interview loads. */
+/* 5. The interview loads, behind the "do you already have a brand?" gate
+   (MVP simplification brief §10) — someone who needs branding help clicks
+   through to the interview the same way "OUI" clicks through to the
+   catalogue instead. */
 await p.goto(`${BASE}/create.html`);
+await p.waitForTimeout(500);
+await p.click('[data-gate-needs-brand]');
 await p.waitForTimeout(2500);
 const interview = await p.evaluate(() => ({
   error: document.querySelector('[data-error]')?.hidden === false

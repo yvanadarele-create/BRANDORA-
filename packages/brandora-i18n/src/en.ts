@@ -806,6 +806,14 @@ export const en = {
   "product.detail.customization": "Customization",
   "product.detail.notes": "Notes",
   "product.detail.not-confirmed": "Not confirmed by the supplier yet — tell us what you need.",
+
+  "gate.eyebrow": "Create my brand",
+  "gate.title": "Do you already have a brand?",
+  "gate.lede": "This decides which of the two paths below fits you — either one takes less than a minute to start.",
+  "gate.has-brand.title": "Yes — I already have my brand",
+  "gate.has-brand.body": "You have a name, a logo, a slogan. Skip straight to the catalogue, upload your logo on a product, and ask for a quote.",
+  "gate.needs-brand.title": "No — I want to create my brand",
+  "gate.needs-brand.body": "A short interview about your business, product and audience — Brandora builds a name, positioning, palette and identity from it.",
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -50,6 +50,8 @@ const el = {
   progress: document.querySelector('[data-progress]'),
   question: document.querySelector('[data-question]'),
   result: document.querySelector('[data-result]'),
+  gate: document.querySelector('[data-brand-gate]'),
+  interviewSection: document.querySelector('[data-brand-interview]'),
 };
 
 /* --- The in-progress form --------------------------------------------------- */
@@ -588,4 +590,37 @@ async function boot() {
   else renderQuestion();
 }
 
-void boot();
+/**
+ * The two-path gate (§10). The header still has to reflect whether someone
+ * is signed in even while the gate is showing, so this runs before either
+ * path is chosen — `boot()` reads `state.user` again once it starts, which
+ * costs one extra `/api/auth/me` call and is cheaper than plumbing the
+ * result through.
+ */
+function showInterview() {
+  if (el.gate) el.gate.hidden = true;
+  if (el.interviewSection) el.interviewSection.hidden = false;
+  void boot();
+}
+
+restoreDraft();
+void mountAccountNav().then((user) => { state.user = user; });
+
+// A returning visitor who already answered something, or who has a project
+// under way, gets straight back into the interview — the gate is a first
+// question, not a checkpoint on every visit.
+if (Object.keys(state.answers).length > 0 || state.projectId) {
+  showInterview();
+} else {
+  const hasBrandButton = document.querySelector('[data-gate-has-brand]');
+  const needsBrandButton = document.querySelector('[data-gate-needs-brand]');
+  if (hasBrandButton) {
+    hasBrandButton.addEventListener('click', () => {
+      window.location.href = 'catalog.html';
+    });
+  }
+  if (needsBrandButton) needsBrandButton.addEventListener('click', showInterview);
+  // The gate markup is missing for some reason — do not strand the page
+  // behind a screen with no way forward.
+  if (!hasBrandButton && !needsBrandButton) showInterview();
+}
