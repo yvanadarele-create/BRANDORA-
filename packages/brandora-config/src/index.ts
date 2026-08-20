@@ -238,9 +238,25 @@ export function defaultCurrency(source: Env = env()): CurrencyCode {
   return isCurrency(raw) ? raw : DEFAULT_CURRENCY;
 }
 
-/** Brandora's margin on the landed cost, as a rate. 0.35 = 35%. */
+/**
+ * Brandora's margin on (product cost + shipping cost), as a rate — see
+ * pricing.ts's PricingSettings.serviceRate for exactly what it is charged
+ * against. 0.30 = 30%.
+ *
+ * Clamped to [MARGIN_RATE_MIN, MARGIN_RATE_MAX] rather than accepted
+ * verbatim: a margin set below the floor stops covering Brandora's own
+ * sourcing and coordination costs, and one set above the ceiling stops
+ * being the transparent, disclosed rate the pricing page promises. Clamping
+ * rather than throwing keeps a typo'd environment variable from taking
+ * pricing down entirely — the nearest honest value is used instead.
+ */
+export const MARGIN_RATE_MIN = 0.25;
+export const MARGIN_RATE_MAX = 0.35;
+export const DEFAULT_MARGIN_RATE = 0.3;
+
 export function marginRate(source: Env = env()): number {
-  return numeric("BRANDORA_MARGIN_RATE", 0.35, source);
+  const raw = numeric("BRANDORA_MARGIN_RATE", DEFAULT_MARGIN_RATE, source);
+  return Math.min(MARGIN_RATE_MAX, Math.max(MARGIN_RATE_MIN, raw));
 }
 
 /** Local handling, storage and last-mile coordination, as a rate on goods. */

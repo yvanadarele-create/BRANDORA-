@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+  <script>
+    /* Language before first paint. See privacy.html's identical script for why. */
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comment fonctionnent nos prix — Brandora Union</title>
+<meta name="description" content="La formule exacte derrière chaque prix Brandora : coût produit, coût de livraison, et une marge de service transparente et plafonnée.">
+<link rel="canonical" href="https://brandoraunion.online/pricing.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brandora Union">
+<meta property="og:title" content="Comment fonctionnent nos prix — Brandora Union">
+<meta property="og:description" content="La formule exacte derrière chaque prix Brandora : coût produit, coût de livraison, et une marge de service transparente et plafonnée.">
+<meta property="og:url" content="https://brandoraunion.online/pricing.html">
+<meta property="og:locale" content="fr_FR">
+</head>
+<body>
+
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html" aria-label="Brandora Union — home">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__stack">
+        <span class="brand-lockup__word">BRANDORA</span>
+        <span class="brand-lockup__union">UNION</span>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="assistant.html" data-when-signed-in hidden data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="procurement.html" data-when-admin hidden>Sourcing</a>
+      <a href="testimonials.html" data-when-admin hidden>Testimonials</a>
+    </nav>
+
+    <div class="header-tools">
+      <button class="control" type="button" data-book-call hidden data-i18n="cta.book">Book a call</button>
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="wrap wrap--narrow legal">
+      <p class="eyebrow" data-i18n="pricing.eyebrow">Tarification</p>
+      <h1 data-i18n="pricing.title">Comment fonctionnent nos prix</h1>
+      <p class="lede" data-i18n="pricing.lede">
+        Une formule, pas une estimation à l'œil. Voici exactement ce qui compose
+        le prix que vous voyez, et pourquoi.
+      </p>
+
+      <div class="panel">
+        <p class="product__meta" data-i18n="pricing.formula.label">La formule</p>
+        <p style="font-size:1.15rem;font-weight:500" data-i18n="pricing.formula.text">
+          Prix final = Coût produit + Coût de livraison + Marge de service Brandora
+        </p>
+      </div>
+
+      <h2 data-i18n="pricing.h.product-cost">Coût produit</h2>
+      <p data-i18n="pricing.p.product-cost">
+        Ce que le fabricant facture pour le produit lui-même, au fournisseur
+        réel derrière chaque article du catalogue — jamais un chiffre
+        approximatif.
+      </p>
+
+      <h2 data-i18n="pricing.h.shipping-cost">Coût de livraison</h2>
+      <p data-i18n="pricing.p.shipping-cost">
+        Le coût logistique estimé — ou, une fois confirmé, réel — associé à
+        votre commande : fret international, douane et livraison locale selon
+        le cas.
+      </p>
+
+      <h2 data-i18n="pricing.h.margin">Marge de service Brandora</h2>
+      <p>
+        <span data-i18n="pricing.p.margin-1">Un pourcentage transparent, ajouté sur le coût produit et le coût de
+        livraison réunis, pour couvrir le sourcing, la coordination avec le
+        fournisseur, le contrôle qualité, la gestion de commande et le
+        fonctionnement de la plateforme. Ce taux est configurable plutôt que
+        codé en dur — il est actuellement fixé à</span>
+        <strong data-margin-rate>30&nbsp;%</strong>
+        <span data-i18n="pricing.p.margin-2">, dans une fourchette annoncée de 25 à 35&nbsp;%.</span>
+      </p>
+
+      <h2 data-i18n="pricing.h.example">Exemple chiffré</h2>
+      <table class="totals" data-pricing-example>
+        <tbody>
+          <tr><th data-i18n="pricing.example.product">Coût produit</th><td>100</td></tr>
+          <tr><th data-i18n="pricing.example.shipping">Coût de livraison</th><td>20</td></tr>
+          <tr>
+            <th>
+              <span data-i18n="pricing.example.margin">Marge Brandora</span>
+              (<span data-example-rate>30&nbsp;%</span>)
+            </th>
+            <td data-example-margin>36</td>
+          </tr>
+          <tr><th data-i18n="pricing.example.total">Prix final</th><td data-example-total>156</td></tr>
+        </tbody>
+      </table>
+      <p class="product__meta" data-i18n="pricing.example.note">
+        À titre d'illustration uniquement — vos devis réels sont exprimés en
+        francs CFA (XOF).
+      </p>
+
+      <h2 data-i18n="pricing.h.states">Estimé, puis confirmé</h2>
+      <p>
+        <strong data-i18n="pricing.states.estimated-label">Prix estimé</strong>
+        <span data-i18n="pricing.p.states-1">— calculé à partir du produit choisi, de la quantité, et d'un coût
+        fournisseur et d'une livraison estimés. C'est ce que vous voyez en
+        parcourant le catalogue.</span>
+      </p>
+      <p>
+        <strong data-i18n="pricing.states.confirmed-label">Devis confirmé</strong>
+        <span data-i18n="pricing.p.states-2">— une fois que nous avons échangé avec le fabricant : prix fournisseur
+        final, livraison confirmée, et la même marge Brandora. Les prix de
+        fabrication varient selon la quantité minimale, la matière, la
+        personnalisation, l'emballage, la destination et le mode
+        d'expédition — le devis confirmé tient compte de tout cela.</span>
+      </p>
+
+      <h2 data-i18n="pricing.h.transparency">Ce que nous montrons, ce que nous gardons privé</h2>
+      <p data-i18n="pricing.p.transparency">
+        Nous sommes transparents sur la méthode : votre prix, c'est coût
+        produit + livraison + marge de service Brandora. Le coût exact
+        négocié avec chaque fournisseur reste dans notre système interne —
+        la transparence sur la formule ne veut pas dire divulguer les
+        conditions commerciales confidentielles de nos fournisseurs.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__identity">
+    <p class="site-footer__brand">
+      <img class="site-footer__mark" src="assets/img/logo-b-solid.svg" alt="" width="16" height="21">
+      <span class="site-footer__name">Brandora&nbsp;Union</span>
+    </p>
+    <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
+    <p class="site-footer__contact">
+      <a href="mailto:brandora.union@gmail.com">brandora.union@gmail.com</a>
+      <span aria-hidden="true">·</span>
+      <a href="tel:0556140994">0556140994</a>
+    </p>
+  </div>
+  <div class="wrap site-footer__row">
+    <a href="create.html" data-i18n="nav.create">Create my brand</a>
+    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="pricing.html" data-i18n="nav.pricing">How pricing works</a>
+    <a href="privacy.html" data-i18n="footer.privacy">Privacy policy</a>
+    <a href="terms.html" data-i18n="footer.terms">Terms of service</a>
+    <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/booking.js"></script>
+<script type="module" src="assets/js/assistant-widget.js"></script>
+<script type="module" src="assets/js/pricing-page.js"></script>
+</body>
+</html>

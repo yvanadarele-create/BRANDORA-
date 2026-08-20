@@ -227,12 +227,17 @@ describe("§29 — no credential is a literal in this repository", () => {
 
 describe("§66 — business numbers are settings", () => {
   test("the margin can be changed without a code change", () => {
-    assert.equal(marginRate({}), 0.35);
-    assert.equal(marginRate({ BRANDORA_MARGIN_RATE: "0.42" }), 0.42);
+    assert.equal(marginRate({}), 0.3);
+    assert.equal(marginRate({ BRANDORA_MARGIN_RATE: "0.32" }), 0.32);
   });
 
   test("a nonsense value falls back rather than producing NaN prices", () => {
-    assert.equal(marginRate({ BRANDORA_MARGIN_RATE: "not a number" }), 0.35);
+    assert.equal(marginRate({ BRANDORA_MARGIN_RATE: "not a number" }), 0.3);
+  });
+
+  test("a value outside the disclosed 25–35% band is clamped, not accepted verbatim", () => {
+    assert.equal(marginRate({ BRANDORA_MARGIN_RATE: "0.42" }), 0.35);
+    assert.equal(marginRate({ BRANDORA_MARGIN_RATE: "0.1" }), 0.25);
   });
 
   test("the sourcing thresholds are configurable", () => {

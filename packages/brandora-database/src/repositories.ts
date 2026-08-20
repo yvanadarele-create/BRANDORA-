@@ -395,8 +395,10 @@ export interface QuoteRequestRow {
   material?: string;
   shape?: string;
   dimensions?: string;
+  quality?: string;
   customization?: string;
   destination?: string;
+  desiredTimeframe?: string;
   message?: string;
   attachmentFilename?: string;
   attachmentData?: string;
@@ -418,8 +420,10 @@ const toQuoteRequest = (row: Record<string, unknown>): QuoteRequestRow => ({
   material: optionalText(row["material"]),
   shape: optionalText(row["shape"]),
   dimensions: optionalText(row["dimensions"]),
+  quality: optionalText(row["quality"]),
   customization: optionalText(row["customization"]),
   destination: optionalText(row["destination"]),
+  desiredTimeframe: optionalText(row["desired_timeframe"]),
   message: optionalText(row["message"]),
   attachmentFilename: optionalText(row["attachment_filename"]),
   attachmentData: optionalText(row["attachment_data"]),
@@ -1132,8 +1136,10 @@ export interface QuoteRequestInput {
   material?: string;
   shape?: string;
   dimensions?: string;
+  quality?: string;
   customization?: string;
   destination?: string;
+  desiredTimeframe?: string;
   message?: string;
   attachmentFilename?: string;
   attachmentData?: string;
@@ -1305,8 +1311,10 @@ export function createRepositories(db: SqlDriver): Repositories {
           ...(input.material ? { material: input.material } : {}),
           ...(input.shape ? { shape: input.shape } : {}),
           ...(input.dimensions ? { dimensions: input.dimensions } : {}),
+          ...(input.quality ? { quality: input.quality } : {}),
           ...(input.customization ? { customization: input.customization } : {}),
           ...(input.destination ? { destination: input.destination } : {}),
+          ...(input.desiredTimeframe ? { desiredTimeframe: input.desiredTimeframe } : {}),
           ...(input.message ? { message: input.message } : {}),
           ...(input.attachmentFilename ? { attachmentFilename: input.attachmentFilename } : {}),
           ...(input.attachmentData ? { attachmentData: input.attachmentData } : {}),
@@ -1315,13 +1323,13 @@ export function createRepositories(db: SqlDriver): Repositories {
         await run(
           `INSERT INTO quote_requests
              (id,created_at,customer_name,company_name,email,phone,product_id,product_name,quantity,
-              material,shape,dimensions,customization,destination,message,
+              material,shape,dimensions,quality,customization,destination,desired_timeframe,message,
               attachment_filename,attachment_data,status)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
           row.id, row.createdAt, row.customerName, row.companyName ?? null, row.email, row.phone ?? null,
           row.productId, row.productName, row.quantity,
-          row.material ?? null, row.shape ?? null, row.dimensions ?? null, row.customization ?? null,
-          row.destination ?? null, row.message ?? null,
+          row.material ?? null, row.shape ?? null, row.dimensions ?? null, row.quality ?? null,
+          row.customization ?? null, row.destination ?? null, row.desiredTimeframe ?? null, row.message ?? null,
           row.attachmentFilename ?? null, row.attachmentData ?? null, row.status,
         );
         return row;

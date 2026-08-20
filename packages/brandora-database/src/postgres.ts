@@ -110,6 +110,10 @@ const ADDITIVE_COLUMNS: readonly string[] = [
   "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS source_url TEXT;",
   "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'unverified';",
   "ALTER TABLE supplier_offers ADD COLUMN IF NOT EXISTS notes TEXT;",
+
+  // Two fields added to the product-page quote request after it first shipped.
+  "ALTER TABLE quote_requests ADD COLUMN IF NOT EXISTS quality TEXT;",
+  "ALTER TABLE quote_requests ADD COLUMN IF NOT EXISTS desired_timeframe TEXT;",
 ];
 
 /**

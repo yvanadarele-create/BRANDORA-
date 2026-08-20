@@ -445,6 +445,11 @@ export function createRouter(deps: ServerDeps): Router {
       // than starting a flow that cannot finish.
       googleSignInEnabled: googleSignInConfigured(deps.env ?? process.env),
       locales: ["en", "fr", "es"],
+      // The rate itself, not what it is charged against — the "How Pricing
+      // Works" page reads this so the documented figure can never drift from
+      // what priceProject() actually applies. The methodology is public; the
+      // supplier cost it is applied to never travels in this response.
+      marginRate: deps.pricing.serviceRate,
     }),
   );
 
@@ -1181,8 +1186,10 @@ export function createRouter(deps: ServerDeps): Router {
     const material = optionalString(ctx.body, "material", 200);
     const shape = optionalString(ctx.body, "shape", 200);
     const dimensions = optionalString(ctx.body, "dimensions", 500);
+    const quality = optionalString(ctx.body, "quality", 300);
     const customization = optionalString(ctx.body, "customization", 500);
     const destination = optionalString(ctx.body, "destination", 300);
+    const desiredTimeframe = optionalString(ctx.body, "desiredTimeframe", 200);
     const message = optionalString(ctx.body, "message", 2_000);
 
     // Base64, and capped well inside MAX_BODY_BYTES (256KB) so a filename with
@@ -1205,8 +1212,10 @@ export function createRouter(deps: ServerDeps): Router {
       ...(material ? { material } : {}),
       ...(shape ? { shape } : {}),
       ...(dimensions ? { dimensions } : {}),
+      ...(quality ? { quality } : {}),
       ...(customization ? { customization } : {}),
       ...(destination ? { destination } : {}),
+      ...(desiredTimeframe ? { desiredTimeframe } : {}),
       ...(message ? { message } : {}),
       ...(logoFilename ? { logoFilename } : {}),
     });
@@ -1222,8 +1231,10 @@ export function createRouter(deps: ServerDeps): Router {
       ...(material ? { material } : {}),
       ...(shape ? { shape } : {}),
       ...(dimensions ? { dimensions } : {}),
+      ...(quality ? { quality } : {}),
       ...(customization ? { customization } : {}),
       ...(destination ? { destination } : {}),
+      ...(desiredTimeframe ? { desiredTimeframe } : {}),
       ...(message ? { message } : {}),
       ...(logoFilename ? { attachmentFilename: logoFilename } : {}),
       ...(logoData ? { attachmentData: logoData } : {}),

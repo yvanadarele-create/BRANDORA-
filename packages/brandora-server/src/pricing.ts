@@ -38,8 +38,9 @@ export interface PricingSettings {
    * Brandora's margin, as a rate on (products + customization + shipping) —
    * everything the customer is charged before this fee and the logistics fee
    * are added. Configurable rather than hardcoded so it can be tuned without
-   * a deploy; BRANDORA_MARGIN_RATE defaults to 0.35, inside the 25–35% band
-   * this business runs on.
+   * a deploy; BRANDORA_MARGIN_RATE defaults to 0.30 and is clamped to
+   * 0.25–0.35 (see marginRate() in packages/brandora-config), the disclosed
+   * band on the "How Pricing Works" page.
    */
   serviceRate: number;
   /** Local handling and last-mile, as a rate on goods. */

@@ -439,6 +439,20 @@ describe("the manufacturer network", () => {
   });
 });
 
+describe("/api/settings — the margin rate is public, the supplier cost it applies to is not", () => {
+  let h: Harness;
+  before(async () => { h = await start(); });
+  after(() => h.close());
+
+  it("exposes the same rate priceProject() actually applies", async () => {
+    const settings = (await new Client(h.base).get("/api/settings")).json;
+    assert.equal(settings.marginRate, h.app.deps.pricing.serviceRate);
+    // Never below the disclosed floor or above the disclosed ceiling — the
+    // "How Pricing Works" page's 25–35% band is a promise, not a suggestion.
+    assert.ok(settings.marginRate >= 0.25 && settings.marginRate <= 0.35);
+  });
+});
+
 describe("staying close to what we're building", () => {
   let h: Harness;
   before(async () => { h = await start(); });
@@ -720,8 +734,10 @@ describe("brandora api", () => {
         material: "Recycled kraft board",
         shape: "round",
         dimensions: "Diameter 90mm",
+        quality: "Food-grade, matte finish",
         customization: "Logo print",
         destination: "Abidjan, Côte d'Ivoire",
+        desiredTimeframe: "Within 4 weeks",
         message: "Need these by end of quarter.",
         logoFilename: "acme-logo.png",
         logoData: Buffer.from("not-a-real-png").toString("base64"),
@@ -746,8 +762,10 @@ describe("brandora api", () => {
       assert.equal(stored.material, "Recycled kraft board");
       assert.equal(stored.shape, "round");
       assert.equal(stored.dimensions, "Diameter 90mm");
+      assert.equal(stored.quality, "Food-grade, matte finish");
       assert.equal(stored.customization, "Logo print");
       assert.equal(stored.destination, "Abidjan, Côte d'Ivoire");
+      assert.equal(stored.desiredTimeframe, "Within 4 weeks");
       assert.equal(stored.message, "Need these by end of quarter.");
       assert.equal(stored.attachmentFilename, "acme-logo.png");
       assert.equal(stored.attachmentData, Buffer.from("not-a-real-png").toString("base64"));

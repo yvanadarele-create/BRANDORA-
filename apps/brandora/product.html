@@ -142,6 +142,10 @@
               <input class="input" id="qr-dimensions" name="dimensions" maxlength="500">
               <p class="field__why" data-dimensions-hint></p>
             </div>
+            <div class="field">
+              <label for="qr-quality" data-i18n="product.quote.quality">Qualité / spécification</label>
+              <input class="input" id="qr-quality" name="quality" maxlength="300" data-i18n-attr="placeholder:product.quote.quality-placeholder" placeholder="Ex. qualité alimentaire, finition mate">
+            </div>
           </div>
 
           <div class="field">
@@ -164,6 +168,11 @@
           <div class="field">
             <label for="qr-destination" data-i18n="product.quote.destination">Destination</label>
             <input class="input" id="qr-destination" name="destination" maxlength="300" data-i18n-attr="placeholder:product.quote.destination-placeholder" placeholder="Ville, pays">
+          </div>
+
+          <div class="field">
+            <label for="qr-timeframe" data-i18n="product.quote.timeframe">Délai de livraison souhaité (optionnel)</label>
+            <input class="input" id="qr-timeframe" name="desiredTimeframe" maxlength="200" data-i18n-attr="placeholder:product.quote.timeframe-placeholder" placeholder="Ex. sous 4 semaines">
           </div>
 
           <div class="field">
@@ -205,6 +214,7 @@
     <a href="create.html" data-i18n="nav.create">Create my brand</a>
     <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
     <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="pricing.html" data-i18n="nav.pricing">How pricing works</a>
     <a href="privacy.html" data-i18n="footer.privacy">Privacy policy</a>
     <a href="terms.html" data-i18n="footer.terms">Terms of service</a>
     <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>

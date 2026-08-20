@@ -27,8 +27,12 @@ export interface QuoteRequestInput {
   material?: string;
   shape?: string;
   dimensions?: string;
+  /** Grade or finish — "food-grade", "premium matte", and the like. */
+  quality?: string;
   customization?: string;
   destination?: string;
+  /** What the customer is hoping for, not a carrier's estimate — see §38: Brandora never states a delivery date it has not actually confirmed. */
+  desiredTimeframe?: string;
   message?: string;
   logoFilename?: string;
 }
@@ -75,8 +79,10 @@ export function buildQuoteRequestEmail(input: QuoteRequestInput): QuoteRequestEm
   const material = clean(input.material, "material");
   const shape = clean(input.shape, "shape");
   const dimensions = clean(input.dimensions, "dimensions");
+  const quality = clean(input.quality, "quality");
   const customization = clean(input.customization, "customization");
   const destination = clean(input.destination, "destination");
+  const desiredTimeframe = clean(input.desiredTimeframe, "desiredTimeframe");
   const message = clean(input.message, "message");
 
   const lines = [
@@ -95,9 +101,11 @@ export function buildQuoteRequestEmail(input: QuoteRequestInput): QuoteRequestEm
     line("Material", material),
     line("Shape", shape),
     line("Dimensions", dimensions),
+    line("Quality / specification", quality),
     line("Customization", customization),
     "",
     line("Destination", destination),
+    line("Expected shipping / delivery timeframe", desiredTimeframe),
     line("Additional message", message),
     "",
     "ATTACHMENTS",

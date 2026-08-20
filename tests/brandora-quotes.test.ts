@@ -308,8 +308,10 @@ describe("buildQuoteRequestEmail — a product-page submission, turned into an e
       material: "Recycled kraft board",
       shape: "round",
       dimensions: "Diameter 90mm, height 55mm",
+      quality: "Food-grade, matte finish",
       customization: "Logo, full colour print",
       destination: "Abidjan, Côte d'Ivoire",
+      desiredTimeframe: "Within 4 weeks",
       message: "Need these by end of quarter.",
     });
 
@@ -324,8 +326,10 @@ describe("buildQuoteRequestEmail — a product-page submission, turned into an e
     assert.match(email.body, /Material: Recycled kraft board/);
     assert.match(email.body, /Shape: round/);
     assert.match(email.body, /Dimensions: Diameter 90mm, height 55mm/);
+    assert.match(email.body, /Quality \/ specification: Food-grade, matte finish/);
     assert.match(email.body, /Customization: Logo, full colour print/);
     assert.match(email.body, /Destination: Abidjan, Côte d'Ivoire/);
+    assert.match(email.body, /Expected shipping \/ delivery timeframe: Within 4 weeks/);
     assert.match(email.body, /Additional message: Need these by end of quarter\./);
     assert.match(email.body, /Logo\/design uploaded: NO/);
     assert.match(email.body, /Reply directly to awa@example\.com/);
@@ -338,8 +342,10 @@ describe("buildQuoteRequestEmail — a product-page submission, turned into an e
     assert.match(email.body, /Material: not specified/);
     assert.match(email.body, /Shape: not specified/);
     assert.match(email.body, /Dimensions: not specified/);
+    assert.match(email.body, /Quality \/ specification: not specified/);
     assert.match(email.body, /Customization: not specified/);
     assert.match(email.body, /Destination: not specified/);
+    assert.match(email.body, /Expected shipping \/ delivery timeframe: not specified/);
     assert.match(email.body, /Additional message: not specified/);
   });
 
