@@ -75,10 +75,12 @@ function productCard(product) {
       class: 'product__price',
       text: quoteOnly ? priceLabel(product) : t('ui.catalog.per-unit', '{price} per unit', { price: priceLabel(product) }),
     }),
-    el('p', { class: 'product__meta', text: t('ui.assistant.product-meta', 'Minimum {min} · {category}', {
-      min: product.minimumQuantity,
-      category: product.category,
-    }) }),
+    el('p', { class: 'product__meta', text: product.sourcingInProgress
+      ? t('ui.assistant.product-meta-sourcing', '{category} · quantity not yet confirmed', { category: product.category })
+      : t('ui.assistant.product-meta', 'Minimum {min} · {category}', {
+          min: product.minimumQuantity,
+          category: product.category,
+        }) }),
     el('span', {
       class: `tag ${product.customization.canCarryLogo ? 'tag--ok' : 'tag--unconfirmed'}`,
       text: confidenceLabel(product.customization),

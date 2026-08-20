@@ -49,6 +49,10 @@ function matchesSearch(product: BrandoraProduct, term: string): boolean {
 
 /** True when the product can be ordered at this quantity (§35). */
 export function satisfiesQuantity(product: BrandoraProduct, quantity: number): boolean {
+  // No manufacturer is confirmed yet, so there is no real minimum or stock
+  // figure to test the requested quantity against — excluding it from a
+  // quantity search would be refusing on a number nobody actually said.
+  if (product.sourcingInProgress) return true;
   return product.minimumQuantity <= quantity && product.availableQuantity >= quantity;
 }
 

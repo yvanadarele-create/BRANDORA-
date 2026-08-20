@@ -10,10 +10,19 @@
  * So this fails the build when the shipped catalogue contains anything that
  * cannot stand behind itself:
  *
- *   1. A product with no supplier reference. Brandora's whole claim is that
- *      it connects people to manufacturers it has verified; a product with no
- *      manufacturer behind it is the claim being made falsely.
- *   2. A product claiming `verified` customization without one.
+ *   1. A product with no supplier reference and no explicit `sourcingInProgress`
+ *      flag. Brandora's whole claim is that it connects people to manufacturers
+ *      it has verified; a product with no manufacturer behind it, presented as
+ *      though one exists, is the claim being made falsely. `sourcingInProgress`
+ *      is the one way to ship a product Brandora hasn't placed with a factory
+ *      yet — and only if it says so.
+ *   2. A `sourcingInProgress` product that also carries a supplier reference —
+ *      that is not "in progress", that is finished, so the flag is a lie.
+ *   3. A `sourcingInProgress` product with a nonzero `minimumQuantity` or
+ *      `availableQuantity`, or without `quoteOnRequest` — the whole point of
+ *      the flag is that none of those numbers exist yet; a nonzero one would
+ *      be exactly the invented-number problem this script exists to catch.
+ *   4. A product claiming `verified` customization without a supplier.
  *
  * An empty catalogue passes. Empty is honest — the page says it is being
  * prepared, which is true. What is forbidden is *full and invented*.
@@ -37,14 +46,38 @@ const payload = JSON.parse(readFileSync(file, "utf8"));
 const products = Array.isArray(payload) ? payload : (payload.products ?? []);
 const problems = [];
 
+let sourcing = 0;
+
 for (const product of products) {
   const where = `${product.id ?? "(no id)"} "${product.name ?? ""}"`;
 
   const supplier = product.supplierReference ?? product.supplier ?? null;
-  if (!supplier) {
+
+  if (product.sourcingInProgress) {
+    sourcing += 1;
+    if (supplier) {
+      problems.push(
+        `${where}: marked sourcingInProgress but also carries a supplier reference. ` +
+          `That is not in progress, that is confirmed — drop the flag, not the supplier.`,
+      );
+    }
+    if (!product.quoteOnRequest) {
+      problems.push(
+        `${where}: sourcingInProgress with no quoteOnRequest. There is no price behind this ` +
+          `product yet, so the interface must ask for a quote, not show a number.`,
+      );
+    }
+    if (product.minimumQuantity !== 0 || product.availableQuantity !== 0) {
+      problems.push(
+        `${where}: sourcingInProgress with a nonzero minimumQuantity or availableQuantity. ` +
+          `No manufacturer has confirmed either figure, so they must stay 0, not a plausible guess.`,
+      );
+    }
+  } else if (!supplier) {
     problems.push(
-      `${where}: no supplier reference. A product in the catalogue is a promise that ` +
-        `Brandora can actually have it made; without a manufacturer behind it that promise is invented.`,
+      `${where}: no supplier reference and not marked sourcingInProgress. A product in the ` +
+        `catalogue is a promise that Brandora can actually have it made; without a manufacturer ` +
+        `behind it, or an explicit sourcingInProgress flag saying there isn't one yet, that promise is invented.`,
     );
   }
 
@@ -69,5 +102,5 @@ if (problems.length > 0) {
 console.log(
   products.length === 0
     ? "Catalogue check passed — the catalogue is empty, and says so on the page."
-    : `Catalogue check passed — ${products.length} product(s), each with a supplier behind it.`,
+    : `Catalogue check passed — ${products.length} product(s): ${products.length - sourcing} with a confirmed supplier, ${sourcing} honestly marked as still being sourced.`,
 );

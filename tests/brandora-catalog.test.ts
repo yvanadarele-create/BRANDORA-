@@ -34,13 +34,23 @@ const detailOf = (fn: () => unknown): string => {
 };
 
 describe("the real catalogue never invents a price or a supplier", () => {
-  test("every shipped product names a real supplier", () => {
+  test("every shipped product names a real supplier or says explicitly that it does not have one yet", () => {
     assert.ok(CATALOG.length > 0, "the catalogue should not be empty once real products exist");
     for (const product of CATALOG) {
       assert.ok(
-        product.supplierReference?.name,
-        `${product.id} has no supplierReference — this is exactly what check-catalog.mjs exists to block`,
+        product.supplierReference?.name || product.sourcingInProgress,
+        `${product.id} has no supplierReference and is not marked sourcingInProgress — this is exactly what check-catalog.mjs exists to block`,
       );
+    }
+  });
+
+  test("a sourcingInProgress product never carries a supplier or an invented quantity", () => {
+    for (const product of CATALOG) {
+      if (!product.sourcingInProgress) continue;
+      assert.ok(!product.supplierReference, `${product.id} is sourcingInProgress but also names a supplier — that is not in progress, that is confirmed`);
+      assert.ok(product.quoteOnRequest, `${product.id} is sourcingInProgress with no quoteOnRequest — there is no price behind it yet`);
+      assert.equal(product.minimumQuantity, 0, `${product.id} is sourcingInProgress but claims a minimum order nobody confirmed`);
+      assert.equal(product.availableQuantity, 0, `${product.id} is sourcingInProgress but claims a stock figure nobody confirmed`);
     }
   });
 

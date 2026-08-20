@@ -243,6 +243,17 @@ export interface BrandoraProduct {
     name: string;
     platform?: string;
   };
+  /**
+   * True when this is a real, photographed product Brandora has not yet
+   * placed with a specific manufacturer — no `supplierReference`, and no
+   * confirmed minimum order or stock either, so `minimumQuantity` and
+   * `availableQuantity` are `0` and must never be shown as numbers. Always
+   * paired with `quoteOnRequest: true`, since there is no price to show.
+   * Distinct from `quoteOnRequest` alone, which means a named supplier is
+   * confirmed but the landed price is not — here even the supplier is not
+   * confirmed yet. `scripts/check-catalog.mjs` enforces both halves of this.
+   */
+  sourcingInProgress?: boolean;
   customization: Customization;
   variants: BrandoraVariant[];
   status: ProductStatus;

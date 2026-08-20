@@ -127,7 +127,12 @@ function productCard(product, orderable, quantity) {
           class: 'product__meta',
           text: t('ui.catalog.sourced-from', 'Sourced from {supplier}', { supplier: product.supplierReference.name }),
         })
-      : null,
+      : product.sourcingInProgress
+        ? el('p', {
+            class: 'product__meta',
+            text: t('ui.catalog.sourcing-in-progress', 'Brandora is sourcing this — no manufacturer confirmed yet'),
+          })
+        : null,
     reason
       ? el('p', {
           class: 'product__reason',
@@ -140,7 +145,9 @@ function productCard(product, orderable, quantity) {
     }),
     el('p', { class: 'product__meta' }, [
       customizationTag(product),
-      el('span', { text: ` ${t('ui.catalog.minimum', 'Minimum {min}', { min: product.minimumQuantity })}` }),
+      el('span', {
+        text: ` ${product.sourcingInProgress ? t('ui.catalog.moq-unconfirmed', 'Quantity not yet confirmed') : t('ui.catalog.minimum', 'Minimum {min}', { min: product.minimumQuantity })}`,
+      }),
     ]),
     // §38 in the interface, not only in the data.
     el('p', {

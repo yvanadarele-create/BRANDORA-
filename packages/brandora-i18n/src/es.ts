@@ -371,6 +371,10 @@ export const es: Catalogue = {
     "Solicitar una cotización",
   "ui.catalog.sourced-from":
     "Suministrado por {supplier}",
+  "ui.catalog.sourcing-in-progress":
+    "Brandora está buscando un fabricante para este producto — aún no hay ninguno confirmado",
+  "ui.catalog.moq-unconfirmed":
+    "Cantidad aún no confirmada",
   "ui.catalog.confidence.verified":
     "Confirmado: puede llevar su logo",
   "ui.catalog.confidence.reported":
@@ -439,6 +443,8 @@ export const es: Catalogue = {
     "Buscando en el cat\u00e1logo\u2026",
   "ui.assistant.product-meta":
     "M\u00ednimo {min} \u00b7 {category}",
+  "ui.assistant.product-meta-sourcing":
+    "{category} \u00b7 cantidad a\u00fan no confirmada",
   "ui.assistant-widget.open":
     "Preguntar a Brandora",
   "ui.assistant-widget.title":
@@ -790,6 +796,7 @@ export const es: Catalogue = {
   "product.detail.dimensions": "Dimensiones",
   "product.detail.colors": "Colores",
   "product.detail.minimum": "Pedido mínimo",
+  "product.detail.minimum-unconfirmed": "Aún no confirmado — dinos cuántos necesitas",
   "product.detail.price": "Precio",
   "product.detail.customization": "Personalización",
   "product.detail.notes": "Notas",

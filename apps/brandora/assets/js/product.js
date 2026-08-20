@@ -93,7 +93,9 @@ function renderSpecs(product) {
     specRow(t('product.detail.shape', 'Shape'), product.shape),
     specRow(t('product.detail.dimensions', 'Dimensions'), dimensionsLabel),
     specRow(t('product.detail.colors', 'Colours'), (product.colors || []).join(', ')),
-    specRow(t('product.detail.minimum', 'Minimum order'), String(product.minimumQuantity)),
+    product.sourcingInProgress
+      ? [el('dt', { text: t('product.detail.minimum', 'Minimum order') }), el('dd', { text: t('product.detail.minimum-unconfirmed', 'Not yet confirmed — tell us how many you need') })]
+      : specRow(t('product.detail.minimum', 'Minimum order'), String(product.minimumQuantity)),
     specRow(t('product.detail.price', 'Price'), priceLabel(product)),
     specRow(t('product.detail.customization', 'Customization'), confidenceLabel(product.customization)),
   ].filter(Boolean);
@@ -128,7 +130,9 @@ function render(product) {
 
   node.supplier.textContent = product.supplierReference
     ? t('ui.catalog.sourced-from', 'Sourced from {supplier}', { supplier: product.supplierReference.name })
-    : '';
+    : product.sourcingInProgress
+      ? t('ui.catalog.sourcing-in-progress', 'Brandora is sourcing this — no manufacturer confirmed yet')
+      : '';
 
   const quantityInput = node.form.querySelector('#qr-quantity');
   quantityInput.value = product.minimumQuantity || 1;

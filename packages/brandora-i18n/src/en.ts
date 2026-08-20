@@ -390,6 +390,10 @@ export const en = {
     "Request a quote",
   "ui.catalog.sourced-from":
     "Sourced from {supplier}",
+  "ui.catalog.sourcing-in-progress":
+    "Brandora is sourcing this — no manufacturer confirmed yet",
+  "ui.catalog.moq-unconfirmed":
+    "Quantity not yet confirmed",
   "ui.catalog.confidence.verified":
     "Confirmed: carries your logo",
   "ui.catalog.confidence.reported":
@@ -458,6 +462,8 @@ export const en = {
     "Looking through the catalogue\u2026",
   "ui.assistant.product-meta":
     "Minimum {min} \u00b7 {category}",
+  "ui.assistant.product-meta-sourcing":
+    "{category} \u00b7 quantity not yet confirmed",
   "ui.assistant-widget.open":
     "Ask Brandora",
   "ui.assistant-widget.title":
@@ -809,6 +815,7 @@ export const en = {
   "product.detail.dimensions": "Dimensions",
   "product.detail.colors": "Colours",
   "product.detail.minimum": "Minimum order",
+  "product.detail.minimum-unconfirmed": "Not yet confirmed — tell us how many you need",
   "product.detail.price": "Price",
   "product.detail.customization": "Customization",
   "product.detail.notes": "Notes",

@@ -289,6 +289,10 @@ const productView = (product: BrandoraProduct) => ({
   // true, and the interface must never format it as a price.
   quoteOnRequest: product.quoteOnRequest === true,
   supplierReference: product.supplierReference ?? null,
+  // See BrandoraProduct.sourcingInProgress: minimumQuantity/availableQuantity
+  // above are 0 when this is true, and the interface must never format them
+  // as confirmed numbers.
+  sourcingInProgress: product.sourcingInProgress === true,
   weightG: product.dimensions?.weightG ?? null,
   // Only the fields a spec sheet actually stated — null rather than a
   // fabricated zero for anything nobody measured.

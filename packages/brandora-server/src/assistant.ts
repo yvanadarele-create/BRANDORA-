@@ -128,8 +128,11 @@ function describeProduct(
 
   const reasons = entry?.reasons.length ? ` | matches: ${entry.reasons.join("; ")}` : "";
 
+  // sourcingInProgress means no manufacturer, and therefore no real minimum
+  // or stock figure exists yet — 0/0 is a sentinel, not a fact, and must
+  // never be read by the model as "cannot be ordered" or as a real number.
   const orderable =
-    quantity === null
+    quantity === null || product.sourcingInProgress
       ? ""
       : product.minimumQuantity <= quantity && product.availableQuantity >= quantity
         ? ` | CAN be ordered at ${quantity}`
@@ -140,7 +143,14 @@ function describeProduct(
   const priceText = product.quoteOnRequest
     ? "QUOTE ON REQUEST, no fixed unit price yet — do not state a number, tell the customer to ask for a quote"
     : `${formatMoney(product.indicativeUnitPrice)} per unit`;
-  const supplierText = product.supplierReference ? `| supplier: ${product.supplierReference.name} ` : "";
+  const supplierText = product.sourcingInProgress
+    ? "| NO MANUFACTURER CONFIRMED YET — Brandora is still sourcing this, do not name or imply a supplier "
+    : product.supplierReference
+      ? `| supplier: ${product.supplierReference.name} `
+      : "";
+  const quantityText = product.sourcingInProgress
+    ? "| minimum and stock NOT YET CONFIRMED — do not state a number, any quantity can be asked about"
+    : `| minimum ${product.minimumQuantity} | ${product.availableQuantity} available`;
 
   return [
     `[${product.id}]`,
@@ -148,8 +158,7 @@ function describeProduct(
     `— ${product.category}/${product.subcategory}`,
     `| ${priceText}`,
     supplierText,
-    `| minimum ${product.minimumQuantity}`,
-    `| ${product.availableQuantity} available`,
+    quantityText,
     `| ${customization}`,
     product.material ? `| ${product.material}` : "",
     orderable,

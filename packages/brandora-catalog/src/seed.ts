@@ -67,6 +67,8 @@ interface SeedInput {
   quoteOnRequest?: boolean;
   /** See `BrandoraProduct.supplierReference`. Required for anything real. */
   supplierReference?: { supplierId: string; name: string; platform?: string };
+  /** See `BrandoraProduct.sourcingInProgress`. */
+  sourcingInProgress?: boolean;
   customization: Customization;
   featured?: boolean;
   volumeMl?: number;
@@ -419,6 +421,7 @@ function toProduct(seed: SeedInput): BrandoraProduct {
     indicativeUnitPrice: seed.quoteOnRequest ? zero(DEFAULT_CURRENCY) : fromMajor(seed.unitPrice ?? 0),
     ...(seed.quoteOnRequest ? { quoteOnRequest: true as const } : {}),
     ...(seed.supplierReference ? { supplierReference: seed.supplierReference } : {}),
+    ...(seed.sourcingInProgress ? { sourcingInProgress: true as const } : {}),
     customization: seed.customization,
     variants: [],
     status: "active",
@@ -531,12 +534,322 @@ const REAL_SEED: SeedInput[] = [
   },
 ];
 
+/* --- Products Brandora is sourcing, not yet placed with a manufacturer ----
+ *
+ * Every photo below is real — the same ones on the homepage's "what we can
+ * have made" gallery, traced in `scripts/prepare-product-photos.py` and, for
+ * a few, in `sourcing/extracted-2026-08-18.json`. What none of them has is a
+ * `supplierReference`: the photographs do not name the factory that made
+ * them, so no manufacturer is attached rather than one being guessed (see
+ * that file's own note on why Shanghai Forests Packaging Group — a real
+ * lead — is not linked to these specific photos).
+ *
+ * Without a supplier there is no confirmed minimum order and no confirmed
+ * stock either, so `minimumQuantity` and `availableQuantity` are both `0` —
+ * never a plausible-looking number nobody said — and `sourcingInProgress`
+ * marks that explicitly so the interface shows "sourcing in progress"
+ * instead of silently rendering "Minimum 0". `quoteOnRequest` is always true
+ * alongside it, because there is no price either. A visitor can still see
+ * the product, ask for it at any quantity, and Brandora goes and confirms a
+ * real manufacturer before any number is quoted.
+ */
+const SOURCING_SEED: SeedInput[] = [
+  {
+    id: "prd_box_bakery_gable",
+    name: "Gable-top bakery box with handle",
+    nameFr: "Boîte gâteau gable-top avec poignée",
+    category: "packaging",
+    subcategory: "boxes",
+    description:
+      "White board cake box that folds flat and carries by handle panels cut into the sides. Photographed closed and open.",
+    descriptionFr:
+      "Boîte à gâteau en carton blanc, pliable à plat, avec des panneaux-poignées découpés sur les côtés. Photographiée fermée et ouverte.",
+    material: "White corrugated board",
+    colors: ["white"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this box — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bakery-gable-box.webp", "/assets/img/sourcing/bakery-gable-box-open.webp"],
+  },
+  {
+    id: "prd_box_bakery_carrier",
+    name: "Carrier box with cut-out handle",
+    nameFr: "Boîte porte-gâteau à poignée découpée",
+    category: "packaging",
+    subcategory: "boxes",
+    description:
+      "Shallower cake carrier box, wider handle, shown side-on, carried, and open. The pink-striped version is the same style in a printed finish.",
+    descriptionFr:
+      "Boîte porte-gâteau plus basse, poignée plus large, montrée de côté, portée, puis ouverte. La version à rayures roses est le même modèle en version imprimée.",
+    material: "White corrugated board",
+    colors: ["white", "pink stripe"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this box — tell us your size and quantity and Brandora will source it."),
+    images: [
+      "/assets/img/sourcing/bakery-carrier-box.webp",
+      "/assets/img/sourcing/bakery-carrier-in-hand.webp",
+      "/assets/img/sourcing/bakery-carrier-open.webp",
+      "/assets/img/sourcing/box-cake-carrier-stripe.webp",
+    ],
+  },
+  {
+    id: "prd_box_kraft_small",
+    name: "Small kraft box",
+    nameFr: "Petite boîte kraft",
+    category: "packaging",
+    subcategory: "boxes",
+    description: "Small kraft box shown closed, open, and stacked two-high.",
+    descriptionFr: "Petite boîte kraft montrée fermée, ouverte, puis empilée par deux.",
+    material: "Kraft board",
+    colors: ["kraft"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print", "sticker"], "No manufacturer confirmed yet for this box — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/box-kraft-small.webp", "/assets/img/sourcing/box-kraft-stacked.webp"],
+  },
+  {
+    id: "prd_box_kraft_window",
+    name: "Kraft box with clear window",
+    nameFr: "Boîte kraft avec fenêtre transparente",
+    category: "packaging",
+    subcategory: "boxes",
+    description: "Kraft box with a clear window in the lid, shown closed and open.",
+    descriptionFr: "Boîte kraft avec une fenêtre transparente sur le couvercle, montrée fermée et ouverte.",
+    material: "Kraft board, clear window",
+    colors: ["kraft"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print", "sticker"], "No manufacturer confirmed yet for this box — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/box-kraft-window.webp"],
+  },
+  {
+    id: "prd_box_shipping_mailer",
+    name: "Coloured shipping box",
+    nameFr: "Boîte d'expédition colorée",
+    category: "packaging",
+    subcategory: "boxes",
+    description: "A coloured mailer-style shipping box, open on its shredded-paper filler.",
+    descriptionFr: "Boîte d'expédition colorée de type mailer, ouverte sur son calage en papier déchiqueté.",
+    material: "Corrugated board",
+    colors: ["pink"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this box — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/box-shipping-pink.webp"],
+  },
+  {
+    id: "prd_bag_kraft_rope_handle",
+    name: "Kraft bags with rope handles",
+    nameFr: "Sacs kraft à poignées cordées",
+    category: "packaging",
+    subcategory: "bags",
+    description: "Kraft paper bags with twisted rope handles, several sizes shown together.",
+    descriptionFr: "Sacs en papier kraft à poignées en corde torsadée, plusieurs tailles présentées ensemble.",
+    material: "Kraft paper",
+    colors: ["kraft"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for these bags — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bags-kraft-handles.webp"],
+  },
+  {
+    id: "prd_bag_bakery_window",
+    name: "Bakery window bag",
+    nameFr: "Sac boulangerie à fenêtre",
+    category: "packaging",
+    subcategory: "bags",
+    description: "Kraft window bag for croissants and cookies, three sizes, one shown held by hand for scale.",
+    descriptionFr: "Sac kraft à fenêtre pour croissants et cookies, trois tailles, l'une tenue à la main pour l'échelle.",
+    material: "Kraft paper, clear window",
+    colors: ["kraft"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this bag — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bags-kraft-bakery-hand.webp"],
+  },
+  {
+    id: "prd_bag_diecut_colour",
+    name: "Die-cut handle bags, several colours",
+    nameFr: "Sacs à poignées découpées, plusieurs coloris",
+    category: "packaging",
+    subcategory: "bags",
+    description: "Die-cut handle bags shown in five colours side by side.",
+    descriptionFr: "Sacs à poignées découpées présentés en cinq coloris côte à côte.",
+    material: "Coated paper",
+    colors: ["assorted"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this bag — tell us your size, colour and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bags-colour-diecut.webp"],
+  },
+  {
+    id: "prd_pouch_kraft_standup",
+    name: "Stand-up kraft pouch with window",
+    nameFr: "Pochette kraft autoportante à fenêtre",
+    category: "packaging",
+    subcategory: "pouches",
+    description: "Stand-up kraft pouch with a clear window and a zip top, for coffee, spices or dried goods.",
+    descriptionFr: "Pochette kraft autoportante avec fenêtre transparente et fermeture zip, pour café, épices ou produits secs.",
+    material: "Kraft paper, clear window",
+    colors: ["kraft"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this pouch — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/pouch-kraft-window-standup.webp"],
+  },
+  {
+    id: "prd_tray_bagasse_divided",
+    name: "Compartmented fibre food tray",
+    nameFr: "Barquette compartimentée en fibre",
+    category: "packaging",
+    subcategory: "trays",
+    description: "Compartmented bagasse fibre tray with its own lid, for takeaway meals.",
+    descriptionFr: "Barquette compartimentée en fibre de bagasse avec son couvercle, pour repas à emporter.",
+    material: "Bagasse fibre",
+    colors: ["natural"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown([], "No manufacturer confirmed yet for this tray — tell us your quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/tray-bagasse-divided.webp"],
+  },
+  {
+    id: "prd_cup_icecream_paper",
+    name: "Paper ice-cream cup",
+    nameFr: "Gobelet à glace en papier",
+    category: "packaging",
+    subcategory: "cups",
+    description: "Paper ice-cream cup — the leaf print shown is the factory's own sample design, not a customer's brand.",
+    descriptionFr: "Gobelet à glace en papier — le motif feuille visible est le design d'échantillon du fabricant, pas la marque d'un client.",
+    material: "Paper, PE lined",
+    colors: ["white"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this cup — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/icecream-cups.webp"],
+  },
+  {
+    id: "prd_cup_pet_clear",
+    name: "Clear PET dessert cup, 92/93mm rim",
+    nameFr: "Gobelet PET transparent, bord 92/93mm",
+    category: "packaging",
+    subcategory: "cups",
+    description:
+      "Clear PET cup. Dimensions are read directly from the supplier's own dimensioned photograph — 92 to 93mm rim, 55mm base — not measured or estimated by Brandora.",
+    descriptionFr:
+      "Gobelet PET transparent. Les dimensions sont lues directement sur la photo cotée du fabricant — bord de 92 à 93mm, base de 55mm — non mesurées ni estimées par Brandora.",
+    material: "PET, clear",
+    colors: ["clear"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["sticker"], "No manufacturer confirmed yet for this cup — tell us your quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/cup-pet-dimensions.webp"],
+  },
+  {
+    id: "prd_cup_dome_lid",
+    name: "Cup with domed lid",
+    nameFr: "Gobelet avec couvercle dôme",
+    category: "packaging",
+    subcategory: "cups",
+    description: "Clear cup fitted with a domed lid, shown on a navy ground.",
+    descriptionFr: "Gobelet transparent muni d'un couvercle dôme, présenté sur fond bleu marine.",
+    material: "PET, clear",
+    colors: ["clear"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["sticker"], "No manufacturer confirmed yet for this cup — tell us your quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/cup-dome-navy.webp"],
+  },
+  {
+    id: "prd_cup_lids_assorted",
+    name: "Assorted cup lids",
+    nameFr: "Couvercles pour gobelets, plusieurs profils",
+    category: "packaging",
+    subcategory: "cups",
+    description: "Nine lid profiles on one supplier studio sheet — flat sipper, dome, faceted dome and others. No single dimension stated.",
+    descriptionFr: "Neuf profils de couvercles sur une même planche du fabricant — plat à bec, dôme, dôme facetté et autres. Aucune dimension unique n'est indiquée.",
+    material: "PET, clear",
+    colors: ["clear"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown([], "No manufacturer confirmed yet for these lids — tell us which profile and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/cup-lids.webp"],
+  },
+  {
+    id: "prd_cup_lid_straw_set",
+    name: "Cup, lid and straw set",
+    nameFr: "Ensemble gobelet, couvercle et paille",
+    category: "packaging",
+    subcategory: "cups",
+    description: "An iced-drink cup, its dome lid and a straw, shown together as they would be sold.",
+    descriptionFr: "Un gobelet pour boisson glacée, son couvercle dôme et une paille, présentés ensemble tels qu'ils seraient vendus.",
+    material: "PET, clear",
+    colors: ["clear"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["sticker"], "No manufacturer confirmed yet for this set — tell us your quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/cups-lids-straws-set.webp"],
+  },
+  {
+    id: "prd_cutlery_wood_kraft",
+    name: "Wooden and kraft-paper cutlery, assorted shapes",
+    nameFr: "Couverts en bois et papier kraft, formes variées",
+    category: "tableware",
+    subcategory: "cutlery",
+    description:
+      "Six ice-cream spoon and spatula shapes in birch wood and kraft paper, plus a single disposable spoon. A supplier spec sheet gives real dimensions for six of these — the smallest is 70×20×1.4mm, the largest 120×30×1.6mm — but no manufacturer is confirmed for them yet.",
+    descriptionFr:
+      "Six formes de cuillères et spatules à glace en bois de bouleau et papier kraft, plus une cuillère jetable seule. Une fiche technique du fabricant donne des dimensions réelles pour six d'entre elles — de 70×20×1,4mm à 120×30×1,6mm — mais aucun fabricant n'est encore confirmé pour ces pièces.",
+    material: "Birch wood, kraft paper",
+    colors: ["natural", "white"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown([], "No manufacturer confirmed yet for this cutlery — tell us which shape and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/wooden-cutlery.webp", "/assets/img/sourcing/wooden-spoon.webp"],
+  },
+];
+
 /**
  * The catalogue Brandora actually serves.
  *
- * No longer empty, but still never *invented*: every product below traces to
- * a named, real supplier (`supplierReference`), and none carries a price
- * nobody quoted (`quoteOnRequest` where a landed price is not yet computed).
- * `scripts/check-catalog.mjs` fails the build if either guarantee breaks.
+ * No longer just three products, but still never *invented*: every product
+ * below is either a confirmed real supplier (`supplierReference`, from
+ * `REAL_SEED`) or an explicitly-marked sourcing-in-progress product with no
+ * price, no supplier and no invented quantity (`sourcingInProgress`, from
+ * `SOURCING_SEED`) — never something in between that looks confirmed but
+ * isn't. `scripts/check-catalog.mjs` fails the build if either guarantee
+ * breaks.
  */
-export const CATALOG: readonly BrandoraProduct[] = REAL_SEED.map(toProduct);
+export const CATALOG: readonly BrandoraProduct[] = [...REAL_SEED, ...SOURCING_SEED].map(toProduct);
