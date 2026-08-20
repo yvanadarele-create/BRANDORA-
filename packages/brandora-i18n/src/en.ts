@@ -670,6 +670,8 @@ export const en = {
     "Stand-up kraft pouches with a clear window",
   "sourcing.alt.bagsBakeryHand":
     "Three sizes of window bakery bag, one held by hand",
+  "sourcing.alt.cakeCarrierStripe":
+    "A white cake carrier box with pink stripes, carried by its handle",
   "sourcing.alt.labels":
     "Gold holographic security labels in their carton",
   "brand.app.carton":

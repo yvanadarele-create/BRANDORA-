@@ -433,3 +433,51 @@ print(
     "  8.11.20 PM.jpeg       kraft bag lineup, kept out only for being near-identical to\n"
     "                        bags-kraft-handles.webp above — no new information published twice.\n"
 )
+
+
+# ---------------------------------------------------------------------------
+# Fourth batch, added 20 Aug 2026 ("PHOTOS 3") — sixteen files, nine of which
+# were exact re-sends of photos already in this repository under their
+# original 17/18 Aug filenames (same bytes, same md5, just pushed again under
+# a new name) and were removed rather than reprocessed, since reprocessing a
+# duplicate publishes nothing new. Of the seven files that were genuinely new
+# content, six fail the same three tests every batch has been held to — a
+# small food business would order it, no supplier logo, no other company's
+# brand — and one survives.
+BATCH_FOUR = [
+    (
+        "WhatsApp Image 2026-08-20 at 12.26.07 PM.jpeg",
+        "box-cake-carrier-stripe.webp",
+        True,
+        "Pink-and-white striped cake carrier box with a folding handle, plain ground. Nobody's mark on it.",
+    ),
+]
+
+print("\nFourth batch:\n")
+for source, name, cropped, _why in BATCH_FOUR:
+    path = ROOT / source
+    if not path.exists():
+        print(f"  ! {source} is not in the repository — skipped")
+        continue
+    image = Image.open(path).convert("RGB")
+    if cropped:
+        image = autocrop(image)
+    square(image, name)
+
+print(
+    "\nNot published from this batch, and why:\n"
+    "  12.26.06 PM.jpeg       an ice-cream cup printed with a real business's name and logo,\n"
+    "                         Luna's Gelateria — someone else's brand, not Brandora's to show.\n"
+    "  12.26.07 PM (1).jpeg   a cake box printed with a real business's name and logo,\n"
+    "                         Daan Go Cake Lab — the branding is on the product itself.\n"
+    "  12.28.19 PM (2).jpeg   six wooden cutlery shapes and a wet-wipe packet laid out\n"
+    "                         together — a dense multi-product collage, not one product.\n"
+    "  12.28.19 PM (3).jpeg   a nine-panel supplier catalogue spread of cup lids, not a\n"
+    "                         photograph Brandora took of a single product.\n"
+    "  12.28.20 PM (1).jpeg   holographic and clear labels in their shipping carton — the\n"
+    "                         same subject already published as holographic-labels.webp,\n"
+    "                         just pulled back to show the box; no new information.\n"
+    "  12.28.20 PM.jpeg       a hologram label sheet with the MAX Italian wordmark and live\n"
+    "                         QR authentication codes printed on it — the same problem as\n"
+    "                         4.26.59 PM (1).jpeg in the first batch.\n"
+)

@@ -651,6 +651,8 @@ export const es: Catalogue = {
     "Bolsas kraft autoportantes con ventana transparente",
   "sourcing.alt.bagsBakeryHand":
     "Tres tama\xf1os de bolsa de panader\xeda con ventana, una sostenida a mano",
+  "sourcing.alt.cakeCarrierStripe":
+    "Una caja porta-tartas blanca con rayas rosas, sujeta por su asa",
   "sourcing.alt.labels":
     "Etiquetas hologr\u00e1ficas doradas en su caja",
   "brand.app.carton":

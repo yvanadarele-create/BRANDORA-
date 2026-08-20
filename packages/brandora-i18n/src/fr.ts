@@ -659,6 +659,8 @@ export const fr: Catalogue = {
     "Pochettes kraft autoportantes \xe0 fen\xeatre transparente",
   "sourcing.alt.bagsBakeryHand":
     "Trois tailles de sac boulangerie \xe0 fen\xeatre, l'un tenu \xe0 la main",
+  "sourcing.alt.cakeCarrierStripe":
+    "Une bo\xeete g\xe2teau blanche \xe0 rayures roses, port\xe9e par sa poign\xe9e",
   "sourcing.alt.labels":
     "\u00c9tiquettes holographiques dor\u00e9es dans leur carton",
   "brand.app.carton":
