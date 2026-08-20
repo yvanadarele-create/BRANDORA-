@@ -689,6 +689,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
  * six words, and gives an address and a number that reach a person.
  */
 .site-footer__identity { margin-bottom: var(--s5); }
+.site-footer__brand { display: flex; align-items: center; gap: var(--s2); margin: 0; }
+.site-footer__mark { flex-shrink: 0; }
 .site-footer__name {
   font-family: Georgia, 'Times New Roman', serif;
   letter-spacing: 0.12em;
@@ -733,6 +735,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 .field__optional { color: var(--ink-faint); font-weight: 400; }
 
 .auth-panel { width: min(100% - 2.5rem, 27rem); margin-inline: auto; }
+.auth-panel__mark { display: block; width: fit-content; margin: 0 auto var(--s5); }
 .auth-alt { color: var(--ink-muted); font-size: 0.92rem; margin-top: var(--s5); }
 .auth-forgot { text-align: right; font-size: 0.85rem; margin: calc(var(--s2) * -1) 0 var(--s3); }
 .auth-divider {
