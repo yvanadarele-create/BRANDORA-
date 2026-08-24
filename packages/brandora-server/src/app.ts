@@ -32,6 +32,7 @@ import {
 import { type Repositories, type SqlDriver, createRepositories, openDatabase } from "@brandora/database";
 import { type BrandoraProduct, money } from "@brandora/shared";
 
+import { seedCatalogIfEmpty } from "./catalog-seed.js";
 import { type ServerLogger, consoleLogger, handle } from "./http.js";
 import { type PaymentProvider, resolvePaymentProvider } from "./payments.js";
 import { type NotificationTransport, resolveNotificationTransport } from "./notifications.js";
@@ -90,6 +91,15 @@ export async function createApp(options: AppOptions = {}): Promise<BrandoraApp> 
 
   const db = options.db ?? (await openConfiguredDatabase(env, logger));
   const repos = createRepositories(db);
+
+  // `options.catalog` set means a caller (every test harness) is supplying
+  // its own fixed product list and does not want database writes on every
+  // boot. Unset — the real, deployed shape — a first boot against a fresh
+  // `catalog_products` table auto-imports the built-in catalogue rather
+  // than silently serving an empty one. See catalog-seed.ts.
+  if (!options.catalog) {
+    await seedCatalogIfEmpty(repos, logger);
+  }
 
   const currency = defaultCurrency(env);
   const delivery = deliverySettings(env);

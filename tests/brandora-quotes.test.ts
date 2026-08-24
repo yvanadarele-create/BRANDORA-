@@ -310,8 +310,10 @@ describe("buildQuoteRequestEmail — a product-page submission, turned into an e
       dimensions: "Diameter 90mm, height 55mm",
       quality: "Food-grade, matte finish",
       customization: "Logo, full colour print",
+      color: "Navy blue",
       destination: "Abidjan, Côte d'Ivoire",
       desiredTimeframe: "Within 4 weeks",
+      deliveryMethod: "Delivery",
       message: "Need these by end of quarter.",
     });
 
@@ -328,8 +330,10 @@ describe("buildQuoteRequestEmail — a product-page submission, turned into an e
     assert.match(email.body, /Dimensions: Diameter 90mm, height 55mm/);
     assert.match(email.body, /Quality \/ specification: Food-grade, matte finish/);
     assert.match(email.body, /Customization: Logo, full colour print/);
+    assert.match(email.body, /Colour \/ preference: Navy blue/);
     assert.match(email.body, /Destination: Abidjan, Côte d'Ivoire/);
     assert.match(email.body, /Expected shipping \/ delivery timeframe: Within 4 weeks/);
+    assert.match(email.body, /Delivery or pickup: Delivery/);
     assert.match(email.body, /Additional message: Need these by end of quarter\./);
     assert.match(email.body, /Logo\/design uploaded: NO/);
     assert.match(email.body, /Reply directly to awa@example\.com/);

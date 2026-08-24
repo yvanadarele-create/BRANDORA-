@@ -104,6 +104,9 @@
         <p class="product__meta" data-i18n="product.quote.lede">
           Aucun compte n'est nécessaire. Décrivez ce qu'il vous faut et nous vous répondrons par e-mail.
         </p>
+        <p class="product__meta" data-i18n="product.quote.not-instant">
+          Ceci est une demande de personnalisation, pas un achat instantané : Brandora Union confirme le coût de livraison et le délai exact après examen de votre demande.
+        </p>
 
         <form data-quote-form novalidate>
           <div class="grid grid--2">
@@ -146,6 +149,10 @@
               <label for="qr-quality" data-i18n="product.quote.quality">Qualité / spécification</label>
               <input class="input" id="qr-quality" name="quality" maxlength="300" data-i18n-attr="placeholder:product.quote.quality-placeholder" placeholder="Ex. qualité alimentaire, finition mate">
             </div>
+            <div class="field">
+              <label for="qr-color" data-i18n="product.quote.color">Couleur / préférence</label>
+              <input class="input" id="qr-color" name="color" maxlength="200" data-i18n-attr="placeholder:product.quote.color-placeholder" placeholder="Ex. bleu marine, kraft naturel">
+            </div>
           </div>
 
           <div class="field">
@@ -168,6 +175,15 @@
           <div class="field">
             <label for="qr-destination" data-i18n="product.quote.destination">Destination</label>
             <input class="input" id="qr-destination" name="destination" maxlength="300" data-i18n-attr="placeholder:product.quote.destination-placeholder" placeholder="Ville, pays">
+          </div>
+
+          <div class="field">
+            <label for="qr-delivery-method" data-i18n="product.quote.deliveryMethod">Livraison ou retrait</label>
+            <select class="control" id="qr-delivery-method" name="deliveryMethod">
+              <option value="" data-i18n="product.quote.deliveryMethod.unset">Pas encore décidé</option>
+              <option value="Delivery" data-i18n="product.quote.deliveryMethod.delivery">Livraison</option>
+              <option value="Pickup" data-i18n="product.quote.deliveryMethod.pickup">Retrait</option>
+            </select>
           </div>
 
           <div class="field">

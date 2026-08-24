@@ -1309,8 +1309,10 @@ export function createRouter(deps: ServerDeps): Router {
     const dimensions = optionalString(ctx.body, "dimensions", 500);
     const quality = optionalString(ctx.body, "quality", 300);
     const customization = optionalString(ctx.body, "customization", 500);
+    const color = optionalString(ctx.body, "color", 200);
     const destination = optionalString(ctx.body, "destination", 300);
     const desiredTimeframe = optionalString(ctx.body, "desiredTimeframe", 200);
+    const deliveryMethod = optionalString(ctx.body, "deliveryMethod", 40);
     const message = optionalString(ctx.body, "message", 2_000);
 
     // Base64, and capped well inside MAX_BODY_BYTES (256KB) so a filename with
@@ -1335,8 +1337,10 @@ export function createRouter(deps: ServerDeps): Router {
       ...(dimensions ? { dimensions } : {}),
       ...(quality ? { quality } : {}),
       ...(customization ? { customization } : {}),
+      ...(color ? { color } : {}),
       ...(destination ? { destination } : {}),
       ...(desiredTimeframe ? { desiredTimeframe } : {}),
+      ...(deliveryMethod ? { deliveryMethod } : {}),
       ...(message ? { message } : {}),
       ...(logoFilename ? { logoFilename } : {}),
     });
@@ -1354,8 +1358,10 @@ export function createRouter(deps: ServerDeps): Router {
       ...(dimensions ? { dimensions } : {}),
       ...(quality ? { quality } : {}),
       ...(customization ? { customization } : {}),
+      ...(color ? { color } : {}),
       ...(destination ? { destination } : {}),
       ...(desiredTimeframe ? { desiredTimeframe } : {}),
+      ...(deliveryMethod ? { deliveryMethod } : {}),
       ...(message ? { message } : {}),
       ...(logoFilename ? { attachmentFilename: logoFilename } : {}),
       ...(logoData ? { attachmentData: logoData } : {}),

@@ -736,8 +736,10 @@ describe("brandora api", () => {
         dimensions: "Diameter 90mm",
         quality: "Food-grade, matte finish",
         customization: "Logo print",
+        color: "Navy blue",
         destination: "Abidjan, Côte d'Ivoire",
         desiredTimeframe: "Within 4 weeks",
+        deliveryMethod: "Delivery",
         message: "Need these by end of quarter.",
         logoFilename: "acme-logo.png",
         logoData: Buffer.from("not-a-real-png").toString("base64"),
@@ -764,8 +766,10 @@ describe("brandora api", () => {
       assert.equal(stored.dimensions, "Diameter 90mm");
       assert.equal(stored.quality, "Food-grade, matte finish");
       assert.equal(stored.customization, "Logo print");
+      assert.equal(stored.color, "Navy blue");
       assert.equal(stored.destination, "Abidjan, Côte d'Ivoire");
       assert.equal(stored.desiredTimeframe, "Within 4 weeks");
+      assert.equal(stored.deliveryMethod, "Delivery");
       assert.equal(stored.message, "Need these by end of quarter.");
       assert.equal(stored.attachmentFilename, "acme-logo.png");
       assert.equal(stored.attachmentData, Buffer.from("not-a-real-png").toString("base64"));

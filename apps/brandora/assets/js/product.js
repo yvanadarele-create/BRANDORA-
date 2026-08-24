@@ -204,9 +204,11 @@ function wireForm(product) {
         ...(String(data.get('shape') || '').trim() ? { shape: String(data.get('shape')).trim() } : {}),
         ...(String(data.get('dimensions') || '').trim() ? { dimensions: String(data.get('dimensions')).trim() } : {}),
         ...(String(data.get('quality') || '').trim() ? { quality: String(data.get('quality')).trim() } : {}),
+        ...(String(data.get('color') || '').trim() ? { color: String(data.get('color')).trim() } : {}),
         ...(customizationOptions.length > 0 ? { customization: customizationOptions.join(', ') } : {}),
         ...(String(data.get('destination') || '').trim() ? { destination: String(data.get('destination')).trim() } : {}),
         ...(String(data.get('desiredTimeframe') || '').trim() ? { desiredTimeframe: String(data.get('desiredTimeframe')).trim() } : {}),
+        ...(String(data.get('deliveryMethod') || '').trim() ? { deliveryMethod: String(data.get('deliveryMethod')).trim() } : {}),
         ...(String(data.get('message') || '').trim() ? { message: String(data.get('message')).trim() } : {}),
         ...(logoFilename ? { logoFilename, logoData } : {}),
       });
