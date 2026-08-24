@@ -18,12 +18,16 @@ import {
   type BrandProfile,
   type ColorSwatch,
   type CurrencyCode,
+  type CustomizationConfidence,
+  type CustomizationMethod,
   type Locale,
   type Money,
   type Positioning,
+  type ProductCategory,
   type Typography,
   type UserRole,
   newId,
+  slugify,
 } from "@brandora/shared";
 import type { Row, SqlDriver } from "./driver.js";
 import {
@@ -915,6 +919,29 @@ export interface Repositories {
     read(): Promise<PricingPolicyRow | null>;
     save(input: PricingPolicyRow, updatedBy?: string): Promise<void>;
   };
+
+  /**
+   * The catalogue an administrator manages from /admin/products.
+   *
+   * `listPublished` is the one method the public `/api/catalog` route may
+   * call — every other read here can return a draft or archived row, which
+   * must never reach an unauthenticated request.
+   */
+  catalogProducts: {
+    create(input: CatalogProductInput): Promise<CatalogProductRow>;
+    findById(id: string): Promise<CatalogProductRow | null>;
+    findBySlug(slug: string): Promise<CatalogProductRow | null>;
+    listAsAdmin(limit?: number): Promise<CatalogProductRow[]>;
+    listPublished(): Promise<CatalogProductRow[]>;
+    update(id: string, patch: Partial<CatalogProductInput>): Promise<CatalogProductRow | null>;
+    remove(id: string): Promise<void>;
+  };
+
+  catalogProductImages: {
+    add(productId: string, url: string): Promise<CatalogProductImageRow>;
+    listFor(productId: string): Promise<CatalogProductImageRow[]>;
+    remove(productId: string, imageId: string): Promise<void>;
+  };
 }
 
 /**
@@ -1144,6 +1171,139 @@ export interface QuoteRequestInput {
   attachmentFilename?: string;
   attachmentData?: string;
 }
+
+/* --- Catalogue products ----------------------------------------------------
+ *
+ * The row shape closely mirrors `BrandoraProduct` (packages/brandora-shared),
+ * which this table now backs, but is kept structural rather than importing
+ * that type — the database package must not depend on a package shaped for
+ * the customer-facing engine. `@brandora/catalog` and the server map between
+ * the two.
+ */
+
+export interface CatalogProductSupplierReference {
+  supplierId: string;
+  name: string;
+  platform?: string;
+}
+
+export interface CatalogProductDimensions {
+  lengthMm?: number;
+  widthMm?: number;
+  heightMm?: number;
+  weightG?: number;
+  volumeMl?: number;
+}
+
+export interface CatalogProductCustomization {
+  confidence: CustomizationConfidence;
+  methods: CustomizationMethod[];
+  /** Minor units, same currency as the product. Never a supplier's raw cost. */
+  unitCost?: number;
+  setupCost?: number;
+  minimumUnits?: number;
+  notes?: string;
+}
+
+export type CatalogProductStatus = "draft" | "published" | "archived";
+
+export interface CatalogProductRow {
+  id: string;
+  slug: string;
+  name: string;
+  nameFr?: string;
+  category: ProductCategory;
+  subcategory: string;
+  description: string;
+  descriptionFr?: string;
+  material?: string;
+  shape?: string;
+  colors: string[];
+  dimensions: CatalogProductDimensions;
+  minimumQuantity: number;
+  availableQuantity: number;
+  priceAmount?: number;
+  currency: string;
+  quoteOnRequest: boolean;
+  supplierReference?: CatalogProductSupplierReference;
+  sourcingInProgress: boolean;
+  customization: CatalogProductCustomization;
+  mainImage?: string;
+  status: CatalogProductStatus;
+  featured: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CatalogProductInput {
+  /** Auto-generated from `name` when omitted. */
+  slug?: string;
+  name: string;
+  nameFr?: string;
+  category: ProductCategory;
+  subcategory: string;
+  description: string;
+  descriptionFr?: string;
+  material?: string;
+  shape?: string;
+  colors?: string[];
+  dimensions?: CatalogProductDimensions;
+  minimumQuantity?: number;
+  availableQuantity?: number;
+  priceAmount?: number;
+  currency?: string;
+  quoteOnRequest?: boolean;
+  supplierReference?: CatalogProductSupplierReference;
+  sourcingInProgress?: boolean;
+  customization?: CatalogProductCustomization;
+  mainImage?: string;
+  status?: CatalogProductStatus;
+  featured?: boolean;
+}
+
+export interface CatalogProductImageRow {
+  id: string;
+  productId: string;
+  url: string;
+  position: number;
+  createdAt: string;
+}
+
+const toCatalogProduct = (row: Record<string, unknown>): CatalogProductRow => ({
+  id: text(row["id"]),
+  slug: text(row["slug"]),
+  name: text(row["name"]),
+  nameFr: optionalText(row["name_fr"]),
+  category: text(row["category"]) as ProductCategory,
+  subcategory: text(row["subcategory"]),
+  description: text(row["description"]),
+  descriptionFr: optionalText(row["description_fr"]),
+  material: optionalText(row["material"]),
+  shape: optionalText(row["shape"]),
+  colors: fromJsonArray<string>(row["colors"]),
+  dimensions: fromJson<CatalogProductDimensions>(row["dimensions"], {}),
+  minimumQuantity: int(row["minimum_quantity"]),
+  availableQuantity: int(row["available_quantity"]),
+  priceAmount: row["price_amount"] === null || row["price_amount"] === undefined ? undefined : int(row["price_amount"]),
+  currency: text(row["currency"]),
+  quoteOnRequest: row["quote_on_request"] === true || row["quote_on_request"] === 1 || row["quote_on_request"] === "1",
+  supplierReference: fromJson<CatalogProductSupplierReference | null>(row["supplier_reference"], null) ?? undefined,
+  sourcingInProgress: row["sourcing_in_progress"] === true || row["sourcing_in_progress"] === 1 || row["sourcing_in_progress"] === "1",
+  customization: fromJson<CatalogProductCustomization>(row["customization"], { confidence: "unknown", methods: [] }),
+  mainImage: optionalText(row["main_image"]),
+  status: text(row["status"]) as CatalogProductStatus,
+  featured: row["featured"] === true || row["featured"] === 1 || row["featured"] === "1",
+  createdAt: text(row["created_at"]),
+  updatedAt: text(row["updated_at"]),
+});
+
+const toCatalogProductImage = (row: Record<string, unknown>): CatalogProductImageRow => ({
+  id: text(row["id"]),
+  productId: text(row["product_id"]),
+  url: text(row["url"]),
+  position: int(row["position"]),
+  createdAt: text(row["created_at"]),
+});
 
 export function createRepositories(db: SqlDriver): Repositories {
   const get = (sql: string, ...params: unknown[]): Promise<Record<string, unknown> | null> =>
@@ -2490,6 +2650,197 @@ export function createRepositories(db: SqlDriver): Repositories {
           nowIso(),
           updatedBy ?? null,
         );
+      },
+    },
+
+    catalogProducts: {
+      async create(input) {
+        const now = nowIso();
+        const slug = (input.slug?.trim() || slugify(input.name)) || newId("product");
+        // A sourcing-in-progress product cannot also carry a price or a
+        // supplier — there is no confirmed manufacturer to have quoted
+        // either one — so the flag forces `quoteOnRequest` and blanks both,
+        // regardless of what else the caller sent. This is the enforcement
+        // point: a form bug upstream must not be able to publish an invented
+        // price next to an unconfirmed supplier.
+        const sourcingInProgress = input.sourcingInProgress ?? false;
+        const quoteOnRequest = sourcingInProgress || (input.quoteOnRequest ?? false);
+
+        const product: CatalogProductRow = {
+          id: newId("product"),
+          slug,
+          name: input.name.trim(),
+          nameFr: input.nameFr,
+          category: input.category,
+          subcategory: input.subcategory.trim(),
+          description: input.description.trim(),
+          descriptionFr: input.descriptionFr,
+          material: input.material,
+          shape: input.shape,
+          colors: input.colors ?? [],
+          dimensions: input.dimensions ?? {},
+          minimumQuantity: input.minimumQuantity ?? 0,
+          availableQuantity: input.availableQuantity ?? 0,
+          priceAmount: quoteOnRequest ? undefined : input.priceAmount,
+          currency: input.currency ?? "XOF",
+          quoteOnRequest,
+          supplierReference: sourcingInProgress ? undefined : input.supplierReference,
+          sourcingInProgress,
+          customization: input.customization ?? { confidence: "unknown", methods: [] },
+          mainImage: input.mainImage,
+          status: input.status ?? "draft",
+          featured: input.featured ?? false,
+          createdAt: now,
+          updatedAt: now,
+        };
+        await run(
+          `INSERT INTO catalog_products (
+             id, slug, name, name_fr, category, subcategory, description, description_fr,
+             material, shape, colors, dimensions, minimum_quantity, available_quantity,
+             price_amount, currency, quote_on_request, supplier_reference, sourcing_in_progress,
+             customization, main_image, status, featured, created_at, updated_at
+           ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          product.id, product.slug, product.name, product.nameFr ?? null,
+          product.category, product.subcategory, product.description, product.descriptionFr ?? null,
+          product.material ?? null, product.shape ?? null,
+          toJson(product.colors), toJson(product.dimensions),
+          product.minimumQuantity, product.availableQuantity,
+          product.priceAmount ?? null, product.currency, product.quoteOnRequest ? 1 : 0,
+          product.supplierReference ? toJson(product.supplierReference) : null,
+          product.sourcingInProgress ? 1 : 0,
+          toJson(product.customization), product.mainImage ?? null,
+          product.status, product.featured ? 1 : 0, now, now,
+        );
+        return product;
+      },
+
+      async findById(id) {
+        const row = await get(`SELECT * FROM catalog_products WHERE id = ?`, id);
+        return row ? toCatalogProduct(row) : null;
+      },
+
+      async findBySlug(slug) {
+        const row = await get(`SELECT * FROM catalog_products WHERE slug = ?`, slug);
+        return row ? toCatalogProduct(row) : null;
+      },
+
+      async listAsAdmin(limit = 500) {
+        const rows = await all(`SELECT * FROM catalog_products ORDER BY updated_at DESC LIMIT ?`, limit);
+        return rows.map(toCatalogProduct);
+      },
+
+      async listPublished() {
+        const rows = await all(`SELECT * FROM catalog_products WHERE status = 'published' ORDER BY featured DESC, name ASC`);
+        return rows.map(toCatalogProduct);
+      },
+
+      async update(id, patch) {
+        // Built from the keys actually present, so a field the admin form did
+        // not send is left alone rather than overwritten with null — the same
+        // rule as suppliers.update above.
+        const columns: Record<string, unknown> = {};
+        const set = <K extends keyof CatalogProductInput>(
+          key: K,
+          column: string,
+          map?: (value: NonNullable<CatalogProductInput[K]>) => unknown,
+        ) => {
+          if (!(key in patch)) return;
+          const value = patch[key];
+          columns[column] = value === undefined || value === null ? null : map ? map(value as NonNullable<CatalogProductInput[K]>) : value;
+        };
+
+        set("slug", "slug", (value) => String(value).trim() || slugify(String(patch.name ?? "")));
+        set("name", "name", (value) => String(value).trim());
+        set("nameFr", "name_fr");
+        set("category", "category");
+        set("subcategory", "subcategory", (value) => String(value).trim());
+        set("description", "description", (value) => String(value).trim());
+        set("descriptionFr", "description_fr");
+        set("material", "material");
+        set("shape", "shape");
+        set("colors", "colors", toJson);
+        set("dimensions", "dimensions", toJson);
+        set("minimumQuantity", "minimum_quantity");
+        set("availableQuantity", "available_quantity");
+        set("currency", "currency");
+        set("mainImage", "main_image");
+        set("status", "status");
+        set("featured", "featured", (value) => (value ? 1 : 0));
+        set("customization", "customization", toJson);
+
+        // These four travel together — see the schema note on catalog_products:
+        // a sourcing-in-progress row can never also carry a price or a
+        // supplier, and a quote-on-request row can never also carry a price.
+        // `sourcingInProgress: true` is enforced last and wins over whatever
+        // else this same patch said, so a caller that sends both a price and
+        // `sourcingInProgress: true` in one request (a form bug, not just a
+        // hypothetical one — see the admin product editor) cannot publish an
+        // invented-looking price next to an unconfirmed supplier.
+        if ("quoteOnRequest" in patch) {
+          columns["quote_on_request"] = patch.quoteOnRequest ? 1 : 0;
+          if (patch.quoteOnRequest) columns["price_amount"] = null;
+        }
+        if ("priceAmount" in patch) columns["price_amount"] = patch.priceAmount ?? null;
+        if ("supplierReference" in patch) {
+          columns["supplier_reference"] = patch.supplierReference ? toJson(patch.supplierReference) : null;
+        }
+        if ("sourcingInProgress" in patch) {
+          columns["sourcing_in_progress"] = patch.sourcingInProgress ? 1 : 0;
+          if (patch.sourcingInProgress) {
+            columns["supplier_reference"] = null;
+            columns["quote_on_request"] = 1;
+            columns["price_amount"] = null;
+          }
+        }
+
+        if (Object.keys(columns).length > 0) {
+          const names = Object.keys(columns);
+          await run(
+            `UPDATE catalog_products SET ${names.map((name) => `${name} = ?`).join(", ")}, updated_at = ? WHERE id = ?`,
+            ...names.map((name) => columns[name]), nowIso(), id,
+          );
+        }
+
+        const row = await get(`SELECT * FROM catalog_products WHERE id = ?`, id);
+        return row ? toCatalogProduct(row) : null;
+      },
+
+      async remove(id) {
+        await run(`DELETE FROM catalog_products WHERE id = ?`, id);
+      },
+    },
+
+    catalogProductImages: {
+      async add(productId, url) {
+        const image: CatalogProductImageRow = {
+          id: newId("productImage"),
+          productId,
+          url,
+          position: 0,
+          createdAt: nowIso(),
+        };
+        const row = await get(
+          `SELECT COALESCE(MAX(position), -1) AS max_position FROM catalog_product_images WHERE product_id = ?`,
+          productId,
+        );
+        image.position = int(row?.["max_position"]) + 1;
+        await run(
+          `INSERT INTO catalog_product_images (id, product_id, url, position, created_at) VALUES (?,?,?,?,?)`,
+          image.id, image.productId, image.url, image.position, image.createdAt,
+        );
+        return image;
+      },
+
+      async listFor(productId) {
+        const rows = await all(
+          `SELECT * FROM catalog_product_images WHERE product_id = ? ORDER BY position ASC, created_at ASC`,
+          productId,
+        );
+        return rows.map(toCatalogProductImage);
+      },
+
+      async remove(productId, imageId) {
+        await run(`DELETE FROM catalog_product_images WHERE id = ? AND product_id = ?`, imageId, productId);
       },
     },
   };

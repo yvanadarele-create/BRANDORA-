@@ -41,7 +41,14 @@ const LIST = process.argv.includes("--list");
  * is a decision, not an oversight, which is why it is written down here rather
  * than left as a silent gap in the numbers.
  */
-const EXEMPT = new Set(["admin.js", "procurement.js", "suppliers.js", "testimonials.js"]);
+const EXEMPT = new Set([
+  "admin.js",
+  "procurement.js",
+  "suppliers.js",
+  "testimonials.js",
+  "admin-products.js",
+  "admin-product-form.js",
+]);
 
 /** Ways a string reaches the screen in this codebase. */
 const SINKS = [

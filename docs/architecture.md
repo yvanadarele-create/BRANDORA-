@@ -49,7 +49,7 @@ second supplier is one new file rather than an audit of the codebase.
 | `@brandora/catalog` | The Brandora product layer, quantity and customisation filters, the package builder |
 | `@brandora/sourcing` | `SupplierAdapter`, the AliExpress adapter, the sourcing agent, scoring, freight, landed cost, caching |
 | `@brandora/quotes` | The quote engine and the order state machine |
-| `@brandora/database` | SQLite schema and repositories; ownership lives in the query |
+| `@brandora/database` | SQLite/Postgres schema and repositories; ownership lives in the query. `catalog_products` is the catalogue itself — see `docs/products.md` |
 | `@brandora/auth` | scrypt password hashing, session lifecycle, authorization policy |
 | `@brandora/ai` | The Anthropic-backed `StrategyProvider` and the generation flow |
 | `@brandora/server` | The HTTP layer, the authoritative price, payments, and every API route |

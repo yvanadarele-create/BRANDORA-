@@ -205,6 +205,59 @@ export function paystackIntegrationStatus(source: Env = env()): IntegrationStatu
   };
 }
 
+/* --- Product image storage (Cloudflare R2) --------------------------------- */
+
+const R2_HINT =
+  "Set it in the deployment's encrypted environment settings. Create an R2 bucket in the Cloudflare dashboard, an API token scoped to it, and a public URL (either R2.dev or a custom domain) for the bucket.";
+
+/** SECRET. Identifies the Cloudflare account the bucket lives in. */
+export function r2AccountId(source: Env = env()): string {
+  return required("R2_ACCOUNT_ID", R2_HINT, source);
+}
+
+/** SECRET. Half of the credential pair that signs every upload/delete request. */
+export function r2AccessKeyId(source: Env = env()): string {
+  return required("R2_ACCESS_KEY_ID", R2_HINT, source);
+}
+
+/** SECRET. The other half — never logged, never sent to the browser. */
+export function r2SecretAccessKey(source: Env = env()): string {
+  return required("R2_SECRET_ACCESS_KEY", R2_HINT, source);
+}
+
+export function r2BucketName(source: Env = env()): string {
+  return required("R2_BUCKET_NAME", R2_HINT, source);
+}
+
+/** The bucket's public base URL — what a browser actually fetches an image from. */
+export function r2PublicUrl(source: Env = env()): string {
+  return required("R2_PUBLIC_URL", R2_HINT, source).replace(/\/+$/, "");
+}
+
+export function r2Configured(source: Env = env()): boolean {
+  return (
+    !!source["R2_ACCOUNT_ID"]?.trim() &&
+    !!source["R2_ACCESS_KEY_ID"]?.trim() &&
+    !!source["R2_SECRET_ACCESS_KEY"]?.trim() &&
+    !!source["R2_BUCKET_NAME"]?.trim() &&
+    !!source["R2_PUBLIC_URL"]?.trim()
+  );
+}
+
+export function r2IntegrationStatus(source: Env = env()): IntegrationStatus {
+  return {
+    name: "Product images (Cloudflare R2)",
+    connected: r2Configured(source),
+    fields: [
+      { label: "Account ID", masked: maskCredential(source["R2_ACCOUNT_ID"]) },
+      { label: "Access Key ID", masked: maskCredential(source["R2_ACCESS_KEY_ID"]) },
+      { label: "Secret Access Key", masked: maskCredential(source["R2_SECRET_ACCESS_KEY"]) },
+      { label: "Bucket", masked: maskCredential(source["R2_BUCKET_NAME"]) },
+      { label: "Public URL", masked: maskCredential(source["R2_PUBLIC_URL"]) },
+    ],
+  };
+}
+
 /* --- Notifications -------------------------------------------------------- */
 
 export function notificationsConfigured(source: Env = env()): boolean {

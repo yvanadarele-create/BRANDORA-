@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr" class="no-js" data-theme="dark">
+<head>
+<meta charset="utf-8">
+  <script>
+    (function () {
+      var SUPPORTED = ['fr', 'en', 'es'];
+      var locale = 'fr';
+      try {
+        var fromUrl = new URLSearchParams(location.search).get('lang');
+        var stored = localStorage.getItem('brandora.locale');
+        if (SUPPORTED.indexOf(fromUrl) !== -1) locale = fromUrl;
+        else if (SUPPORTED.indexOf(stored) !== -1) locale = stored;
+      } catch (e) { /* private mode; the default stands */ }
+      var root = document.documentElement;
+      root.setAttribute('lang', locale);
+      root.setAttribute('data-i18n-pending', '');
+      setTimeout(function () { root.removeAttribute('data-i18n-pending'); }, 1200);
+    })();
+  </script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modifier le produit — Administration Brandora</title>
+<meta name="description" content="Modifier un produit du catalogue Brandora.">
+<link rel="canonical" href="https://brandoraunion.online/admin-product-edit.html">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#050507">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/brandora.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand-lockup" href="index.html" aria-label="Brandora Union — home">
+      <img src="assets/img/logo-b-solid.svg" alt="" width="20" height="26">
+      <span class="brand-lockup__stack">
+        <span class="brand-lockup__word">BRANDORA</span>
+        <span class="brand-lockup__union">UNION</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="create.html" data-i18n="nav.create">Create my brand</a>
+      <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+      <a href="package.html" data-i18n="nav.package">My package</a>
+      <a href="assistant.html" data-when-signed-in hidden data-i18n="nav.assistant">Ask Brandora</a>
+      <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
+      <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="admin-products.html" data-when-admin hidden>Products</a>
+    </nav>
+    <div class="header-tools">
+      <a class="btn btn--small btn--ghost" href="login.html" data-when-signed-out hidden data-i18n="nav.login">Log in</a>
+      <button class="control" type="button" data-logout data-when-signed-in hidden data-i18n="nav.logout">Log out</button>
+      <label class="visually-hidden" for="locale">Language</label>
+      <select class="control" id="locale" data-locale-switch>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+      <button class="control" type="button" data-theme-toggle aria-pressed="false">
+        <span aria-hidden="true">◐</span>
+        <span data-theme-label>Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section">
+    <div class="wrap" style="max-width:760px">
+      <p class="eyebrow"><a href="admin-products.html">Products</a></p>
+      <h1 data-product-title>Edit product</h1>
+
+      <p class="notice" data-error hidden role="alert"></p>
+      <p class="notice" data-admin-only hidden>
+        Product management is an operations tool. <a href="login.html">Log in</a>
+        as an administrator to use it.
+      </p>
+
+      <div data-editor hidden>
+        <h2>Photos</h2>
+        <p class="product__meta">JPG, PNG or WEBP, up to 8MB. The first photo becomes the main image automatically.</p>
+        <div class="gallery" data-image-panel style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1rem 0"></div>
+        <div class="field">
+          <label class="btn btn--ghost btn--small" for="p-image-input" style="display:inline-block;cursor:pointer">Add image</label>
+          <input id="p-image-input" type="file" accept="image/jpeg,image/png,image/webp" data-image-input hidden>
+        </div>
+        <p class="notice" data-image-error hidden role="alert"></p>
+
+        <form data-product-form>
+          <h2 style="margin-top:2rem">Basic information</h2>
+          <div class="field">
+            <label for="p-name">Product name</label>
+            <input class="input" id="p-name" name="name" required maxlength="200">
+          </div>
+          <div class="field">
+            <label for="p-name-fr">Product name (French)</label>
+            <input class="input" id="p-name-fr" name="nameFr" maxlength="200">
+            <p class="field__why">Optional — falls back to the English name on the French site if left blank.</p>
+          </div>
+          <div class="field">
+            <label for="p-description">Description</label>
+            <textarea class="input" id="p-description" name="description" rows="3" required maxlength="4000"></textarea>
+          </div>
+          <div class="field">
+            <label for="p-description-fr">Description (French)</label>
+            <textarea class="input" id="p-description-fr" name="descriptionFr" rows="3" maxlength="4000"></textarea>
+          </div>
+          <div class="field">
+            <label for="p-category">Category</label>
+            <select class="control" id="p-category" name="category" required>
+              <option value="">Choose one…</option>
+              <option value="packaging">Packaging</option>
+              <option value="brand-materials">Brand materials</option>
+              <option value="tableware">Tableware</option>
+              <option value="merchandise">Merchandise</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="p-subcategory">Subcategory</label>
+            <input class="input" id="p-subcategory" name="subcategory" required maxlength="100" placeholder="boxes, cups, labels…">
+          </div>
+          <div class="field">
+            <label for="p-status">Status</label>
+            <select class="control" id="p-status" name="status">
+              <option value="draft">Draft — not shown on the site</option>
+              <option value="published">Published — visible to everyone</option>
+              <option value="archived">Archived — removed from the site</option>
+            </select>
+          </div>
+          <div class="field field--check">
+            <label><input type="checkbox" name="featured"> Featured on the homepage</label>
+          </div>
+
+          <h2>Specifications</h2>
+          <div class="field">
+            <label for="p-material">Material</label>
+            <input class="input" id="p-material" name="material" maxlength="200">
+          </div>
+          <div class="field">
+            <label for="p-shape">Shape</label>
+            <input class="input" id="p-shape" name="shape" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="p-colors">Colours</label>
+            <input class="input" id="p-colors" name="colors" placeholder="kraft, white, black">
+            <p class="field__why">Comma-separated.</p>
+          </div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <div class="field" style="flex:1;min-width:120px">
+              <label for="p-length">Length (mm)</label>
+              <input class="input" id="p-length" name="lengthMm" type="number" min="0">
+            </div>
+            <div class="field" style="flex:1;min-width:120px">
+              <label for="p-width">Width (mm)</label>
+              <input class="input" id="p-width" name="widthMm" type="number" min="0">
+            </div>
+            <div class="field" style="flex:1;min-width:120px">
+              <label for="p-height">Height (mm)</label>
+              <input class="input" id="p-height" name="heightMm" type="number" min="0">
+            </div>
+            <div class="field" style="flex:1;min-width:120px">
+              <label for="p-weight">Weight (g)</label>
+              <input class="input" id="p-weight" name="weightG" type="number" min="0">
+            </div>
+            <div class="field" style="flex:1;min-width:120px">
+              <label for="p-volume">Volume (ml)</label>
+              <input class="input" id="p-volume" name="volumeMl" type="number" min="0">
+            </div>
+          </div>
+          <div class="field">
+            <label for="p-manufacturer">Manufacturer / supplier name</label>
+            <input class="input" id="p-manufacturer" name="supplierName" maxlength="200">
+            <p class="field__why">Leave blank if none is confirmed yet — the product will honestly show "sourcing in progress" instead of a supplier nobody confirmed.</p>
+          </div>
+
+          <h2>Commercial information</h2>
+          <div class="field field--check">
+            <label><input type="checkbox" name="quoteOnRequest" data-quote-toggle> No fixed price yet — quote on request</label>
+          </div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <div class="field" style="flex:1;min-width:160px">
+              <label for="p-price">Price</label>
+              <input class="input" id="p-price" name="price" type="number" min="0" step="0.01">
+            </div>
+            <div class="field" style="flex:1;min-width:120px">
+              <label for="p-currency">Currency</label>
+              <input class="input" id="p-currency" name="currency" maxlength="3" placeholder="XOF" value="XOF">
+            </div>
+            <div class="field" style="flex:1;min-width:160px">
+              <label for="p-moq">Minimum order quantity</label>
+              <input class="input" id="p-moq" name="minimumQuantity" type="number" min="0" value="0">
+            </div>
+            <div class="field" style="flex:1;min-width:160px">
+              <label for="p-stock">Available quantity</label>
+              <input class="input" id="p-stock" name="availableQuantity" type="number" min="0" value="0">
+            </div>
+          </div>
+
+          <h2>Customisation</h2>
+          <div class="field">
+            <label for="p-confidence">Can it carry a logo?</label>
+            <select class="control" id="p-confidence" name="confidence">
+              <option value="unknown">Not confirmed yet</option>
+              <option value="reported">Supplier reports it — not yet confirmed by Brandora</option>
+              <option value="verified">Confirmed — Brandora has verified this</option>
+              <option value="unavailable">Cannot be branded</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="p-custom-notes">Customisation notes</label>
+            <textarea class="input" id="p-custom-notes" name="customizationNotes" rows="2" maxlength="1000"></textarea>
+          </div>
+
+          <p class="notice" data-form-error hidden role="alert"></p>
+          <button class="btn btn--primary" type="submit" data-submit>Save changes</button>
+        </form>
+      </div>
+
+      <noscript><div class="notice">This screen needs JavaScript.</div></noscript>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__identity">
+    <p class="site-footer__brand">
+      <img class="site-footer__mark" src="assets/img/logo-b-solid.svg" alt="" width="16" height="21">
+      <span class="site-footer__name">Brandora&nbsp;Union</span>
+    </p>
+    <p class="site-footer__tagline" data-i18n="brand.tagline">Where brands take form.</p>
+  </div>
+  <div class="wrap site-footer__row">
+    <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+    <a href="admin-products.html" data-when-admin hidden>Products</a>
+  </div>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script type="module" src="assets/js/admin-product-form.js"></script>
+</body>
+</html>

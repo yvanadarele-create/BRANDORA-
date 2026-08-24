@@ -30,7 +30,15 @@ const pageFlag = process.argv.indexOf("--page");
 const onlyPage = pageFlag === -1 ? null : process.argv[pageFlag + 1];
 
 /** Operator screens. English on purpose — see check-i18n.mjs for why. */
-const EXEMPT = new Set(["admin.html", "procurement.html", "suppliers.html", "testimonials.html"]);
+const EXEMPT = new Set([
+  "admin.html",
+  "procurement.html",
+  "suppliers.html",
+  "testimonials.html",
+  "admin-products.html",
+  "admin-product-new.html",
+  "admin-product-edit.html",
+]);
 
 /** Elements whose contents are not prose a visitor reads. */
 const NOT_PROSE = /^(script|style|svg|path|code|pre|template|noscript)$/i;

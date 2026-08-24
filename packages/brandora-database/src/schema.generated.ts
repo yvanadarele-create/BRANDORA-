@@ -613,4 +613,70 @@ CREATE TABLE IF NOT EXISTS testimonials (
 );
 
 CREATE INDEX IF NOT EXISTS idx_testimonials_approved ON testimonials(approved, position);
+
+/* --- Catalogue products (admin-managed) ------------------------------------
+ *
+ * The catalogue an administrator manages from /admin/products, and the table
+ * \`/api/catalog\` reads from. Named \`catalog_products\` rather than \`products\`
+ * because that name is already taken, above, by the supplier-sourced product
+ * cache the procurement agent fills — a different table for a different kind
+ * of row (\`external_id\`, \`stock_status\`, one per supplier listing) that this
+ * one is not a variant of.
+ *
+ * \`status\` is the publish gate: only 'published' rows reach a customer.
+ * 'draft' lets an administrator build a product before it is visible; 'archived'
+ * removes it from the site without deleting the row. Everything nobody has
+ * confirmed yet stays out of this table's confirmed-looking columns the same
+ * way it did in the code this replaces — \`price_amount\` is NULL and
+ * \`quote_on_request\` is 1 rather than a guessed price, and \`supplier_reference\`
+ * is NULL alongside \`sourcing_in_progress = 1\` rather than a named supplier
+ * nobody has actually confirmed. See packages/brandora-catalog/src/query.ts.
+ */
+CREATE TABLE IF NOT EXISTS catalog_products (
+  id                   TEXT PRIMARY KEY,
+  slug                 TEXT NOT NULL UNIQUE,
+  name                 TEXT NOT NULL,
+  name_fr              TEXT,
+  category             TEXT NOT NULL,
+  subcategory          TEXT NOT NULL,
+  description          TEXT NOT NULL,
+  description_fr       TEXT,
+  material             TEXT,
+  shape                TEXT,
+  colors               TEXT NOT NULL DEFAULT '[]',
+  dimensions           TEXT NOT NULL DEFAULT '{}',
+  minimum_quantity     INTEGER NOT NULL DEFAULT 0,
+  available_quantity   INTEGER NOT NULL DEFAULT 0,
+  -- Minor units of \`currency\`, NULL when quote_on_request is set — never a
+  -- placeholder number sitting next to a currency nobody priced it in.
+  price_amount         INTEGER,
+  currency             TEXT NOT NULL,
+  quote_on_request     INTEGER NOT NULL DEFAULT 0,
+  -- JSON: {supplierId, name, platform?} or NULL. See BrandoraProduct.supplierReference.
+  supplier_reference   TEXT,
+  sourcing_in_progress INTEGER NOT NULL DEFAULT 0,
+  -- JSON: {confidence, methods, unitCost?, setupCost?, minimumUnits?, notes?}
+  customization        TEXT NOT NULL DEFAULT '{"confidence":"unknown","methods":[]}',
+  main_image           TEXT,
+  status               TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','archived')),
+  featured             INTEGER NOT NULL DEFAULT 0,
+  created_at           TEXT NOT NULL,
+  updated_at           TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_products_status ON catalog_products(status, category);
+
+-- One row per uploaded photo, ordered by \`position\`. \`main_image\` on the
+-- product is a URL, not a foreign key here — it is allowed to point at any of
+-- these rows' \`url\` (enforced in the repository, not the schema, so choosing a
+-- main image is a plain UPDATE rather than a constraint fight) or be unset.
+CREATE TABLE IF NOT EXISTS catalog_product_images (
+  id           TEXT PRIMARY KEY,
+  product_id   TEXT NOT NULL REFERENCES catalog_products(id) ON DELETE CASCADE,
+  url          TEXT NOT NULL,
+  position     INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_product_images_product ON catalog_product_images(product_id, position);
 `;

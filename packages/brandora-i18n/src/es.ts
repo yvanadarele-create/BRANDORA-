@@ -335,6 +335,9 @@ export const es: Catalogue = {
   "error.input.invalid": "Algo en el formulario no está bien. Revísalo e inténtalo de nuevo.",
   "error.rate.limited": "Son muchas peticiones. Espera un momento e inténtalo de nuevo.",
   "error.internal": "Algo ha fallado por nuestra parte. Estamos en ello.",
+  "error.storage.not-configured": "El almacenamiento de imágenes aún no está configurado. El producto se guardó sin esta foto.",
+  "error.storage.upload-failed": "No se pudo subir la imagen. Verifica el tipo y el tamaño del archivo e inténtalo de nuevo.",
+  "error.storage.delete-failed": "No se pudo eliminar esa imagen en este momento. Inténtalo de nuevo.",
   "ui.catalog.add-to-package":
     "A\u00f1adir a mi lote",
   "ui.catalog.raise-quantity":

@@ -51,6 +51,9 @@ export const CUSTOMER_MESSAGES = {
   "input.invalid": "Something in that form didn't look right. Please check and try again.",
   "rate.limited": "That's a lot of requests. Please wait a moment and try again.",
   "internal": "Something went wrong on our side. We're on it.",
+  "storage.not-configured": "Image storage isn't set up yet. The product was saved without this photo.",
+  "storage.upload-failed": "Unable to upload image. Please check the file type and size, then try again.",
+  "storage.delete-failed": "Unable to remove that image right now. Please try again.",
 } as const;
 
 export type CustomerMessageKey = keyof typeof CUSTOMER_MESSAGES;

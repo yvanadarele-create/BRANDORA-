@@ -30,6 +30,7 @@ const PREFIXES = {
   subscriber: "sbr",
   testimonial: "tst",
   quoteRequest: "qrq",
+  productImage: "pimg",
 } as const;
 
 export type IdKind = keyof typeof PREFIXES;

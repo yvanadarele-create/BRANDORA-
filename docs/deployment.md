@@ -260,6 +260,27 @@ one. Promote yourself directly against the database:
 UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
 ```
 
+### 6. Manage the catalogue without touching code
+
+Log in as that administrator and open **/admin-products** (linked from
+**/admin**). From there you can add a product, upload its photos, and publish
+or unpublish it — the public site reads `/api/catalog` live from the database
+on every request, so a change appears immediately with no code edit, no
+redeploy, and no CloudCode session required. See `docs/products.md` for the
+full walkthrough.
+
+If this is a fresh database, run the one-time import that carries the
+existing, photograph-grounded catalogue across so the site is not empty on
+day one:
+
+```bash
+BRANDORA_DATABASE_URL=… node scripts/import-catalog-seed.mjs
+node scripts/import-catalog-seed.mjs --dry-run   # see what it would do first
+```
+
+It is safe to run more than once — a product already imported is updated by
+its slug, never duplicated.
+
 ---
 
 ## Environment variables in full
@@ -284,6 +305,7 @@ UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
 | `PAYSTACK_SECRET_KEY` | Orders are placed at `pending`; an admin confirms an arranged transfer |
 | `BRANDORA_CALENDLY_URL` | Booking controls hide themselves |
 | `ALIEXPRESS_*` | The Brandora catalogue serves; no supplier call is made |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | Product image uploads in `/admin-products` **fail with a clear message**; existing products and text fields are unaffected |
 
 ### Everything else has a working default
 
@@ -293,7 +315,7 @@ UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
 | `BRANDORA_PUBLIC_BASE_URL` | `http://localhost:4100` |
 | `BRANDORA_STATIC_ROOT` | `./apps/brandora` |
 | `BRANDORA_DEFAULT_CURRENCY` | `XOF` — zero-decimal; see `money.ts` |
-| `BRANDORA_MARGIN_RATE` | `0.35` |
+| `BRANDORA_MARGIN_RATE` | `0.30` (clamped to 0.25–0.35) |
 | `BRANDORA_LOGISTICS_RATE` | `0.08` |
 | `BRANDORA_DELIVERY_FLAT` | `3000` (minor units — whole francs for XOF) |
 | `BRANDORA_DELIVERY_PER_KG` | `1200` |

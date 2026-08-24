@@ -343,6 +343,9 @@ export const fr: Catalogue = {
   "error.input.invalid": "Un champ ne semble pas correct. Vérifiez et réessayez.",
   "error.rate.limited": "Cela fait beaucoup de requêtes. Patientez un instant et réessayez.",
   "error.internal": "Un problème est survenu de notre côté. Nous nous en occupons.",
+  "error.storage.not-configured": "Le stockage des images n'est pas encore configuré. Le produit a été enregistré sans cette photo.",
+  "error.storage.upload-failed": "Impossible de téléverser l'image. Vérifiez le type et la taille du fichier, puis réessayez.",
+  "error.storage.delete-failed": "Impossible de supprimer cette image pour le moment. Veuillez réessayer.",
   "ui.catalog.add-to-package":
     "Ajouter \u00e0 mon lot",
   "ui.catalog.raise-quantity":

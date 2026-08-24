@@ -30,13 +30,19 @@ import { randomBytes } from "node:crypto";
 import {
   BrandoraError,
   type BrandoraProduct,
+  CUSTOMIZATION_CONFIDENCE,
+  CUSTOMIZATION_METHODS,
   type CurrencyCode,
   type Money,
   NotFoundError,
+  PRODUCT_CATEGORIES,
+  type ProductCategory,
   ValidationError,
   add,
   formatMoney,
+  fromMajor,
   money,
+  newId,
   sum,
   toMajor,
 } from "@brandora/shared";
@@ -54,9 +60,12 @@ import {
   buildLogoBrief,
 } from "@brandora/brand-engine";
 import { generateBrandWithRetry, regenerateField } from "@brandora/ai";
-import { CATALOG, filterProducts } from "@brandora/catalog";
+import { filterProducts } from "@brandora/catalog";
 import { defaultPolicy, policyToRow } from "./quote-pricing.js";
 import {
+  type CatalogProductImageRow,
+  type CatalogProductInput,
+  type CatalogProductRow,
   type QualityCheckRow,
   type Repositories,
   type ShipmentInput,
@@ -91,7 +100,9 @@ import {
   notificationsIntegrationStatus,
   paystackIntegrationStatus,
   paystackWebhookSecret,
+  r2IntegrationStatus,
 } from "@brandora/config";
+import { type ImageStorage, MAX_IMAGE_BYTES, r2Storage, validateImage } from "./storage.js";
 
 import {
   type HttpResult,
@@ -156,12 +167,20 @@ export interface ServerDeps {
   pricing: PricingSettings;
   publicBaseUrl: string;
   logger: ServerLogger;
+  /**
+   * A fixed catalogue, for tests. Set, it is authoritative and static.
+   * Unset — the real, deployed shape — the public catalogue routes read
+   * published products live from `repos.catalogProducts` on every request;
+   * see `loadCatalog()` below.
+   */
   catalog?: readonly BrandoraProduct[];
   now?: () => Date;
   /** Overridden in tests, where every request shares one address. */
   rateLimits?: Partial<RateLimits>;
   /** The environment as the admin integrations page should read it. */
   env?: Record<string, string | undefined>;
+  /** Where product photos go. Defaults to R2, reading credentials from `env`. */
+  storage?: ImageStorage;
 }
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 14;
@@ -329,14 +348,89 @@ const productView = (product: BrandoraProduct) => ({
   deliveryEstimate: null as string | null,
 });
 
+/**
+ * A published database row, in the shape the catalogue engine
+ * (`@brandora/catalog`'s `filterProducts`/`priceProject`/`recommendProducts`)
+ * already knows how to filter, price and rank. Only ever called with rows
+ * `listPublished()` returned, so `status: "active"` is safe to hard-code
+ * rather than translate — a draft or archived row never reaches this
+ * function in the first place.
+ */
+function toBrandoraProduct(row: CatalogProductRow, images: CatalogProductImageRow[]): BrandoraProduct {
+  const orderedImages = images.slice().sort((a, b) => a.position - b.position).map((image) => image.url);
+  return {
+    id: row.id,
+    name: row.name,
+    ...(row.nameFr ? { nameFr: row.nameFr } : {}),
+    category: row.category,
+    subcategory: row.subcategory,
+    description: row.description,
+    ...(row.descriptionFr ? { descriptionFr: row.descriptionFr } : {}),
+    images: orderedImages.length > 0 ? orderedImages : row.mainImage ? [row.mainImage] : [],
+    ...(row.material ? { material: row.material } : {}),
+    ...(row.shape ? { shape: row.shape } : {}),
+    dimensions: row.dimensions,
+    colors: row.colors,
+    minimumQuantity: row.minimumQuantity,
+    availableQuantity: row.availableQuantity,
+    indicativeUnitPrice: row.quoteOnRequest ? money(0, row.currency as CurrencyCode) : money(row.priceAmount ?? 0, row.currency as CurrencyCode),
+    ...(row.quoteOnRequest ? { quoteOnRequest: true as const } : {}),
+    ...(row.supplierReference ? { supplierReference: row.supplierReference } : {}),
+    ...(row.sourcingInProgress ? { sourcingInProgress: true as const } : {}),
+    customization: {
+      confidence: row.customization.confidence,
+      methods: row.customization.methods,
+      ...(row.customization.unitCost !== undefined ? { unitCost: money(row.customization.unitCost, row.currency as CurrencyCode) } : {}),
+      ...(row.customization.setupCost !== undefined ? { setupCost: money(row.customization.setupCost, row.currency as CurrencyCode) } : {}),
+      ...(row.customization.minimumUnits !== undefined ? { minimumUnits: row.customization.minimumUnits } : {}),
+      ...(row.customization.notes ? { notes: row.customization.notes } : {}),
+    },
+    variants: [],
+    status: "active",
+    featured: row.featured,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/** What the admin product form actually sees — every status, the raw row. */
+const adminProductView = (row: CatalogProductRow, images: CatalogProductImageRow[]) => ({
+  id: row.id,
+  slug: row.slug,
+  name: row.name,
+  nameFr: row.nameFr ?? null,
+  category: row.category,
+  subcategory: row.subcategory,
+  description: row.description,
+  descriptionFr: row.descriptionFr ?? null,
+  material: row.material ?? null,
+  shape: row.shape ?? null,
+  colors: row.colors,
+  dimensions: row.dimensions,
+  minimumQuantity: row.minimumQuantity,
+  availableQuantity: row.availableQuantity,
+  price: row.priceAmount != null ? asMoney(money(row.priceAmount, row.currency as CurrencyCode)) : null,
+  currency: row.currency,
+  quoteOnRequest: row.quoteOnRequest,
+  supplierReference: row.supplierReference ?? null,
+  sourcingInProgress: row.sourcingInProgress,
+  customization: row.customization,
+  mainImage: row.mainImage ?? null,
+  images: images.slice().sort((a, b) => a.position - b.position).map((image) => ({ id: image.id, url: image.url })),
+  status: row.status,
+  featured: row.featured,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
+
 /* --- The router ------------------------------------------------------------ */
 
 export function createRouter(deps: ServerDeps): Router {
   const router = new Router();
   const repos = deps.repos;
-  const catalog = deps.catalog ?? CATALOG;
   const now = deps.now ?? (() => new Date());
   const session: SessionContext = { repos, authSecret: deps.authSecret };
+  const storage = deps.storage ?? r2Storage(deps.env ?? process.env);
 
   const limits: RateLimits = { ...DEFAULT_RATE_LIMITS, ...(deps.rateLimits ?? {}) };
   const loginLimiter = new RateLimiter(limits.loginsPerWindow, limits.loginWindowMs);
@@ -346,7 +440,29 @@ export function createRouter(deps: ServerDeps): Router {
   const passwordResetLimiter = new RateLimiter(limits.passwordResetsPerWindow, limits.passwordResetWindowMs);
   const quoteRequestLimiter = new RateLimiter(limits.quoteRequestsPerWindow, limits.quoteRequestWindowMs);
 
-  const byId = new Map(catalog.map((p) => [p.id, p]));
+  /**
+   * The catalogue this process serves.
+   *
+   * `deps.catalog`, when a caller sets it, is authoritative and static — the
+   * shape every existing test relies on. Otherwise (the real, deployed shape)
+   * this reads published products straight from the database on every call,
+   * with no cache: an administrator's edit is visible on the very next
+   * request, never "until the next deploy" — see the admin-portal brief's
+   * §16 on cache/refresh behaviour, and §26 on not depending on a rebuild.
+   * Traffic here is a founder's own catalogue browsing, not a storefront
+   * under load, so a query per request costs nothing worth caching against.
+   */
+  const loadCatalog = async (): Promise<readonly BrandoraProduct[]> => {
+    if (deps.catalog) return deps.catalog;
+    const rows = await repos.catalogProducts.listPublished();
+    const products = await Promise.all(
+      rows.map(async (row) => toBrandoraProduct(row, await repos.catalogProductImages.listFor(row.id))),
+    );
+    return products;
+  };
+
+  const catalogById = async (id: string): Promise<BrandoraProduct | undefined> =>
+    (await loadCatalog()).find((product) => product.id === id);
 
   /** Load a project the caller owns, or 404. */
   const ownedProject = async (ctx: { params: Record<string, string> }, user: UserRow) => {
@@ -1131,6 +1247,7 @@ export function createRouter(deps: ServerDeps): Router {
     const search = ctx.query.get("q") ?? undefined;
     const customizable = ctx.query.get("customizable") === "true";
 
+    const catalog = await loadCatalog();
     const result = filterProducts(
       {
         ...(category && category !== "all" ? { category: category as never } : {}),
@@ -1152,7 +1269,7 @@ export function createRouter(deps: ServerDeps): Router {
   });
 
   router.get("/api/catalog/:productId", async (ctx) => {
-    const product = byId.get(ctx.params["productId"] ?? "");
+    const product = await catalogById(ctx.params["productId"] ?? "");
     if (!product) throw new NotFoundError("product", ctx.params["productId"] ?? "");
     return json(200, { product: productView(product) });
   });
@@ -1179,7 +1296,7 @@ export function createRouter(deps: ServerDeps): Router {
       throw new RateLimitedError(`quote request rate limit from ${ctx.ip}`);
     }
 
-    const product = byId.get(ctx.params["productId"] ?? "");
+    const product = await catalogById(ctx.params["productId"] ?? "");
     if (!product) throw new NotFoundError("product", ctx.params["productId"] ?? "");
 
     const customerName = requireString(ctx.body, "customerName", 200);
@@ -1291,7 +1408,7 @@ export function createRouter(deps: ServerDeps): Router {
         industry: `${strategy.industry} ${strategy.description}`,
         quantity,
       },
-      catalog,
+      await loadCatalog(),
     );
 
     return json(200, {
@@ -1348,7 +1465,7 @@ export function createRouter(deps: ServerDeps): Router {
             }
           : null,
       },
-      catalog,
+      catalog: await loadCatalog(),
       provider: deps.strategy,
     });
 
@@ -1376,6 +1493,9 @@ export function createRouter(deps: ServerDeps): Router {
     if (items.length === 0) {
       return { items: [], totals: null, adjustments: [], currency: deps.pricing.currency };
     }
+
+    const catalog = await loadCatalog();
+    const byId = new Map(catalog.map((p) => [p.id, p]));
 
     const priced = priceProject(
       items.map((item) => ({
@@ -1428,7 +1548,7 @@ export function createRouter(deps: ServerDeps): Router {
     const project = await ownedProject(ctx, user);
 
     const productId = requireString(ctx.body, "productId", 80);
-    const product = byId.get(productId);
+    const product = await catalogById(productId);
     if (!product) throw new ValidationError("productId", `unknown product ${productId}`);
     // A quote-on-request product has no landed price to sum into a package
     // total — adding it would either silently price it at zero or crash the
@@ -1497,7 +1617,7 @@ export function createRouter(deps: ServerDeps): Router {
         quantity: item.quantity,
         ...(item.customizationMethod ? { customizationMethod: item.customizationMethod } : {}),
       })),
-      catalog,
+      await loadCatalog(),
       deps.pricing,
     );
 
@@ -1891,6 +2011,7 @@ export function createRouter(deps: ServerDeps): Router {
         aliexpressIntegrationStatus(deps.env ?? process.env),
         paystackIntegrationStatus(deps.env ?? process.env),
         notificationsIntegrationStatus(deps.env ?? process.env),
+        r2IntegrationStatus(deps.env ?? process.env),
       ],
     });
   });
@@ -2010,7 +2131,7 @@ export function createRouter(deps: ServerDeps): Router {
       repos,
       brief,
       provider: deps.strategy,
-      catalogue: catalog,
+      catalogue: await loadCatalog(),
       currency: deps.pricing.currency,
       ...(optionalInteger(ctx.body, "limit", 1, 5) !== undefined
         ? { limit: optionalInteger(ctx.body, "limit", 1, 5)! }
@@ -2089,6 +2210,143 @@ export function createRouter(deps: ServerDeps): Router {
       limit: asMoney(limit),
       risk: { signals },
     });
+  });
+
+  /* --- Admin: catalogue products --------------------------------------------
+   *
+   * The admin portal's reason for existing (BRANDORA — PRIVATE PRODUCT
+   * MANAGEMENT PORTAL brief): the owner manages the catalogue from here,
+   * never by asking for a code change. Every read here can return a draft or
+   * archived row — that is the point of an admin view — and every write goes
+   * through `requireAdmin`. The public `/api/catalog` above never calls these;
+   * it reads `listPublished()` through `loadCatalog()` instead.
+   */
+
+  router.get("/api/admin/products", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const search = (ctx.query.get("q") ?? "").trim().toLowerCase();
+    const category = ctx.query.get("category") ?? "";
+    const status = ctx.query.get("status") ?? "";
+
+    let rows = await repos.catalogProducts.listAsAdmin();
+    if (category) rows = rows.filter((row) => row.category === category);
+    if (status) rows = rows.filter((row) => row.status === status);
+    if (search) {
+      rows = rows.filter(
+        (row) =>
+          row.name.toLowerCase().includes(search) ||
+          row.category.toLowerCase().includes(search) ||
+          row.subcategory.toLowerCase().includes(search),
+      );
+    }
+
+    const products = await Promise.all(
+      rows.map(async (row) => adminProductView(row, await repos.catalogProductImages.listFor(row.id))),
+    );
+    return json(200, { products });
+  });
+
+  router.post("/api/admin/products", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const product = await repos.catalogProducts.create(readCatalogProductInput(ctx.body, true));
+    return json(201, { product: adminProductView(product, []) });
+  });
+
+  router.get("/api/admin/products/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const product = await repos.catalogProducts.findById(id);
+    if (!product) throw new NotFoundError("product", id);
+    return json(200, { product: adminProductView(product, await repos.catalogProductImages.listFor(id)) });
+  });
+
+  router.patch("/api/admin/products/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const updated = await repos.catalogProducts.update(id, readCatalogProductInput(ctx.body, false));
+    if (!updated) throw new NotFoundError("product", id);
+    return json(200, { product: adminProductView(updated, await repos.catalogProductImages.listFor(id)) });
+  });
+
+  router.delete("/api/admin/products/:id", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    if (!(await repos.catalogProducts.findById(id))) throw new NotFoundError("product", id);
+
+    // The photos live in R2, not just the database — removed first so
+    // deleting the row (which cascades the image rows) never orphans a file
+    // nothing points at any more. One failed delete does not block the rest;
+    // an unreachable object in the bucket is a cleanup task, not data loss.
+    const images = await repos.catalogProductImages.listFor(id);
+    await Promise.all(images.map((image) => storage.remove(image.url).catch(() => undefined)));
+
+    await repos.catalogProducts.remove(id);
+    return json(200, { deleted: id });
+  });
+
+  /**
+   * Upload a product photo.
+   *
+   * The body carries the file as base64 — the same transport the public
+   * quote-request logo upload already uses (product.js's `readFileAsDataUrl`)
+   * — decoded here and checked by its actual bytes, never by the filename or
+   * a client-supplied Content-Type, before anything is sent to R2. What lands
+   * in the database afterward is the URL R2 hands back; the bytes never touch
+   * a database row.
+   */
+  router.post("/api/admin/products/:id/images", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const product = await repos.catalogProducts.findById(id);
+    if (!product) throw new NotFoundError("product", id);
+
+    const raw = requireString(ctx.body, "data", Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 100);
+    const base64 = raw.replace(/^data:[^;]+;base64,/, "");
+    let buffer: Buffer;
+    try {
+      buffer = Buffer.from(base64, "base64");
+    } catch {
+      throw new ValidationError("data", "is not valid base64 image data");
+    }
+    // Throws ValidationError on an empty buffer, an oversized one, or bytes
+    // that are not a JPG/PNG/WEBP — the customer-safe message the admin form
+    // shows, per the brief's §17.
+    validateImage(buffer);
+
+    const uploaded = await storage.upload({ productId: id, buffer });
+    const image = await repos.catalogProductImages.add(id, uploaded.url);
+
+    // The first photo on a product becomes its main image automatically, so
+    // uploading one photo is the whole task rather than two.
+    if (!product.mainImage) {
+      await repos.catalogProducts.update(id, { mainImage: uploaded.url });
+    }
+
+    return json(201, { image: { id: image.id, url: image.url } });
+  });
+
+  router.delete("/api/admin/products/:id/images/:imageId", async (ctx) => {
+    await requireAdmin(ctx, session);
+    const id = ctx.params["id"] ?? "";
+    const imageId = ctx.params["imageId"] ?? "";
+    const product = await repos.catalogProducts.findById(id);
+    if (!product) throw new NotFoundError("product", id);
+
+    const images = await repos.catalogProductImages.listFor(id);
+    const target = images.find((image) => image.id === imageId);
+    if (!target) throw new NotFoundError("image", imageId);
+
+    await storage.remove(target.url);
+    await repos.catalogProductImages.remove(id, imageId);
+
+    // Losing the main image reassigns it to whatever is left, rather than a
+    // product silently pointing at a photo that no longer exists.
+    if (product.mainImage === target.url) {
+      const remaining = images.filter((image) => image.id !== imageId);
+      await repos.catalogProducts.update(id, { mainImage: remaining[0]?.url });
+    }
+
+    return json(200, { deleted: imageId });
   });
 
   /* --- Suppliers ----------------------------------------------------------- */
@@ -2175,7 +2433,11 @@ export function createRouter(deps: ServerDeps): Router {
     if (!(await repos.suppliers.findById(supplierId))) throw new NotFoundError("supplier", supplierId);
 
     const productId = requireString(ctx.body, "productId", 80);
-    if (!byId.has(productId)) throw new ValidationError("productId", "is not a Brandora product");
+    // Any status, not just published — an admin may be recording an offer
+    // against a product they are still building out.
+    if (!(await repos.catalogProducts.findById(productId))) {
+      throw new ValidationError("productId", "is not a Brandora product");
+    }
 
     const offer = await repos.supplierOffers.save({
       supplierId,
@@ -2475,6 +2737,7 @@ export function createRouter(deps: ServerDeps): Router {
         aliexpressIntegrationStatus(deps.env ?? process.env),
         paystackIntegrationStatus(deps.env ?? process.env),
         notificationsIntegrationStatus(deps.env ?? process.env),
+        r2IntegrationStatus(deps.env ?? process.env),
       ],
     });
   });
@@ -2719,6 +2982,140 @@ function readStringArray(body: Record<string, unknown>, field: string): string[]
     .map((entry) => entry.trim().slice(0, 200))
     .filter((entry) => entry !== "")
     .slice(0, 40);
+}
+
+const PRODUCT_STATUSES = ["draft", "published", "archived"] as const;
+const isProductStatus = (value: string): value is (typeof PRODUCT_STATUSES)[number] =>
+  (PRODUCT_STATUSES as readonly string[]).includes(value);
+
+/**
+ * A catalogue product, read off an admin request.
+ *
+ * `required` distinguishes a create from a patch, the same way
+ * `readSupplierInput` below does: on a patch an absent field is left alone,
+ * so a form that posts only a status change cannot blank out a description
+ * nobody sent.
+ */
+function readCatalogProductInput(body: Record<string, unknown>, required: true): CatalogProductInput;
+function readCatalogProductInput(body: Record<string, unknown>, required: false): Partial<CatalogProductInput>;
+function readCatalogProductInput(body: Record<string, unknown>, required: boolean): Partial<CatalogProductInput> {
+  const text = (field: string, max: number) => optionalString(body, field, max);
+  const input: Record<string, unknown> = {};
+  const set = (key: string, value: unknown) => {
+    if (value !== undefined) input[key] = value;
+  };
+
+  const category = text("category", 40);
+  if (category !== undefined && !(PRODUCT_CATEGORIES as readonly string[]).includes(category)) {
+    throw new ValidationError("category", `expected one of ${PRODUCT_CATEGORIES.join(", ")}`);
+  }
+  const status = text("status", 20);
+  if (status !== undefined && !isProductStatus(status)) {
+    throw new ValidationError("status", `expected one of ${PRODUCT_STATUSES.join(", ")}`);
+  }
+
+  if (required) {
+    input["name"] = requireString(body, "name", 200);
+    input["category"] = category ?? (() => {
+      throw new ValidationError("category", "is required");
+    })();
+    input["subcategory"] = requireString(body, "subcategory", 100);
+    input["description"] = requireString(body, "description", 4_000);
+  } else {
+    set("name", text("name", 200));
+    set("category", category as ProductCategory | undefined);
+    set("subcategory", text("subcategory", 100));
+    set("description", text("description", 4_000));
+  }
+
+  set("slug", text("slug", 120));
+  set("nameFr", text("nameFr", 200));
+  set("descriptionFr", text("descriptionFr", 4_000));
+  set("material", text("material", 200));
+  set("shape", text("shape", 60));
+  set("colors", readStringArray(body, "colors"));
+  set("minimumQuantity", optionalInteger(body, "minimumQuantity", 0, 10_000_000));
+  set("availableQuantity", optionalInteger(body, "availableQuantity", 0, 10_000_000));
+  set("currency", text("currency", 3));
+  set("mainImage", text("mainImage", 2_000));
+  set("status", status);
+  set("featured", typeof body["featured"] === "boolean" ? body["featured"] : undefined);
+
+  const dimensionsRaw = body["dimensions"];
+  if (dimensionsRaw !== undefined && dimensionsRaw !== null) {
+    if (typeof dimensionsRaw !== "object" || Array.isArray(dimensionsRaw)) {
+      throw new ValidationError("dimensions", "expected an object");
+    }
+    const d = dimensionsRaw as Record<string, unknown>;
+    const dims = optionalIntegers(d, {
+      lengthMm: [0, 100_000],
+      widthMm: [0, 100_000],
+      heightMm: [0, 100_000],
+      weightG: [0, 1_000_000],
+      volumeMl: [0, 1_000_000],
+    });
+    input["dimensions"] = dims;
+  }
+
+  // A price only makes sense without quoteOnRequest — the repository already
+  // enforces that the two never coexist (see catalogProducts.update), but
+  // reading `quoteOnRequest` first means a form toggling it to true does not
+  // also have to remember to clear the price field in the same request.
+  const quoteOnRequest = typeof body["quoteOnRequest"] === "boolean" ? body["quoteOnRequest"] : undefined;
+  set("quoteOnRequest", quoteOnRequest);
+  const priceMajor = optionalNumber(body, "price", 0, 1_000_000_000);
+  if (priceMajor !== undefined && quoteOnRequest !== true) {
+    set("priceAmount", fromMajor(priceMajor).amount);
+  }
+
+  const sourcingInProgress = typeof body["sourcingInProgress"] === "boolean" ? body["sourcingInProgress"] : undefined;
+  set("sourcingInProgress", sourcingInProgress);
+
+  const supplierRaw = body["supplierReference"];
+  if (supplierRaw !== undefined && sourcingInProgress !== true) {
+    if (supplierRaw === null) {
+      set("supplierReference", null);
+    } else if (typeof supplierRaw === "object" && !Array.isArray(supplierRaw)) {
+      const s = supplierRaw as Record<string, unknown>;
+      const name = typeof s["name"] === "string" ? s["name"].trim() : "";
+      if (!name) throw new ValidationError("supplierReference.name", "is required when a supplier is set");
+      input["supplierReference"] = {
+        supplierId: typeof s["supplierId"] === "string" && s["supplierId"].trim() ? s["supplierId"].trim() : newId("supplier"),
+        name,
+        ...(typeof s["platform"] === "string" && s["platform"].trim() ? { platform: s["platform"].trim() } : {}),
+      };
+    } else {
+      throw new ValidationError("supplierReference", "expected an object with a name");
+    }
+  }
+
+  const customizationRaw = body["customization"];
+  if (customizationRaw !== undefined && customizationRaw !== null) {
+    if (typeof customizationRaw !== "object" || Array.isArray(customizationRaw)) {
+      throw new ValidationError("customization", "expected an object");
+    }
+    const c = customizationRaw as Record<string, unknown>;
+    const confidence = typeof c["confidence"] === "string" ? c["confidence"] : "unknown";
+    if (!(CUSTOMIZATION_CONFIDENCE as readonly string[]).includes(confidence)) {
+      throw new ValidationError("customization.confidence", `expected one of ${CUSTOMIZATION_CONFIDENCE.join(", ")}`);
+    }
+    const methodsRaw = Array.isArray(c["methods"]) ? c["methods"] : [];
+    const methods = methodsRaw.filter(
+      (m): m is string => typeof m === "string" && (CUSTOMIZATION_METHODS as readonly string[]).includes(m),
+    );
+    const unitCostMajor = typeof c["unitCost"] === "number" ? c["unitCost"] : undefined;
+    const setupCostMajor = typeof c["setupCost"] === "number" ? c["setupCost"] : undefined;
+    input["customization"] = {
+      confidence,
+      methods,
+      ...(unitCostMajor !== undefined ? { unitCost: fromMajor(unitCostMajor).amount } : {}),
+      ...(setupCostMajor !== undefined ? { setupCost: fromMajor(setupCostMajor).amount } : {}),
+      ...(typeof c["minimumUnits"] === "number" ? { minimumUnits: c["minimumUnits"] } : {}),
+      ...(typeof c["notes"] === "string" && c["notes"].trim() ? { notes: c["notes"].trim() } : {}),
+    };
+  }
+
+  return input as Partial<CatalogProductInput>;
 }
 
 /**

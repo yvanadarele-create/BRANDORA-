@@ -38,6 +38,7 @@ import { type NotificationTransport, resolveNotificationTransport } from "./noti
 import type { PricingSettings } from "./pricing.js";
 import { type ServerDeps, createRouter } from "./routes.js";
 import { SECURITY_HEADERS, resolveStaticFile, sendStatic } from "./static.js";
+import type { ImageStorage } from "./storage.js";
 
 export interface AppOptions {
   /** Absolute path to the static site. Omit to run API-only. */
@@ -52,16 +53,19 @@ export interface AppOptions {
   now?: () => Date;
   rateLimits?: ServerDeps["rateLimits"];
   /**
-   * The products the catalogue serves.
+   * A fixed set of products, for tests.
    *
-   * Defaults to `CATALOG`, which ships empty on purpose — see
-   * packages/brandora-catalog/src/seed.ts. Tests that need products to filter,
-   * price or rank pass their own fixtures here rather than relying on the
-   * application to carry invented ones for them.
+   * Set, it is authoritative and static. Unset — the real, deployed shape —
+   * the catalogue routes read published products live from
+   * `repos.catalogProducts` on every request instead; see `loadCatalog()` in
+   * routes.ts. Tests that need products to filter, price or rank pass their
+   * own fixtures here rather than standing up a database with rows in it.
    */
   catalog?: readonly BrandoraProduct[];
   /** Secure cookies. Defaults to on unless the base URL is plain http. */
   secureCookies?: boolean;
+  /** Where product photos go. Defaults to R2, reading credentials from `env`. */
+  storage?: ImageStorage;
 }
 
 export interface BrandoraApp {
@@ -117,6 +121,7 @@ export async function createApp(options: AppOptions = {}): Promise<BrandoraApp> 
     ...(options.now ? { now: options.now } : {}),
     ...(options.rateLimits ? { rateLimits: options.rateLimits } : {}),
     ...(options.catalog ? { catalog: options.catalog } : {}),
+    ...(options.storage ? { storage: options.storage } : {}),
   };
 
   const router = createRouter(deps);

@@ -7,6 +7,9 @@
 
 User-agent: *
 Disallow: /admin.html
+Disallow: /admin-products.html
+Disallow: /admin-product-new.html
+Disallow: /admin-product-edit.html
 Disallow: /assistant.html
 Disallow: /brand.html
 Disallow: /dashboard.html

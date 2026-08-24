@@ -3,14 +3,7 @@
 <head>
 <meta charset="utf-8">
   <script>
-    /* Language before first paint.
-       app.js applies the dictionary, but it has to fetch 21KB first, and until it
-       lands the authored English is on screen — a French visitor watching English
-       turn into French is exactly the "mixed language" complaint. So the language
-       is decided here, synchronously, and translatable text is held invisible
-       (not removed: visibility keeps the layout, so nothing jumps) until the
-       dictionary is applied. The timeout is the safety net — a failed fetch must
-       leave a readable page, never a blank one. */
+    /* Language before first paint. See admin.html for why this runs inline. */
     (function () {
       var SUPPORTED = ['fr', 'en', 'es'];
       var locale = 'fr';
@@ -27,9 +20,9 @@
     })();
   </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Administration — Brandora Union</title>
-<meta name="description" content="Administration Brandora.">
-<link rel="canonical" href="https://brandoraunion.online/admin.html">
+<title>Produits — Administration Brandora</title>
+<meta name="description" content="Gestion des produits du catalogue Brandora.">
+<link rel="canonical" href="https://brandoraunion.online/admin-products.html">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#050507">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
@@ -85,53 +78,73 @@
   <section class="section">
     <div class="wrap">
       <p class="eyebrow">Administration</p>
-      <h1>Brandora operations</h1>
+      <h1>Products</h1>
+      <p class="lede">
+        Everything the public catalogue shows comes from here. A draft is
+        invisible on the site until you publish it.
+      </p>
 
       <p class="notice" data-error hidden role="alert"></p>
-
-      <div class="grid grid--4" data-admin-counts></div>
-
-      <h2 style="margin-top:3rem">Products</h2>
-      <p class="product__meta">
-        Manage the public catalogue — add products, upload photos, publish
-        or unpublish. Changes appear on the site immediately, with no code
-        change and no redeploy.
+      <p class="notice" data-admin-only hidden>
+        Product management is an operations tool. <a href="login.html">Log in</a>
+        as an administrator to use it.
       </p>
-      <p style="margin:1rem 0"><a class="btn btn--primary" href="admin-products.html">Manage products →</a></p>
 
-      <h2 style="margin-top:3rem">Integrations</h2>
-      <p class="product__meta">Values are never shown — only whether a credential is installed, and its last four characters.</p>
-      <div class="grid grid--2" data-admin-integrations></div>
+      <div class="option__badges" data-add-row hidden style="margin:1.5rem 0">
+        <a class="btn btn--primary" href="admin-product-new.html">+ Add product</a>
+      </div>
 
-      <h2 style="margin-top:3rem">Orders</h2>
+      <form class="book-form" data-filters hidden style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:end;margin-bottom:1.5rem">
+        <div class="field" style="flex:1;min-width:200px">
+          <label for="f-search">Search</label>
+          <input class="input" id="f-search" name="q" placeholder="Name, category…">
+        </div>
+        <div class="field">
+          <label for="f-status">Status</label>
+          <select class="control" id="f-status" name="status">
+            <option value="">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-category">Category</label>
+          <select class="control" id="f-category" name="category">
+            <option value="">All categories</option>
+            <option value="packaging">Packaging</option>
+            <option value="brand-materials">Brand materials</option>
+            <option value="tableware">Tableware</option>
+            <option value="merchandise">Merchandise</option>
+          </select>
+        </div>
+      </form>
+
+      <p class="notice" data-empty hidden>
+        No products yet. <a href="admin-product-new.html">Add the first one</a>.
+      </p>
+
       <div class="scroll-x">
-        <table class="totals" data-admin-orders>
-          <caption class="visually-hidden">Orders</caption>
-          <thead><tr><th scope="col">Reference</th><th scope="col">Customer</th><th scope="col">Payment</th><th scope="col">Fulfilment</th><th scope="col">Total</th><th scope="col">Action</th></tr></thead>
+        <table class="totals" data-products hidden>
+          <caption class="visually-hidden">Products</caption>
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col">Name</th>
+              <th scope="col">Category</th>
+              <th scope="col">Price</th>
+              <th scope="col">Status</th>
+              <th scope="col">Updated</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
       </div>
 
-      <h2 style="margin-top:3rem">Quotes</h2>
-      <div class="scroll-x">
-        <table class="totals" data-admin-quotes>
-          <caption class="visually-hidden">Quotes</caption>
-          <thead><tr><th scope="col">Reference</th><th scope="col">Customer</th><th scope="col">Total</th><th scope="col">Margin</th><th scope="col">Status</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <h2 style="margin-top:3rem">Customers</h2>
-      <div class="scroll-x">
-        <table class="totals" data-admin-customers>
-          <caption class="visually-hidden">Customers</caption>
-          <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Projects</th><th scope="col">Orders</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <noscript><div class="notice">This screen needs JavaScript.</div></noscript>
     </div>
   </section>
-
 </main>
 
 <footer class="site-footer">
@@ -148,9 +161,8 @@
     </p>
   </div>
   <div class="wrap site-footer__row">
-    <a href="create.html" data-i18n="nav.create">Create my brand</a>
-    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
-    <a href="package.html" data-i18n="nav.package">My package</a>
+    <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+    <a href="suppliers.html" data-when-admin hidden>Suppliers</a>
     <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
   </div>
 </footer>
@@ -158,6 +170,6 @@
 <script src="assets/js/app.js" defer></script>
 <script type="module" src="assets/js/booking.js"></script>
 <script type="module" src="assets/js/assistant-widget.js"></script>
-<script type="module" src="assets/js/admin.js"></script>
+<script type="module" src="assets/js/admin-products.js"></script>
 </body>
 </html>
