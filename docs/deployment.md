@@ -225,6 +225,8 @@ paste the value, tick **Production**, **Preview** and **Development**, **Save**.
 | `BRANDORA_PUBLIC_BASE_URL` | `https://brandoraunion.online` | Payment returns land on the wrong host |
 | `ANTHROPIC_API_KEY` | your key | Brand generation fails with a clear message. It does not invent a brand |
 | `PAYSTACK_SECRET_KEY` | your key | Orders are placed and wait for an admin to confirm an arranged payment |
+| `RESEND_API_KEY` | your key | **No email is ever sent — including password-reset.** `notify()` records the notification in the database but skips delivery silently; nothing errors, nothing logs to the customer |
+| `BRANDORA_EMAIL_FROM` | a verified sender, e.g. `Brandora <no-reply@brandoraunion.online>` | Same silent no-op as above — both variables are required together, see `notificationsConfigured()` in `packages/brandora-config/src/index.ts` |
 | `BRANDORA_CALENDLY_URL` | `https://calendly.com/yvanadarele/30min` | The "Book a call" controls hide themselves |
 | `ALIEXPRESS_APP_KEY` | | No supplier call is made; the Brandora catalogue still serves |
 | `ALIEXPRESS_APP_SECRET` | | " |
@@ -303,6 +305,7 @@ its slug, never duplicated.
 | --- | --- |
 | `ANTHROPIC_API_KEY` | Generation **fails with a clear message** rather than fabricating a brand |
 | `PAYSTACK_SECRET_KEY` | Orders are placed at `pending`; an admin confirms an arranged transfer |
+| `RESEND_API_KEY` + `BRANDORA_EMAIL_FROM` | All outbound email — including password-reset — is silently skipped. Both are required together |
 | `BRANDORA_CALENDLY_URL` | Booking controls hide themselves |
 | `ALIEXPRESS_*` | The Brandora catalogue serves; no supplier call is made |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | Product image uploads in `/admin-products` **fail with a clear message**; existing products and text fields are unaffected |
