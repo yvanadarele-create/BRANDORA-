@@ -122,19 +122,35 @@ R2's public bucket setting or a custom domain determines `R2_PUBLIC_URL` — a
 private bucket serves nothing to a customer's browser, so it must be public
 or fronted by one.
 
-## The one-time import
+## The one-time import, and what happens automatically after it
 
-A fresh database has no products until you run:
+A fresh database has no products until something imports `CATALOG` into
+`catalog_products`. Two things can do that now:
 
-```bash
-BRANDORA_DATABASE_URL=… node scripts/import-catalog-seed.mjs
-node scripts/import-catalog-seed.mjs --dry-run   # see what it would do first
-```
+- **On boot**, `createApp()` calls, in order (`packages/brandora-server/src/app.ts`):
+  1. `seedCatalogIfEmpty` — if the table has never been seeded, imports the
+     entire `CATALOG`.
+  2. `seedNewCatalogProducts` — on *every* boot, whether the table was empty
+     or not, creates any product in `CATALOG` whose slug isn't in the
+     database yet. It never updates or touches a row that already exists, so
+     an administrator's edit to an existing product is never overwritten and
+     never fought. This is what makes adding a new photographed product to
+     `seed.ts` (a new sourcing batch, say) reach the live site on the next
+     deploy with no manual step — see `packages/brandora-server/src/catalog-seed.ts`
+     for the exact reasoning, including the one named trade-off: deleting one
+     of these auto-created products afterward, while its slug is still in
+     `CATALOG`, gets it recreated on the next boot. Removing the product from
+     `CATALOG` (or archiving/deleting it and also dropping it from `seed.ts`)
+     closes that for good.
+- **By hand**, `node scripts/import-catalog-seed.mjs` does a full sync —
+  create *or update* by slug — for when you deliberately want an existing
+  seed product's database row to match what `seed.ts` says again:
 
-This carries the existing `CATALOG` export — all 19 products, exactly as
-photographed, with the same honesty flags they already had — into
-`catalog_products`, `published`. It is idempotent (matched by slug), so
-running it again after editing `seed.ts` updates rather than duplicates.
+  ```bash
+  BRANDORA_DATABASE_URL=… node scripts/import-catalog-seed.mjs
+  node scripts/import-catalog-seed.mjs --dry-run   # see what it would do first
+  ```
+
 Photos keep their existing `/assets/img/sourcing/*.webp` paths rather than
 being re-uploaded to R2 — they are already real files shipped with the site.
 

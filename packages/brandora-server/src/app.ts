@@ -33,7 +33,7 @@ import { type Repositories, type SqlDriver, createRepositories, openDatabase } f
 import { type BrandoraProduct, money } from "@brandora/shared";
 
 import { bootstrapAdmin } from "./admin-bootstrap.js";
-import { seedCatalogIfEmpty } from "./catalog-seed.js";
+import { seedCatalogIfEmpty, seedNewCatalogProducts } from "./catalog-seed.js";
 import { type ServerLogger, consoleLogger, handle } from "./http.js";
 import { type PaymentProvider, resolvePaymentProvider } from "./payments.js";
 import { type NotificationTransport, resolveNotificationTransport } from "./notifications.js";
@@ -100,6 +100,10 @@ export async function createApp(options: AppOptions = {}): Promise<BrandoraApp> 
   // than silently serving an empty one. See catalog-seed.ts.
   if (!options.catalog) {
     await seedCatalogIfEmpty(repos, logger);
+    // Carries forward any product added to the built-in seed after the
+    // table already had rows in it — a new photo batch, say — without ever
+    // touching a row that already exists. See catalog-seed.ts.
+    await seedNewCatalogProducts(repos, logger);
     // Promotes BRANDORA_ADMIN_EMAIL to role='admin' if that account exists
     // and isn't already one. Never creates the account, never touches its
     // password. See admin-bootstrap.ts.

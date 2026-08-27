@@ -121,3 +121,52 @@ export async function seedCatalogIfEmpty(repos: Repositories, logger: ServerLogg
     logger.error(`catalog auto-seed failed, continuing without it: ${String(err)}`);
   }
 }
+
+/**
+ * Bring in any product the codebase's own seed knows about that the database
+ * does not yet — on every boot, not only an empty one.
+ *
+ * `seedCatalogIfEmpty` above solves "the table has never been seeded." It
+ * does not solve "a new product was added to `CATALOG` after the table
+ * already had rows in it" — the exact situation a new photo batch creates:
+ * new photos get processed, new entries land in `seed.ts`, and the database
+ * that `/api/catalog` actually serves from is untouched by any of that until
+ * something writes to it. Nobody should have to remember to run
+ * `scripts/import-catalog-seed.mjs` by hand after every such change for a
+ * new product to reach a live site — see docs/products.md, "What still
+ * references CATALOG."
+ *
+ * This only ever *creates*. A slug that already exists is left completely
+ * alone, so it can never overwrite a product an administrator has since
+ * edited — the same promise `importCatalogSeed`'s "update" branch does not
+ * make, which is why that one stays a manual, deliberate script rather than
+ * something that runs on every boot. The one thing this cannot detect is an
+ * administrator deliberately deleting one of *these* specific seed products
+ * after it was auto-created — the row is gone with nothing left behind to
+ * remember that on purpose, so the next boot would recreate it. That is a
+ * narrow, named trade-off, not an oversight: it only applies to products
+ * whose slug still exists in this file, and removing a product from `CATALOG`
+ * itself closes it for good.
+ */
+export async function seedNewCatalogProducts(repos: Repositories, logger: ServerLogger): Promise<void> {
+  try {
+    let created = 0;
+    for (const product of CATALOG) {
+      const slug = product.id.replace(/^prd_/, "");
+      const existing = await repos.catalogProducts.findBySlug(slug);
+      if (existing) continue;
+
+      const input = toCatalogProductInput(product);
+      const row = await repos.catalogProducts.create(input);
+      created += 1;
+      for (const url of product.images) {
+        await repos.catalogProductImages.add(row.id, url);
+      }
+    }
+    if (created > 0) {
+      console.log(`[brandora] catalogue seed: added ${created} product(s) that were not yet in the database`);
+    }
+  } catch (err) {
+    logger.error(`catalog new-product sync failed, continuing without it: ${String(err)}`);
+  }
+}

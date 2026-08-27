@@ -214,7 +214,17 @@ def autocrop(image, tolerance=34, margin=0.045):
 # desk to read as a separate ground. There is no rule that separates a diagonal
 # edge from the product above it; a stated trim is more honest than a rule that
 # pretends to have found one.
-TRIM_BOTTOM = {"WhatsApp Image 2026-08-18 at 1.00.22 PM.jpeg": 0.11}
+TRIM_BOTTOM = {
+    "WhatsApp Image 2026-08-18 at 1.00.22 PM.jpeg": 0.11,
+    # Both acrylic cake-box photos (fifth batch) carry a supplier's own
+    # promotional banner glued across roughly the bottom fifth of the frame —
+    # "可加印LOGO" ("logo can be printed"), a colour-option caption, and Brandora's
+    # own @brandora.union watermark on top of it. None of that is the product;
+    # trimming it is the same operation as every other batch's background
+    # removal, just a hard-edged banner instead of a wall or a floor.
+    "watermark-06dd734890ba15a7b73e54cc04a47e38_1.jpeg": 0.245,
+    "watermark-abd5f6e99577ebf50f1c2bc56fa04134_2.jpeg": 0.245,
+}
 
 
 BATCH_TWO = [
@@ -480,4 +490,125 @@ print(
     "  12.28.20 PM.jpeg       a hologram label sheet with the MAX Italian wordmark and live\n"
     "                         QR authentication codes printed on it — the same problem as\n"
     "                         4.26.59 PM (1).jpeg in the first batch.\n"
+)
+
+
+# ---------------------------------------------------------------------------
+# Fifth batch, added 27 Aug 2026 ("Photos 5" / "Catalogue 2" / "CATALOGE") —
+# roughly thirty files plus eight supplier catalogue PDFs. Most of the images
+# turned out to already be re-sends of the first four batches (same product,
+# different filename) or generic supplier marketing photography with no
+# confirmed Brandora sourcing behind it: a repeating "leaf" watermark across
+# a dozen stand-up-pouch photos from one supplier Brandora has no confirmed
+# relationship with, novelty party-favour bags with no bakery tie-in, and
+# several images of a *different, identifiable business's own branded
+# product* (a "Luna's Gelateria" cup, a "Daan Go Cake Lab" box, a "Happiness
+# Cake" box, an "@nailglamour_9" thank-you card) — none of those are
+# Brandora's to publish, same reasoning as every prior batch.
+#
+# Four bagasse (sugarcane-pulp) tableware photos survive: clean studio shots,
+# already square, nobody's mark on them, and outside the leaf-watermarked
+# pouch supplier's line entirely.
+#
+# The eight PDFs are manufacturer capability decks and sizing charts (paper
+# cans, blister clamshells, custom gift boxes, a watch-accessories line that
+# is not packaging at all) — real and useful for sourcing conversations, but
+# none of them is a photograph of a physical sample, so none becomes a
+# catalogue product here. See docs/products.md and the session notes for
+# where that data is kept instead.
+BATCH_FIVE = [
+    (
+        "1-10.jpg",
+        "bagasse-plates-nested.webp",
+        False,
+        "Four nested bagasse plates, graduated sizes, on white. Already a clean studio shot.",
+    ),
+    (
+        "1-11.jpg",
+        "bagasse-clamshell-embossed.webp",
+        False,
+        "Bagasse hinged clamshell, open, 'THANK YOU' embossed into the pulp itself — not a printed brand.",
+    ),
+    (
+        "1-12.jpg",
+        "bagasse-clamshell-mini-cake.webp",
+        False,
+        "The same style of clamshell, smaller, styled with a mini cake on a strawberry-pattern liner (a decorative print, not a company name) and a gold fork.",
+    ),
+    (
+        "1-13.jpg",
+        "bagasse-bento-4compartment.webp",
+        False,
+        "Bagasse four-compartment bento container with its lid, open.",
+    ),
+]
+
+print("\nFifth batch — bagasse tableware:\n")
+for source, name, cropped, _why in BATCH_FIVE:
+    path = ROOT / source
+    if not path.exists():
+        print(f"  ! {source} is not in the repository — skipped")
+        continue
+    image = Image.open(path).convert("RGB")
+    if cropped:
+        image = autocrop(image)
+    square(image, name)
+
+# The acrylic cake display box: two colourways of what the watermark confirms
+# is a product Brandora has actually sourced and shown on its own TikTok, but
+# the only photography available is a supplier's marketing image with a
+# promotional banner baked across the bottom fifth of the frame. The banner
+# is trimmed (TRIM_BOTTOM, above) the same way any other batch trims a wall or
+# a floor that is not the product; what's left is a clean, unbranded studio
+# photo of the box itself.
+BATCH_FIVE_ACRYLIC = [
+    (
+        "watermark-06dd734890ba15a7b73e54cc04a47e38_1.jpeg",
+        "cake-display-box-black-lid.webp",
+        "Clear acrylic cake display box, black lid and base, on a rotating cake stand.",
+    ),
+    (
+        "watermark-abd5f6e99577ebf50f1c2bc56fa04134_2.jpeg",
+        "cake-display-box-white-lid.webp",
+        "The same box, white lid and base.",
+    ),
+]
+
+print("\nFifth batch — acrylic cake display box:\n")
+for source, name, _why in BATCH_FIVE_ACRYLIC:
+    path = ROOT / source
+    if not path.exists():
+        print(f"  ! {source} is not in the repository — skipped")
+        continue
+    image = Image.open(path).convert("RGB")
+    trim = TRIM_BOTTOM.get(source)
+    if trim:
+        image = image.crop((0, 0, image.width, int(image.height * (1 - trim))))
+    image = autocrop(image)
+    square(image, name)
+
+print(
+    "\nNot published from this batch, and why:\n"
+    "  the ~12 'leaf'-watermarked stand-up-pouch photos (1-3.jpg, 1-4.jpg, 1-9.jpg,\n"
+    "  2e4bfaee694b9.png, 4-2.png, 7-2.png, e4b8bbe59bbe*.jpg, ...)\n"
+    "                          a single supplier's own marketing photography, watermarked\n"
+    "                          with their logo — Brandora has no confirmed sourcing\n"
+    "                          relationship with them yet, so this is not Brandora's to\n"
+    "                          publish as a catalogue product. Ask before adding.\n"
+    "  1-6.jpg, 1-7.jpg, 5-1.jpg, 10.jpg, img_2797.jpg\n"
+    "                          novelty party-favour bags (animal shapes, holiday characters) —\n"
+    "                          fun, but generic supplier stock with no bakery tie-in.\n"
+    "  fw4024bs-s6-4.jpg       a desk-organiser set — not packaging.\n"
+    "  image.png               an uncroppable, unidentifiable spec-table fragment.\n"
+    "  2-1.jpg                 industrial fill-seal film roll stock, not a finished product.\n"
+    "  IMG-20260824-WA0000.jpg a real photo, but of a finished box printed with a real\n"
+    "                          business's own name, 'Happiness Cake' — not Brandora's brand.\n"
+    "  IMG-20260825-WA0014.jpg a video screenshot, not product photography.\n"
+    "  IMG-20260825-WA0046.jpg a supplier's spec-sheet screenshot for a gold cake board —\n"
+    "                          real dimensions (24.5x24.5cm), but no photograph of the\n"
+    "                          physical item exists yet to publish alongside them.\n"
+    "  IMG-20260827-WA0006.jpg a real, styled photo, but of a dessert cup printed with\n"
+    "                          another business's own stickers ('Small Happiness Delicious').\n"
+    "  the 8 supplier PDFs     manufacturer capability decks and sizing charts, not\n"
+    "                          photographs of physical samples — see the note above this batch.\n"
 )

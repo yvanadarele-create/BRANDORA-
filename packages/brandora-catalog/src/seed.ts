@@ -839,6 +839,106 @@ const SOURCING_SEED: SeedInput[] = [
     customization: unknown([], "No manufacturer confirmed yet for this cutlery — tell us which shape and quantity and Brandora will source it."),
     images: ["/assets/img/sourcing/wooden-cutlery.webp", "/assets/img/sourcing/wooden-spoon.webp"],
   },
+
+  /* --- Fifth photo batch, 27 Aug 2026 ("Photos 5") ----------------------- */
+  {
+    id: "prd_tableware_bagasse_plates",
+    name: "Nested bagasse serving plates",
+    nameFr: "Assiettes en bagasse imbriquées",
+    category: "tableware",
+    subcategory: "plates",
+    description:
+      "Compostable sugarcane-pulp plates in four graduated sizes, shown nested. No manufacturer confirmed yet.",
+    descriptionFr:
+      "Assiettes compostables en pulpe de canne à sucre, en quatre tailles graduées, montrées imbriquées. Aucun fabricant confirmé pour l'instant.",
+    material: "Bagasse (sugarcane pulp), compostable",
+    colors: ["natural"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown([], "No manufacturer confirmed yet for these plates — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bagasse-plates-nested.webp"],
+  },
+  {
+    id: "prd_tableware_bagasse_clamshell",
+    name: "Bagasse hinged clamshell container",
+    nameFr: "Boîte clamshell en bagasse",
+    category: "tableware",
+    subcategory: "containers",
+    description:
+      "Compostable sugarcane-pulp takeout clamshell, shown open. 'Thank you' is embossed into the pulp itself, not printed. No manufacturer confirmed yet.",
+    descriptionFr:
+      "Boîte clamshell à emporter compostable en pulpe de canne à sucre, montrée ouverte. « Thank you » est gaufré dans la pulpe elle-même, pas imprimé. Aucun fabricant confirmé pour l'instant.",
+    material: "Bagasse (sugarcane pulp), compostable",
+    colors: ["natural"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown([], "No manufacturer confirmed yet for this container — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bagasse-clamshell-embossed.webp"],
+  },
+  {
+    id: "prd_tableware_bagasse_clamshell_mini",
+    name: "Mini bagasse dessert clamshell",
+    nameFr: "Mini boîte clamshell à dessert en bagasse",
+    category: "tableware",
+    subcategory: "containers",
+    description:
+      "Smaller compostable clamshell sized for a single dessert or mini cake, styled here with a strawberry-pattern paper liner. No manufacturer confirmed yet.",
+    descriptionFr:
+      "Boîte clamshell compostable plus petite, dimensionnée pour un dessert individuel ou un mini gâteau, présentée ici avec un papier de fond à motif fraise. Aucun fabricant confirmé pour l'instant.",
+    material: "Bagasse (sugarcane pulp), compostable",
+    colors: ["natural"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown([], "No manufacturer confirmed yet for this container — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bagasse-clamshell-mini-cake.webp"],
+  },
+  {
+    id: "prd_tableware_bagasse_bento",
+    name: "Bagasse four-compartment bento box",
+    nameFr: "Boîte bento compostable à quatre compartiments",
+    category: "tableware",
+    subcategory: "containers",
+    description:
+      "Compostable sugarcane-pulp bento container with a hinged lid and four separate compartments, shown open. No manufacturer confirmed yet.",
+    descriptionFr:
+      "Boîte bento compostable en pulpe de canne à sucre avec couvercle articulé et quatre compartiments séparés, montrée ouverte. Aucun fabricant confirmé pour l'instant.",
+    material: "Bagasse (sugarcane pulp), compostable",
+    colors: ["natural"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown([], "No manufacturer confirmed yet for this container — tell us your size and quantity and Brandora will source it."),
+    images: ["/assets/img/sourcing/bagasse-bento-4compartment.webp"],
+  },
+  {
+    id: "prd_box_cake_display_acrylic",
+    name: "Clear acrylic cake display box",
+    nameFr: "Boîte de présentation à gâteau en acrylique transparent",
+    category: "packaging",
+    subcategory: "boxes",
+    description:
+      "Transparent acrylic box for a full-size layer cake, with a coloured lid and base and a printable panel for a logo. Shown in both colourways. Brandora has shown this product before, but the only photography available is the supplier's own marketing image, so no manufacturer is confirmed here yet.",
+    descriptionFr:
+      "Boîte en acrylique transparent pour un gâteau à étages, avec couvercle et base de couleur et un panneau imprimable pour un logo. Présentée dans les deux coloris. Brandora a déjà montré ce produit, mais seule la photographie du fournisseur est disponible, donc aucun fabricant n'est encore confirmé ici.",
+    material: "Clear acrylic (PET), printable lid",
+    colors: ["black lid", "white lid"],
+    minimumQuantity: 0,
+    availableQuantity: 0,
+    quoteOnRequest: true,
+    sourcingInProgress: true,
+    customization: unknown(["logo-print"], "No manufacturer confirmed yet for this box — tell us your size and quantity and Brandora will source it."),
+    images: [
+      "/assets/img/sourcing/cake-display-box-black-lid.webp",
+      "/assets/img/sourcing/cake-display-box-white-lid.webp",
+    ],
+  },
 ];
 
 /**
