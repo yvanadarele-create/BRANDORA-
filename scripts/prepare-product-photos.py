@@ -66,6 +66,35 @@ def blur(image, boxes):
     return image
 
 
+def remove_corner_watermark(image, search=(260, 200), tolerance=40):
+    """Flood a supplier's logo watermark, confined to the top-left corner,
+    with the photo's own background colour — found the same way `autocrop`
+    finds a product's edges (compare against a clean reference point), not
+    typed in by eye. The reference is the top-right corner: same row the
+    watermark sits in, far enough away to be clear of it in every photo this
+    is run against.
+    """
+    w, h = image.size
+    ground = image.getpixel((w - 6, 6))
+    px = image.load()
+    left, top, right, bottom = search[0], search[1], 0, 0
+    found = False
+    for y in range(0, min(search[1], h)):
+        for x in range(0, min(search[0], w)):
+            p = px[x, y]
+            if sum(abs(p[i] - ground[i]) for i in range(3)) > tolerance * 3:
+                found = True
+                left, top = min(left, x), min(top, y)
+                right, bottom = max(right, x), max(bottom, y)
+    if not found:
+        return image
+    margin = 6
+    box = (0, 0, min(w, right + margin), min(h, bottom + margin))
+    patch = Image.new("RGB", (box[2] - box[0], box[3] - box[1]), ground)
+    image.paste(patch, (box[0], box[1]))
+    return image
+
+
 def square(image, name):
     """One square ground, centred, product never distorted."""
     # Scaled up a little where the source is small — a phone photograph of a
@@ -611,4 +640,89 @@ print(
     "                          another business's own stickers ('Small Happiness Delicious').\n"
     "  the 8 supplier PDFs     manufacturer capability decks and sizing charts, not\n"
     "                          photographs of physical samples — see the note above this batch.\n"
+)
+
+
+# ---------------------------------------------------------------------------
+# Sixth batch, added 27 Aug 2026 — the fifth batch's leftovers, revisited
+# after the founder asked directly for them. Two things changed from the
+# fifth-batch pass, not the standard: the pouch supplier's watermark is
+# confined to one small corner of every photo it's on and is removed the
+# same way `holographic-labels.webp`'s factory slip was left alone versus
+# `bakery-carrier-box.webp`'s background was trimmed — found automatically
+# (`remove_corner_watermark`, above) rather than typed in, and only ever
+# touching pixels that are the watermark, never the product. And two files
+# turned out to be filed under the wrong name in the earlier notes: what was
+# called "10.jpg" in the fifth-batch summary is the coffee bags below,
+# and what was called "2-1.jpg" is the Christmas cellophane bags — this
+# batch uses the filenames as verified against the actual images, not as
+# transcribed the first time.
+#
+# Still not published, on the same standard as everything else: "1.png" —
+# not the coffee bags, but a stack of printed packaging film rolls carrying
+# several *other, real* businesses' own finished brand designs ("Smile",
+# "milk&tea NICE", and others) printed on the film itself. That is a
+# different problem from a supplier's watermark in a corner: it cannot be
+# cropped or patched out without destroying the photograph, because it is
+# the product's own printed surface, the same reason BIHAKU and Marabu's
+# holograms stayed out of the very first batch. "4-2.png" is left out too —
+# a print-mockup demo ("A day healed by toasut", with the typo baked into
+# the render) rather than a photograph of a real order, the same reasoning
+# that kept the generic thank-you-card template out of the third batch.
+
+BATCH_SIX_WATERMARKED = [
+    ("1-3.jpg", "pouch-kraft-plain-multisize.webp", "Plain kraft stand-up pouches, several sizes, no window."),
+    ("1-4.jpg", "pouch-kraft-window-multisize.webp", "Kraft stand-up pouches with a clear window, several sizes, shown filled."),
+    ("e4b8bbe59bbe1.jpg", "pouch-kraft-window-multisize-2.webp", "The same style, a different size lineup, shown empty — second image for the same product."),
+    ("1-9.jpg", "pouch-metallic-silver-multisize.webp", "Silver metallic stand-up pouches, several sizes."),
+    ("e4b8bbe59bbe.jpg", "pouch-clear-spout-handle.webp", "Clear stand-up spout pouches with a carry handle, shown filled with grain samples."),
+    ("e4b8bbe59bbe1-1.jpg", "pouch-clear-zip-standup.webp", "Clear zip stand-up pouches, shown filled with dried fruit and nuts."),
+    ("2e4bfaee694b9.png", "pouch-matte-colour-assorted.webp", "Matte stand-up pouches, ten colourways, tear-notch zipper."),
+    ("4f6a7273.jpg", "pouch-matte-colour-assorted-2.webp", "The same style, four colourways shown larger — second image for the same product."),
+    ("4.png", "bag-novelty-handbag-shape.webp", "Novelty handbag-shaped treat pouches, two colourways, two sizes each."),
+    ("7-2.png", "bag-flat-poly-pastry.webp", "Flat poly bags sized for a single pastry, shown with a doughnut and a slice of bread."),
+]
+
+print("\nSixth batch — pouches with a supplier watermark, removed:\n")
+for source, name, _why in BATCH_SIX_WATERMARKED:
+    path = ROOT / source
+    if not path.exists():
+        print(f"  ! {source} is not in the repository — skipped")
+        continue
+    image = Image.open(path).convert("RGB")
+    image = remove_corner_watermark(image)
+    square(image, name)
+
+BATCH_SIX_CLEAN = [
+    ("1-6.jpg", "bag-novelty-animal-shapes.webp", "Animal-shaped novelty treat bags (dog, deer, elephant, dinosaur)."),
+    ("1-7.jpg", "bag-novelty-bus-shape.webp", "Bus-shaped novelty treat bags, four colourways."),
+    ("5-1.jpg", "bag-novelty-hologram-skull.webp", "Holographic skull-shaped novelty treat bag."),
+    ("2-1.jpg", "bag-novelty-christmas-cellophane.webp", "Cellophane treat bags printed with winter cartoon characters, gold twist ties."),
+    ("img_2797.jpg", "bag-novelty-christmas-gift-shapes.webp", "Gift-shaped novelty treat bags in a Christmas theme."),
+    ("10.jpg", "pouch-coffee-matte-illustrated.webp", "Matte coffee bags, grey and white, printed with a farmhouse illustration, four sizes."),
+]
+
+print("\nSixth batch — no watermark, already clean:\n")
+for source, name, _why in BATCH_SIX_CLEAN:
+    path = ROOT / source
+    if not path.exists():
+        print(f"  ! {source} is not in the repository — skipped")
+        continue
+    image = Image.open(path).convert("RGB")
+    square(image, name)
+
+print(
+    "\nNot published from this batch, and why:\n"
+    "  1.png                   printed packaging film rolls carrying several other, real\n"
+    "                          businesses' own finished brand designs ('Smile', 'milk&tea\n"
+    "                          NICE', and others) printed on the film itself — not croppable\n"
+    "                          without destroying the photograph, same reasoning as the\n"
+    "                          BIHAKU/Marabu holograms in the first batch.\n"
+    "  4-2.png                 a print-mockup demo ('A day healed by toasut', typo baked\n"
+    "                          into the render) — a template, not a photograph of a real order.\n"
+    "  fw4024bs-s6-4.jpg       a desk-organiser set — not packaging, and never shown\n"
+    "                          anywhere on the site, so it is not the dead-link problem\n"
+    "                          this batch exists to fix.\n"
+    "  image.png               an uncroppable, unidentifiable spec-table fragment — same\n"
+    "                          reasoning, never shown anywhere on the site.\n"
 )

@@ -1676,12 +1676,15 @@ html[data-i18n-pending] [data-i18n-attr] {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .samples__tile { margin: 0; }
+.samples__tile a { display: block; border-radius: var(--radius, 12px); transition: transform 0.15s ease; }
+.samples__tile a:hover, .samples__tile a:focus-visible { transform: translateY(-2px); }
 .samples__tile img {
   width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover;
   display: block; border-radius: var(--radius, 12px);
   border: 1px solid var(--border);
   background: var(--surface, #f7f8f7);
 }
+.samples__tile a:hover img, .samples__tile a:focus-visible img { border-color: var(--border-strong); }
 .samples__note {
   margin: var(--s4) 0 0; max-width: 62ch;
   font-size: 0.9rem; color: var(--muted, inherit);

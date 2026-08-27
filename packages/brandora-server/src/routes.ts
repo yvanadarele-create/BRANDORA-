@@ -461,8 +461,35 @@ export function createRouter(deps: ServerDeps): Router {
     return products;
   };
 
-  const catalogById = async (id: string): Promise<BrandoraProduct | undefined> =>
-    (await loadCatalog()).find((product) => product.id === id);
+  /**
+   * Look a product up by its database id, or — failing that — by its stable
+   * slug.
+   *
+   * The slug fallback exists because a database id is generated fresh in
+   * every environment (a different one locally, in a preview deploy and in
+   * production), so it can never safely be hard-coded into a *static* page.
+   * The homepage's photo gallery is exactly that: committed HTML, not
+   * something rendered from a live API call, so `product.html?id=…` there
+   * has to name something that stays the same everywhere `seed.ts` reaches —
+   * the slug (`row.id.replace(/^prd_/, "")` is how `catalog-seed.ts` derives
+   * it from the same seed data). Both lookups refuse a non-published row,
+   * the same as `loadCatalog()` already does for the list.
+   */
+  const catalogById = async (id: string): Promise<BrandoraProduct | undefined> => {
+    if (deps.catalog) return deps.catalog.find((product) => product.id === id);
+
+    const byId = await repos.catalogProducts.findById(id);
+    if (byId && byId.status === "published") {
+      return toBrandoraProduct(byId, await repos.catalogProductImages.listFor(byId.id));
+    }
+
+    const bySlug = await repos.catalogProducts.findBySlug(id);
+    if (bySlug && bySlug.status === "published") {
+      return toBrandoraProduct(bySlug, await repos.catalogProductImages.listFor(bySlug.id));
+    }
+
+    return undefined;
+  };
 
   /** Load a project the caller owns, or 404. */
   const ownedProject = async (ctx: { params: Record<string, string> }, user: UserRow) => {
