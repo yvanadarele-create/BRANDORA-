@@ -722,6 +722,133 @@ describe("brandora api", () => {
     });
   });
 
+  describe("account settings — change password", () => {
+    it("refuses without the current password", async () => {
+      const email = "change-password-wrong-current@example.com";
+      const client = await signUp(h, email);
+      const response = await client.post("/api/auth/password", {
+        currentPassword: "not-the-real-password",
+        newPassword: "a-brand-new-passphrase",
+      });
+      assert.equal(response.status, 401);
+      assert.equal(response.json["error"], "auth.invalid");
+    });
+
+    it("refuses a weak new password", async () => {
+      const email = "change-password-weak@example.com";
+      const client = await signUp(h, email);
+      const response = await client.post("/api/auth/password", {
+        currentPassword: PASSWORD,
+        newPassword: "short",
+      });
+      assert.equal(response.status, 400);
+      assert.equal(response.json["error"], "auth.weak-password");
+    });
+
+    it("changes the password, logs in with the new one, and the old one no longer works", async () => {
+      const email = "change-password-ok@example.com";
+      const client = await signUp(h, email);
+      const changed = await client.post("/api/auth/password", {
+        currentPassword: PASSWORD,
+        newPassword: "a-genuinely-different-passphrase",
+      });
+      assert.equal(changed.status, 200, JSON.stringify(changed.json));
+
+      const oldLogin = await new Client(h.base).post("/api/auth/login", { email, password: PASSWORD });
+      assert.equal(oldLogin.status, 401);
+
+      const newLogin = await new Client(h.base).post("/api/auth/login", {
+        email,
+        password: "a-genuinely-different-passphrase",
+      });
+      assert.equal(newLogin.status, 200, JSON.stringify(newLogin.json));
+    });
+
+    it("stays signed in on this device, but signs every other session out", async () => {
+      const email = "change-password-sessions@example.com";
+      const client = await signUp(h, email);
+      const elsewhere = new Client(h.base);
+      await elsewhere.post("/api/auth/login", { email, password: PASSWORD });
+      assert.equal((await elsewhere.get("/api/auth/me")).json["user"].email, email);
+
+      await client.post("/api/auth/password", {
+        currentPassword: PASSWORD,
+        newPassword: "a-genuinely-different-passphrase",
+      });
+
+      // The session that made the change is still live…
+      assert.equal((await client.get("/api/auth/me")).json["user"].email, email);
+      // …but the one signed in elsewhere is not.
+      assert.equal((await elsewhere.get("/api/auth/me")).json["user"], null);
+    });
+
+    it("refuses an unauthenticated request", async () => {
+      const response = await new Client(h.base).post("/api/auth/password", {
+        currentPassword: "whatever",
+        newPassword: "a-brand-new-passphrase",
+      });
+      assert.equal(response.status, 401);
+    });
+  });
+
+  describe("account settings — change email", () => {
+    it("refuses without the current password", async () => {
+      const client = await signUp(h, "change-email-wrong-current@example.com");
+      const response = await client.post("/api/auth/email", {
+        currentPassword: "not-the-real-password",
+        newEmail: "new-address@example.com",
+      });
+      assert.equal(response.status, 401);
+      assert.equal(response.json["error"], "auth.invalid");
+    });
+
+    it("refuses an address already in use by another account", async () => {
+      await signUp(h, "already-taken@example.com");
+      const client = await signUp(h, "change-email-conflict@example.com");
+      const response = await client.post("/api/auth/email", {
+        currentPassword: PASSWORD,
+        newEmail: "already-taken@example.com",
+      });
+      assert.equal(response.status, 409);
+      assert.equal(response.json["error"], "auth.email-taken");
+    });
+
+    it("changes the email, and the account is reachable at the new address", async () => {
+      const client = await signUp(h, "change-email-old@example.com");
+      const response = await client.post("/api/auth/email", {
+        currentPassword: PASSWORD,
+        newEmail: "change-email-new@example.com",
+      });
+      assert.equal(response.status, 200, JSON.stringify(response.json));
+      assert.equal(response.json["user"].email, "change-email-new@example.com");
+
+      // The session making the change stays live and reports the new address.
+      assert.equal((await client.get("/api/auth/me")).json["user"].email, "change-email-new@example.com");
+
+      // Login now works at the new address, with the same password…
+      const newLogin = await new Client(h.base).post("/api/auth/login", {
+        email: "change-email-new@example.com",
+        password: PASSWORD,
+      });
+      assert.equal(newLogin.status, 200, JSON.stringify(newLogin.json));
+
+      // …and the old address no longer has an account.
+      const oldLogin = await new Client(h.base).post("/api/auth/login", {
+        email: "change-email-old@example.com",
+        password: PASSWORD,
+      });
+      assert.equal(oldLogin.status, 401);
+    });
+
+    it("refuses an unauthenticated request", async () => {
+      const response = await new Client(h.base).post("/api/auth/email", {
+        currentPassword: "whatever",
+        newEmail: "someone@example.com",
+      });
+      assert.equal(response.status, 401);
+    });
+  });
+
   describe("quote requests — no account required", () => {
     it("submits a full quote request and stores it, with no transport configured", async () => {
       const anon = new Client(h.base);

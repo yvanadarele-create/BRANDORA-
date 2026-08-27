@@ -3,14 +3,7 @@
 <head>
 <meta charset="utf-8">
   <script>
-    /* Language before first paint.
-       app.js applies the dictionary, but it has to fetch 21KB first, and until it
-       lands the authored English is on screen — a French visitor watching English
-       turn into French is exactly the "mixed language" complaint. So the language
-       is decided here, synchronously, and translatable text is held invisible
-       (not removed: visibility keeps the layout, so nothing jumps) until the
-       dictionary is applied. The timeout is the safety net — a failed fetch must
-       leave a readable page, never a blank one. */
+    /* Language before first paint. See login.html for why this runs inline. */
     (function () {
       var SUPPORTED = ['fr', 'en', 'es'];
       var locale = 'fr';
@@ -27,9 +20,9 @@
     })();
   </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Approvisionnement — Brandora Union</title>
-<meta name="description" content="L'agent d'approvisionnement de Brandora : présélectionne les fournisseurs à partir des offres enregistrées.">
-<link rel="canonical" href="https://brandoraunion.online/procurement.html">
+<title>Mon compte — Brandora Union</title>
+<meta name="description" content="Gérez les informations de votre compte Brandora.">
+<link rel="canonical" href="https://brandoraunion.online/account.html">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#050507">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
@@ -39,7 +32,7 @@
 </head>
 <body>
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a data-i18n="nav.skip" class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
   <div class="wrap site-header__inner">
@@ -59,6 +52,7 @@
       <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
       <a href="account.html" data-when-signed-in hidden data-i18n="nav.account">My account</a>
       <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
+      <a href="admin-products.html" data-when-admin hidden>Products</a>
       <a href="procurement.html" data-when-admin hidden>Sourcing</a>
       <a href="testimonials.html" data-when-admin hidden>Testimonials</a>
     </nav>
@@ -82,81 +76,63 @@
 </header>
 
 <main id="main">
-  <section class="section">
+  <noscript><p class="notice" role="alert" data-i18n="account.noscript">Enable JavaScript to manage your account.</p></noscript>
+
+  <section class="section" data-signed-out-only hidden>
     <div class="wrap">
-      <p class="eyebrow">Operations</p>
-      <h1>Sourcing</h1>
-      <p class="lede">
-        Describe what a customer needs. The agent reads the sentence, then
-        shortlists from suppliers and prices Brandora has actually recorded.
-      </p>
+      <p class="notice" role="alert" data-i18n="account.signed-out">Sign in to manage your account.</p>
+      <p><a class="btn btn--primary" href="login.html?next=%2Faccount.html" data-i18n="nav.login">Log in</a></p>
+    </div>
+  </section>
 
-      <!--
-        Stated on the page, not just in the code. An operator who does not know
-        where the numbers come from cannot tell a gap in the data from a gap in
-        the market, and will fill one of them in by hand.
-      -->
-      <p class="notice notice--quiet" data-provenance>
-        Every figure below comes from a recorded supplier offer. Nothing on this
-        page is generated. If no supplier is listed, none is recorded — not none
-        exists.
-      </p>
+  <section class="section" data-account-panel hidden>
+    <div class="wrap auth-panel">
+      <p class="eyebrow" data-i18n="auth.eyebrow">Your account</p>
+      <h1 data-i18n="account.title">Account settings</h1>
+      <p class="lede" data-i18n="account.lede">View your account information, and change your password or email address whenever you need to — no one else has to do this for you.</p>
 
-      <p class="notice" data-error hidden role="alert"></p>
-      <p class="notice" data-admin-only hidden>
-        Sourcing is an operations tool. <a href="login.html">Log in</a> as an
-        administrator to use it.
-      </p>
+      <dl class="account-info" data-account-info>
+        <dt data-i18n="account.field.name">Name</dt>
+        <dd data-account-name></dd>
+        <dt data-i18n="account.field.email">Email</dt>
+        <dd data-account-email></dd>
+        <dt data-i18n="account.field.role">Role</dt>
+        <dd data-account-role></dd>
+      </dl>
 
-      <form class="ask" data-source-form>
-        <label class="visually-hidden" for="brief">What is needed</label>
-        <textarea class="input" id="brief" name="brief" rows="3"
-                  placeholder="e.g. 1000 kraft paper cups, 250ml, logo printed, delivered to Abidjan, under 400 FCFA each"
-                  required></textarea>
-        <button class="btn btn--primary" type="submit" data-submit>Source</button>
+      <h2 data-i18n="account.password.title">Change password</h2>
+      <p class="notice" data-password-error hidden role="alert"></p>
+      <p class="notice notice--accent" data-password-success hidden role="status" data-i18n="account.password.success">Password changed. You're still signed in on this device — every other session was signed out.</p>
+      <form data-password-form novalidate>
+        <div class="field">
+          <label for="current-password" data-i18n="account.password.current">Current password</label>
+          <input class="input" id="current-password" name="currentPassword" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="new-password" data-i18n="account.password.new">New password</label>
+          <input class="input" id="new-password" name="newPassword" type="password" autocomplete="new-password" required>
+        </div>
+        <div class="field">
+          <label for="confirm-password" data-i18n="account.password.confirm">Confirm new password</label>
+          <input class="input" id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required>
+        </div>
+        <button class="btn btn--primary" type="submit" data-password-submit data-i18n="account.password.submit">Change password</button>
       </form>
 
-      <div data-report hidden>
-        <!-- What the agent understood, before anything is evaluated. -->
-        <section class="panel" data-understood-panel>
-          <h2 class="panel__title">Understood</h2>
-          <dl class="spec" data-understood></dl>
-          <p class="notice" data-missing hidden role="status"></p>
-        </section>
-
-        <section class="panel" data-options-panel hidden>
-          <h2 class="panel__title">
-            Shortlist <span class="panel__count" data-considered></span>
-          </h2>
-          <div class="options" data-options></div>
-        </section>
-
-        <section class="panel" data-recommendation-panel hidden>
-          <h2 class="panel__title">Recommendation</h2>
-          <p data-recommendation></p>
-          <!--
-            The sentence the whole ranking exists for. Shown as a warning
-            rather than a footnote because this is the moment somebody
-            overrules the recommendation on price alone.
-          -->
-          <p class="notice notice--warn" data-cost-of-recommendation hidden></p>
-          <ul class="notes" data-notes hidden></ul>
-          <p class="next-step" data-next-step></p>
-        </section>
-
-        <section class="panel" data-empty-panel hidden>
-          <h2 class="panel__title">Nothing to shortlist</h2>
-          <p data-empty-reason></p>
-          <p class="product__meta">
-            Record a supplier and a price under
-            <a href="suppliers.html">Suppliers</a>, then source again.
-          </p>
-        </section>
-      </div>
-
-      <noscript>
-        <div class="notice">Sourcing needs JavaScript.</div>
-      </noscript>
+      <h2 data-i18n="account.email.title">Change email</h2>
+      <p class="notice" data-email-error hidden role="alert"></p>
+      <p class="notice notice--accent" data-email-success hidden role="status" data-i18n="account.email.success">Email address updated.</p>
+      <form data-email-form novalidate>
+        <div class="field">
+          <label for="email-current-password" data-i18n="account.email.current">Current password</label>
+          <input class="input" id="email-current-password" name="currentPassword" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="new-email" data-i18n="account.email.new">New email address</label>
+          <input class="input" id="new-email" name="newEmail" type="email" autocomplete="email" required>
+        </div>
+        <button class="btn btn--primary" type="submit" data-email-submit data-i18n="account.email.submit">Change email</button>
+      </form>
     </div>
   </section>
 </main>
@@ -175,8 +151,9 @@
     </p>
   </div>
   <div class="wrap site-footer__row">
-    <a href="admin.html" data-when-admin hidden data-i18n="nav.admin">Admin</a>
-    <a href="suppliers.html" data-when-admin hidden>Suppliers</a>
+    <a href="create.html" data-i18n="nav.create">Create my brand</a>
+    <a href="catalog.html" data-i18n="nav.catalog">Catalogue</a>
+    <a href="package.html" data-i18n="nav.package">My package</a>
     <a href="dashboard.html" data-when-signed-in hidden data-i18n="nav.dashboard">Dashboard</a>
   </div>
 </footer>
@@ -184,6 +161,6 @@
 <script src="assets/js/app.js" defer></script>
 <script type="module" src="assets/js/booking.js"></script>
 <script type="module" src="assets/js/assistant-widget.js"></script>
-<script type="module" src="assets/js/procurement.js"></script>
+<script type="module" src="assets/js/account.js"></script>
 </body>
 </html>

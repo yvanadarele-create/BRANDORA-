@@ -8,6 +8,7 @@ export * from "./agent.js";
 export * from "./payments.js";
 export * from "./notifications.js";
 export * from "./session.js";
+export * from "./admin-bootstrap.js";
 export * from "./routes.js";
 export * from "./static.js";
 export * from "./app.js";

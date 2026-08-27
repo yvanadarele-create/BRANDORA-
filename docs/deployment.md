@@ -223,6 +223,7 @@ paste the value, tick **Production**, **Preview** and **Development**, **Save**.
 | `BRANDORA_DATABASE_URL` | your **pooled** Postgres string | Data does not persist between invocations |
 | `BRANDORA_AUTH_SECRET` | a fresh 32-byte base64 string | **The server refuses to start** |
 | `BRANDORA_PUBLIC_BASE_URL` | `https://brandoraunion.online` | Payment returns land on the wrong host |
+| `BRANDORA_ADMIN_EMAIL` | the address you signed up with | That account stays a regular customer — see step 5 below |
 | `ANTHROPIC_API_KEY` | your key | Brand generation fails with a clear message. It does not invent a brand |
 | `PAYSTACK_SECRET_KEY` | your key | Orders are placed and wait for an admin to confirm an arranged payment |
 | `RESEND_API_KEY` | your key | **No email is ever sent — including password-reset.** `notify()` records the notification in the database but skips delivery silently; nothing errors, nothing logs to the customer |
@@ -255,12 +256,35 @@ signed out or the brand is gone, `BRANDORA_DATABASE_URL` is not set.
 
 ### 5. Make the first administrator
 
-There is no route that grants a role — by design, so no request can escalate
-one. Promote yourself directly against the database:
+There is still no *route* that grants a role — a public request can never
+escalate one, by design. But the identity no longer depends on you (or a
+CloudCode session) running SQL by hand after every fresh deploy:
+
+1. **Sign up** at `/signup.html` with the email address that should be the
+   administrator. This creates an ordinary customer account, with a password
+   only you know.
+2. **Set `BRANDORA_ADMIN_EMAIL`** in the deployment's environment variables to
+   that same address.
+3. **Redeploy** (or just restart the process). On boot, `bootstrapAdmin()`
+   (`packages/brandora-server/src/admin-bootstrap.ts`) looks up that address
+   and promotes it to `role = 'admin'` if it isn't already. It never creates
+   the account and never touches the password — only `role` changes, and only
+   toward `admin`, never away from it. It is safe to leave the variable set
+   forever: every later boot on an already-promoted account is a silent
+   no-op, and the identity survives any number of redeploys.
+
+If you'd rather do it once, by hand, that still works:
 
 ```sql
 UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
 ```
+
+Once signed in as that administrator, **/account.html** (linked as "My
+account" in the header) is where the password and email address are changed
+— `POST /api/auth/password` and `POST /api/auth/email`, both requiring the
+current password, both server-side only. There is no other way to change
+either, and nothing here is stored in the browser: a page refresh, a new
+device or a redeploy all see the same account.
 
 ### 6. Manage the catalogue without touching code
 
@@ -306,6 +330,7 @@ its slug, never duplicated.
 | `ANTHROPIC_API_KEY` | Generation **fails with a clear message** rather than fabricating a brand |
 | `PAYSTACK_SECRET_KEY` | Orders are placed at `pending`; an admin confirms an arranged transfer |
 | `RESEND_API_KEY` + `BRANDORA_EMAIL_FROM` | All outbound email — including password-reset — is silently skipped. Both are required together |
+| `BRANDORA_ADMIN_EMAIL` | No account is auto-promoted to admin. Sign up, then set this and redeploy — see "Make the first administrator" |
 | `BRANDORA_CALENDLY_URL` | Booking controls hide themselves |
 | `ALIEXPRESS_*` | The Brandora catalogue serves; no supplier call is made |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | Product image uploads in `/admin-products` **fail with a clear message**; existing products and text fields are unaffected |

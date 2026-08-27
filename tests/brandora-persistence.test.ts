@@ -68,6 +68,21 @@ describe("users", () => {
     assert.equal((await repos.users.credentialsFor(user.id))!.passwordHash, "new");
   });
 
+  test("setEmail changes the address, lowercased, and it is findable at the new one", async () => {
+    const user = await makeUser("old-address@example.com");
+    await repos.users.setEmail(user.id, "New-Address@Example.com");
+    const fetched = (await repos.users.findById(user.id))!;
+    assert.equal(fetched.email, "new-address@example.com");
+    assert.ok(await repos.users.findByEmail("new-address@example.com"));
+    assert.equal(await repos.users.findByEmail("old-address@example.com"), null);
+  });
+
+  test("setEmail refuses to collide with another account's address", async () => {
+    await makeUser("taken@example.com");
+    const user = await makeUser("mover@example.com");
+    await assert.rejects(() => repos.users.setEmail(user.id, "taken@example.com"), /UNIQUE|constraint/i);
+  });
+
   test("an unknown role is refused by the database, not just the application", async () => {
     const user = await makeUser();
     await assert.rejects(

@@ -48,6 +48,7 @@ export const CUSTOMER_MESSAGES = {
   // whoever is holding a dead link something about a token they should not
   // be able to probe.
   "auth.reset-invalid": "This reset link is invalid or has expired. Request a new one.",
+  "auth.email-taken": "That email address is already in use by another account.",
   "input.invalid": "Something in that form didn't look right. Please check and try again.",
   "rate.limited": "That's a lot of requests. Please wait a moment and try again.",
   "internal": "Something went wrong on our side. We're on it.",

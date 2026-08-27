@@ -116,6 +116,10 @@ export const api = {
   requestPasswordReset: (email) => request('POST', '/api/auth/password-reset/request', { email }),
   confirmPasswordReset: (token, password) =>
     request('POST', '/api/auth/password-reset/confirm', { token, password }),
+  changePassword: (currentPassword, newPassword) =>
+    request('POST', '/api/auth/password', { currentPassword, newPassword }),
+  changeEmail: (currentPassword, newEmail) =>
+    request('POST', '/api/auth/email', { currentPassword, newEmail }),
 
   /* Projects */
   projects: () => request('GET', '/api/projects'),

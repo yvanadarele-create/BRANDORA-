@@ -996,6 +996,99 @@ export function createRouter(deps: ServerDeps): Router {
     json(200, { minimumLength: MIN_PASSWORD_LENGTH }),
   );
 
+  /**
+   * Change password, while signed in.
+   *
+   * Requires the current password rather than trusting the session alone —
+   * the session cookie proves *a* browser is authenticated, not that the
+   * person typing right now is the account holder and not someone who found
+   * an unlocked laptop. Same enumeration-safe wording as login on a bad
+   * current password (`auth.invalid`), and the same "log out everywhere,
+   * then back in here" behaviour as a password-reset confirm: whoever else
+   * is holding a session on this account should not keep it past a
+   * deliberate password change.
+   */
+  router.post("/api/auth/password", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const currentPassword = requireString(ctx.body, "currentPassword", 512);
+    const newPassword = requireString(ctx.body, "newPassword", 512);
+
+    const credentials = await repos.users.credentialsFor(user.id);
+    if (!credentials) {
+      // A Google-only account has no password to verify against — nothing to
+      // change here, and saying so is not an enumeration risk: the caller
+      // already has a live session on this exact account.
+      throw new BrandoraError(
+        "auth.invalid",
+        `user ${user.id} has no password credentials to change (google-only account)`,
+        401,
+      );
+    }
+
+    const ok = verifyPassword(currentPassword, {
+      hash: credentials.passwordHash,
+      salt: credentials.passwordSalt,
+    });
+    if (!ok) {
+      wasteVerificationTime();
+      throw new BrandoraError("auth.invalid", `bad current password for ${user.id}`, 401);
+    }
+
+    assertPasswordAcceptable(newPassword);
+    const hashed = hashPassword(newPassword);
+    await repos.users.setCredentials(user.id, hashed.hash, hashed.salt);
+
+    await repos.sessions.destroyAllFor(user.id);
+    return json(200, { changed: true }, { cookies: await setSessionCookie(user.id) });
+  });
+
+  /**
+   * Change email, while signed in.
+   *
+   * Also requires the current password — email is how a password reset is
+   * addressed, so changing it is exactly as sensitive as changing the
+   * password itself, and gets the same proof of presence. The session stays
+   * alive: unlike a password change, nothing about the credential that
+   * authenticated this request has changed.
+   */
+  router.post("/api/auth/email", async (ctx) => {
+    const user = await requireUser(ctx, session);
+    const currentPassword = requireString(ctx.body, "currentPassword", 512);
+    const email = requireString(ctx.body, "newEmail", 254).trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      throw new ValidationError("newEmail", "does not look like an email address");
+    }
+
+    const credentials = await repos.users.credentialsFor(user.id);
+    if (!credentials) {
+      throw new BrandoraError(
+        "auth.invalid",
+        `user ${user.id} has no password credentials to verify (google-only account)`,
+        401,
+      );
+    }
+
+    const ok = verifyPassword(currentPassword, {
+      hash: credentials.passwordHash,
+      salt: credentials.passwordSalt,
+    });
+    if (!ok) {
+      wasteVerificationTime();
+      throw new BrandoraError("auth.invalid", `bad current password for ${user.id}`, 401);
+    }
+
+    if (email !== user.email) {
+      const existing = await repos.users.findByEmail(email);
+      if (existing && existing.id !== user.id) {
+        throw new BrandoraError("auth.email-taken", `email ${email} already belongs to ${existing.id}`, 409);
+      }
+      await repos.users.setEmail(user.id, email);
+    }
+
+    const updated = await repos.users.findById(user.id);
+    return json(200, { user: updated ? publicUser(updated) : null });
+  });
+
   /* --- Projects ----------------------------------------------------------- */
 
   router.get("/api/projects", async (ctx) => {

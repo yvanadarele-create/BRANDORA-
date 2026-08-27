@@ -621,6 +621,8 @@ export interface Repositories {
     setCredentials(userId: string, passwordHash: string, passwordSalt: string): Promise<void>;
     credentialsFor(userId: string): Promise<CredentialRow | null>;
     setRole(userId: string, role: UserRole): Promise<void>;
+    /** Throws if another account already holds this address — caller checks first with findByEmail. */
+    setEmail(userId: string, email: string): Promise<void>;
     listAsAdmin(limit?: number): Promise<UserRow[]>;
     /** Customers with their project and order counts, in one query. */
     listWithCountsAsAdmin(limit?: number): Promise<AdminCustomerRow[]>;
@@ -1378,6 +1380,15 @@ export function createRepositories(db: SqlDriver): Repositories {
 
       async setRole(userId, role) {
         await run(`UPDATE users SET role = ?, updated_at = ? WHERE id = ?`, role, nowIso(), userId);
+      },
+
+      async setEmail(userId, email) {
+        await run(
+          `UPDATE users SET email = ?, updated_at = ? WHERE id = ?`,
+          email.trim().toLowerCase(),
+          nowIso(),
+          userId,
+        );
       },
 
       async listAsAdmin(limit = 100) {

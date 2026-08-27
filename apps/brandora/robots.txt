@@ -6,6 +6,7 @@
 # scripts/check-seo.mjs keeps the two lists from drifting apart.
 
 User-agent: *
+Disallow: /account.html
 Disallow: /admin.html
 Disallow: /admin-products.html
 Disallow: /admin-product-new.html
